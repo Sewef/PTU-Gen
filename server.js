@@ -5,9 +5,14 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Import generator
+const PokemonGenerator = require('./utils/pokemonGenerator');
+const { initializeDatasets } = require('./utils/pokemonGenerator');
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 // Import routes
 const pokemonRoutes = require('./routes/pokemon');
@@ -29,7 +34,9 @@ app.get('/', (req, res) => {
       health: '/health',
       generate: '/api/pokemon/generate',
       generateWild: '/api/pokemon/generateWild/:level',
-      list: '/api/pokemon/list'
+      team: '/api/pokemon/team',
+      list: '/api/pokemon/list',
+      datasets: '/api/pokemon/datasets'
     },
     documentation: 'See README.md for full documentation'
   });
@@ -46,6 +53,12 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-app.listen(PORT, () => {
-  console.log(`PTU Pokemon Generator running on port ${PORT}`);
+// Initialize datasets and start server
+initializeDatasets().then(() => {
+  app.listen(PORT, () => {
+    console.log(`✓ PTU Pokemon Generator running on port ${PORT}`);
+  });
+}).catch((error) => {
+  console.error('Failed to initialize datasets:', error);
+  process.exit(1);
 });

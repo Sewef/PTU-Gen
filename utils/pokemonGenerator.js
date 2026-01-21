@@ -1,21 +1,169 @@
 // Pokemon Generator - Handles generating Pokemon stats and teams
 
-const pokemonDatabase = require('../data/pokedex_core.min.json');
-const abilitiesDatabase = require('../data/abilities_core.min.json');
-const movesDatabase = require('../data/moves_core.min.json');
+const fs = require('fs');
+const path = require('path');
+
+// Base URL for external datasets
+const DATASETS_BASE_URL = 'https://sewef.github.io/ptu/data/';
+
+// Dataset definitions - includes all generations as they are complementary
+const DATASETS = {
+  core: {
+    name: 'Core',
+    pokedex: [
+      'pokedex/core/pokedex_core.min.json',
+      'pokedex/core/pokedex_7g.min.json',
+      'pokedex/core/pokedex_8g.min.json',
+      'pokedex/core/pokedex_8g_hisui.min.json'
+    ],
+    abilities: 'abilities/abilities_core.min.json',
+    moves: 'moves/moves_core.min.json',
+  },
+  community: {
+    name: 'Community',
+    pokedex: [
+      'pokedex/community/pokedex_core.min.json',
+      'pokedex/community/pokedex_7g.min.json',
+      'pokedex/community/pokedex_8g.min.json',
+      'pokedex/community/pokedex_8g_hisui.min.json',
+      'pokedex/community/pokedex_9g.min.json'
+    ],
+    abilities: 'abilities/abilities_9g.min.json',
+    moves: 'moves/moves_9g.min.json',
+  },
+  homebrew: {
+    name: 'Homebrew',
+    pokedex: [
+      'pokedex/homebrew/pokedex_core.min.json',
+      'pokedex/homebrew/pokedex_7g.min.json',
+      'pokedex/homebrew/pokedex_8g.min.json',
+      'pokedex/homebrew/pokedex_8g_hisui.min.json',
+      'pokedex/homebrew/pokedex_9g.min.json'
+    ],
+    abilities: 'abilities/abilities_homebrew.min.json',
+    moves: 'moves/moves_homebrew.min.json',
+  },
+};
+
+// Cache for loaded datasets
+const dataCache = {};
+let currentDataset = 'core';
+let pokemonDatabase = [];
+let abilitiesDatabase = {};
+let movesDatabase = {};
 
 // Create lookup objects for easier access
-const pokemonByName = {};
-const movesMap = {};
+let pokemonByName = {};
+let movesMap = {};
 
-pokemonDatabase.forEach(pokemon => {
-  pokemonByName[pokemon.Species.toLowerCase()] = pokemon;
-});
+/**
+ * Fetch data from URL
+ */
+async function fetchDataFromURL(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching data from ${url}:`, error.message);
+    throw error;
+  }
+}
 
-// movesDatabase is an object with move names as keys
-Object.keys(movesDatabase).forEach(moveName => {
-  movesMap[moveName.toLowerCase()] = movesDatabase[moveName];
-});
+/**
+ * Load dataset from external URLs
+ */
+async function loadDataset(datasetKey) {
+  if (!DATASETS[datasetKey]) {
+    throw new Error(`Unknown dataset: ${datasetKey}`);
+  }
+
+  // Check cache
+  if (dataCache[datasetKey]) {
+    return dataCache[datasetKey];
+  }
+
+  console.log(`Loading ${DATASETS[datasetKey].name} dataset...`);
+
+  const dataset = DATASETS[datasetKey];
+  
+  try {
+    // Load all pokedex files for this dataset and merge them
+    const pokedexPromises = dataset.pokedex.map(path => 
+      fetchDataFromURL(DATASETS_BASE_URL + path)
+    );
+    const pokedexArrays = await Promise.all(pokedexPromises);
+    
+    // Merge all pokedex arrays, removing duplicates
+    const pokedexMap = new Map();
+    pokedexArrays.forEach(pokedexArray => {
+      pokedexArray.forEach(pokemon => {
+        // Use species name as key to avoid duplicates
+        pokedexMap.set(pokemon.Species.toLowerCase(), pokemon);
+      });
+    });
+    const mergedPokedex = Array.from(pokedexMap.values());
+    
+    // Load abilities and moves
+    const [abilities, moves] = await Promise.all([
+      fetchDataFromURL(DATASETS_BASE_URL + dataset.abilities),
+      fetchDataFromURL(DATASETS_BASE_URL + dataset.moves),
+    ]);
+
+    dataCache[datasetKey] = { 
+      pokedex: mergedPokedex, 
+      abilities, 
+      moves 
+    };
+    console.log(`✓ ${DATASETS[datasetKey].name} dataset loaded successfully (${mergedPokedex.length} Pokémon)`);
+    return dataCache[datasetKey];
+  } catch (error) {
+    console.error(`Failed to load ${DATASETS[datasetKey].name} dataset:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Switch to a different dataset
+ */
+async function switchDataset(datasetKey) {
+  if (!DATASETS[datasetKey]) {
+    throw new Error(`Unknown dataset: ${datasetKey}`);
+  }
+
+  const data = await loadDataset(datasetKey);
+  currentDataset = datasetKey;
+  
+  pokemonDatabase = data.pokedex;
+  abilitiesDatabase = data.abilities;
+  movesDatabase = data.moves;
+
+  // Rebuild lookup objects
+  pokemonByName = {};
+  movesMap = {};
+
+  pokemonDatabase.forEach(pokemon => {
+    pokemonByName[pokemon.Species.toLowerCase()] = pokemon;
+  });
+
+  Object.keys(movesDatabase).forEach(moveName => {
+    movesMap[moveName.toLowerCase()] = movesDatabase[moveName];
+  });
+}
+
+/**
+ * Initialize with default dataset (Core)
+ */
+async function initializeDatasets() {
+  try {
+    await switchDataset('core');
+  } catch (error) {
+    console.error('Failed to initialize datasets:', error);
+    throw error;
+  }
+}
 
 class PokemonGenerator {
   /**
@@ -29,21 +177,27 @@ class PokemonGenerator {
    * @param {string} options.distribution - RANDOM (default), BALANCED, or MINMAXED
    * @param {string} options.ignoreBaseRelation - 'IGNORE' (all stats) or comma-separated list (e.g., 'HP,ATK,DEF')
    * @param {string} options.hpFormula - Custom HP formula. Default: 'LEVEL + (HP * 3) + 10'
+   * @param {string} options.dataset - Dataset to use: 'core', 'community', 'homebrew'. Default: 'core'
    * @returns {Object} Generated Pokemon
    */
-  static generatePokemon(options = {}) {
+  static async generatePokemon(options = {}) {
+    // Switch dataset if specified
+    const dataset = (options.dataset || 'core').toLowerCase();
+    if (dataset !== currentDataset) {
+      await switchDataset(dataset);
+    }
     let level;
     
     if (options.minLevel && options.maxLevel) {
-      // Plage de niveau aléatoire
+      // Random level range
       const min = Math.max(1, parseInt(options.minLevel));
       const max = Math.min(100, parseInt(options.maxLevel));
       level = Math.floor(Math.random() * (max - min + 1)) + min;
     } else if (options.level) {
-      // Niveau spécifique
+      // Specific level
       level = parseInt(options.level);
     } else {
-      // Niveau aléatoire par défaut (1-50)
+      // Random level by default (1-50)
       level = Math.floor(Math.random() * 50) + 1;
     }
     
@@ -115,26 +269,28 @@ class PokemonGenerator {
   /**
    * Generate a wild Pokemon at specific level
    */
-  static generateWildPokemon(level = 15) {
-    return this.generatePokemon({ level: Math.max(1, Math.min(100, level)) });
+  static async generateWildPokemon(level = 15, dataset = 'core') {
+    return this.generatePokemon({ level: Math.max(1, Math.min(100, level)), dataset });
   }
 
   /**
    * Generate a team of 6 Pokemon
    */
-  static generateTeam(options = {}) {
+  static async generateTeam(options = {}) {
     const team = [];
     const count = options.size || 6;
     const level = options.level || 50;
+    const dataset = options.dataset || 'core';
 
     for (let i = 0; i < count; i++) {
-      team.push(this.generatePokemon({ level }));
+      team.push(await this.generatePokemon({ level, dataset }));
     }
 
     return {
       pokemon: team,
       count: team.length,
       averageLevel: level,
+      dataset: dataset,
       generatedAt: new Date().toISOString()
     };
   }
@@ -175,7 +331,7 @@ class PokemonGenerator {
       baseWithNature[shortName] = Math.max(1, value);
     });
 
-    // Group stats by their base value (stats égales) unless ignoring Base Relation
+    // Group stats by their base value (equal base stats) unless ignoring Base Relation
     let groups;
     if (ignoreBaseRelation === 'IGNORE') {
       // Ignore Base Relation completely - each stat is its own group
@@ -447,42 +603,35 @@ class PokemonGenerator {
   }
 
   /**
-   * Select 6 random moves for a Pokemon based on their moveset
+   * Select moves for a Pokemon based on their Level Up moveset only
    */
   static selectMovesForPokemon(species, level, count = 6) {
     const allMoves = [];
     
-    // Get level-up moves that the Pokemon can learn at this level
+    // Get only level-up moves that the Pokemon can learn at this level
     if (species.Moves && species.Moves['Level Up Move List']) {
       species.Moves['Level Up Move List']
         .filter(move => move.Level <= level)
         .forEach(move => allMoves.push(move));
     }
     
-    // Add TM/HM moves
-    if (species.Moves && species.Moves['TM/HM Move List']) {
-      allMoves.push(...species.Moves['TM/HM Move List']);
-    }
-    
-    // Add Tutor moves
-    if (species.Moves && species.Moves['Tutor Move List']) {
-      allMoves.push(...species.Moves['Tutor Move List']);
-    }
-    
-    // Select random moves
+    // Select random moves from level-up moves only
     const selected = [];
     if (allMoves.length === 0) {
-      return [{ Move: 'Tackle', Type: 'Normal' }];
+      return [{ name: 'Tackle', type: 'Normal', method: 'Level Up' }];
     }
     
-    for (let i = 0; i < Math.min(count, allMoves.length); i++) {
-      const moveIndex = Math.floor(Math.random() * allMoves.length);
-      const move = allMoves[moveIndex];
-      if (!selected.some(m => m.Move === move.Move)) {
+    // Sort moves by level in descending order to prefer later-learned moves
+    const sortedMoves = [...allMoves].sort((a, b) => b.Level - a.Level);
+    
+    // Take the most recent moves up to the count, or fill with earlier moves
+    for (let i = 0; i < Math.min(count, sortedMoves.length); i++) {
+      const move = sortedMoves[i];
+      if (!selected.some(m => m.name === move.Move)) {
         selected.push({
           name: move.Move,
           type: move.Type,
-          method: move.Method || 'Level Up'
+          method: 'Level Up'
         });
       }
     }
@@ -493,16 +642,10 @@ class PokemonGenerator {
 
 
   /**
-   * Select a random item
+   * Select an item (currently disabled - returns null)
    */
   static selectItem() {
-    const items = [
-      'Assaultvest', 'Choice Band', 'Choice Scarf', 'Choice Specs',
-      'Leftovers', 'Life Orb', 'Assault Vest', 'Eviolite',
-      'Weakness Policy', 'Sitrus Berry', 'Lum Berry', 'Cheri Berry',
-      'Air Balloon', 'Focus Sash', 'Nasty Plot', 'Dragon Dance'
-    ];
-    return items[Math.floor(Math.random() * items.length)];
+    return null;
   }
 
   /**
@@ -522,7 +665,10 @@ class PokemonGenerator {
   /**
    * List available Pokemon
    */
-  static listAvailablePokemon() {
+  static async listAvailablePokemon(dataset = 'core') {
+    if (dataset !== currentDataset) {
+      await switchDataset(dataset);
+    }
     return pokemonDatabase.map(species => ({
       id: species.Number,
       name: species.Species,
@@ -536,6 +682,31 @@ class PokemonGenerator {
       }
     }));
   }
+
+  /**
+   * Get list of available datasets
+   */
+  static getAvailableDatasets() {
+    return Object.keys(DATASETS).map(key => ({
+      key: key,
+      name: DATASETS[key].name
+    }));
+  }
+
+  /**
+   * Get current dataset
+   */
+  static getCurrentDataset() {
+    return currentDataset;
+  }
+
+  /**
+   * Switch to a different dataset
+   */
+  static async switchDataset(datasetKey) {
+    return switchDataset(datasetKey);
+  }
 }
 
 module.exports = PokemonGenerator;
+module.exports.initializeDatasets = initializeDatasets;

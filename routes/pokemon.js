@@ -21,8 +21,9 @@ const PokemonGenerator = require('../utils/pokemonGenerator');
  *     * HP,ATK: Ignore Base Relation only for specified stats, others remain grouped
  *   - hpFormula: string - Custom HP calculation formula (default: 'LEVEL + (HP * 3) + 10')
  *     * Can use 'LEVEL' and 'HP' placeholders, e.g., 'LEVEL + (HP * 2)'
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
  */
-router.get('/generate', (req, res) => {
+router.get('/generate', async (req, res) => {
   try {
     const options = {
       level: req.query.level ? parseInt(req.query.level) : undefined,
@@ -32,10 +33,11 @@ router.get('/generate', (req, res) => {
       shiny: req.query.shiny === 'true',
       distribution: req.query.distribution || 'RANDOM',
       ignoreBaseRelation: req.query.ignoreBaseRelation,
-      hpFormula: req.query.hpFormula
+      hpFormula: req.query.hpFormula,
+      dataset: req.query.dataset || 'core'
     };
 
-    const pokemon = PokemonGenerator.generatePokemon(options);
+    const pokemon = await PokemonGenerator.generatePokemon(options);
     res.json(pokemon);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -46,14 +48,15 @@ router.get('/generate', (req, res) => {
  * GET /api/pokemon/generateWild/:level
  * Generate a wild Pokemon at specific level
  */
-router.get('/generateWild/:level', (req, res) => {
+router.get('/generateWild/:level', async (req, res) => {
   try {
     const level = parseInt(req.params.level);
+    const dataset = req.query.dataset || 'core';
     if (isNaN(level) || level < 1 || level > 100) {
       return res.status(400).json({ error: 'Level must be between 1 and 100' });
     }
 
-    const pokemon = PokemonGenerator.generateWildPokemon(level);
+    const pokemon = await PokemonGenerator.generateWildPokemon(level, dataset);
     res.json(pokemon);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -66,19 +69,21 @@ router.get('/generateWild/:level', (req, res) => {
  * Query params:
  *   - level: number (1-100)
  *   - size: number (1-6)
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
  */
-router.get('/team', (req, res) => {
+router.get('/team', async (req, res) => {
   try {
     const options = {
       level: req.query.level ? parseInt(req.query.level) : 50,
-      size: req.query.size ? Math.min(parseInt(req.query.size), 6) : 6
+      size: req.query.size ? Math.min(parseInt(req.query.size), 6) : 6,
+      dataset: req.query.dataset || 'core'
     };
 
     if (options.level < 1 || options.level > 100) {
       return res.status(400).json({ error: 'Level must be between 1 and 100' });
     }
 
-    const team = PokemonGenerator.generateTeam(options);
+    const team = await PokemonGenerator.generateTeam(options);
     res.json(team);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -88,13 +93,34 @@ router.get('/team', (req, res) => {
 /**
  * GET /api/pokemon/list
  * List all available Pokemon species
+ * Query params:
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
  */
-router.get('/list', (req, res) => {
+router.get('/list', async (req, res) => {
   try {
-    const pokemon = PokemonGenerator.listAvailablePokemon();
+    const dataset = req.query.dataset || 'core';
+    const pokemon = await PokemonGenerator.listAvailablePokemon(dataset);
+    const speciesNames = pokemon.map(p => p.name);
     res.json({
-      count: pokemon.length,
-      pokemon: pokemon
+      count: speciesNames.length,
+      dataset: dataset,
+      species: speciesNames
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/pokemon/datasets
+ * List all available datasets
+ */
+router.get('/datasets', (req, res) => {
+  try {
+    const datasets = PokemonGenerator.getAvailableDatasets();
+    res.json({
+      current: PokemonGenerator.getCurrentDataset(),
+      datasets: datasets
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
