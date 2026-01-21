@@ -366,13 +366,21 @@
                     `<span class="pokemon-card-type type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`
                 ).join('');
 
+                const imageNumber = pokemon.Icon || pokemon.id;
+                const imageUrl = `https://sewef.github.io/ptu/img/pokemon/icons/${imageNumber}.png`;
+                
                 html += `
                     <div class="pokemon-card" onclick="openPokemonDetail(${index})">
-                        <div class="pokemon-card-number">#${pokemon.id}</div>
+                        <div class="pokemon-card-header">
+                            <img src="${imageUrl}" alt="${pokemon.name}" class="pokemon-card-icon" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Crect fill=%22%23eee%22 width=%2232%22 height=%2232%22/%3E%3C/svg%3E'" />
+                            <div class="pokemon-card-number">#${pokemon.id}</div>
+                        </div>
                         <div class="pokemon-card-name">${pokemon.name}</div>
-                        <div class="pokemon-card-level">Lvl ${pokemon.level}</div>
+                        <div class="pokemon-card-info">
+                            <span class="pokemon-card-level">L${pokemon.level}</span>
+                            ${pokemon.shiny ? '<span class="pokemon-card-shiny">✨</span>' : ''}
+                        </div>
                         <div class="pokemon-card-types">${typesHtml}</div>
-                        ${pokemon.shiny ? '<div class="pokemon-card-shiny">✨ SHINY</div>' : ''}
                     </div>
                 `;
 

@@ -249,11 +249,12 @@ class PokemonGenerator {
     
     const pokemon = {
       id: species.Number,
+      Icon: species.Icon,
       name: species.Species,
       level: level,
       types: species['Basic Information'].Type,
       abilities: abilitiesWithDefinitions,
-      shiny: options.shiny || Math.random() < 0.01, // 1/100 chance
+      shiny: options.shiny || Math.random() < 0.0625, // 1/16 chance
       nature: nature,
       stats: stats,
       hitPoints: this.calculateHitPoints(level, stats.HP, hpFormula),
