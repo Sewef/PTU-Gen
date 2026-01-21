@@ -137,8 +137,20 @@ async function switchDataset(datasetKey) {
   currentDataset = datasetKey;
   
   pokemonDatabase = data.pokedex;
-  abilitiesDatabase = data.abilities;
   movesDatabase = data.moves;
+
+  // Convert abilities array to object indexed by name
+  if (Array.isArray(data.abilities)) {
+    const abilitiesObj = {};
+    data.abilities.forEach(ability => {
+      if (ability.Name) {
+        abilitiesObj[ability.Name] = ability;
+      }
+    });
+    abilitiesDatabase = abilitiesObj;
+  } else {
+    abilitiesDatabase = data.abilities;
+  }
 
   // Rebuild lookup objects
   pokemonByName = {};
@@ -178,6 +190,7 @@ class PokemonGenerator {
    * @param {string} options.ignoreBaseRelation - 'IGNORE' (all stats) or comma-separated list (e.g., 'HP,ATK,DEF')
    * @param {string} options.hpFormula - Custom HP formula. Default: 'LEVEL + (HP * 3) + 10'
    * @param {string} options.dataset - Dataset to use: 'core', 'community', 'homebrew'. Default: 'core'
+   * @param {string} options.nature - Specific nature name to use. If not specified, a random nature is chosen
    * @returns {Object} Generated Pokemon
    */
   static async generatePokemon(options = {}) {
@@ -211,20 +224,36 @@ class PokemonGenerator {
       throw new Error(`Species not found: ${options.species}`);
     }
 
-    const nature = this.selectNature();
+    const nature = options.nature 
+      ? this.getNatureByName(options.nature)
+      : this.selectNature();
     const distribution = (options.distribution || 'RANDOM').toUpperCase();
     const ignoreBaseRelation = options.ignoreBaseRelation ? (options.ignoreBaseRelation).toUpperCase() : undefined;
     const hpFormula = options.hpFormula || 'LEVEL + (HP * 3) + 10';
     
     const stats = this.calculateStats(species['Base Stats'], level, nature, distribution, ignoreBaseRelation);
     
+    // Get selected abilities with their definitions
+    const abilityNames = this.selectAbilities(species, level);
+    const abilitiesWithDefinitions = abilityNames.map(abilityName => {
+      const definition = this.getAbilityDefinition(abilityName);
+      if (!definition) {
+        return { Name: abilityName };
+      }
+      // Ensure Name is the first property
+      return {
+        Name: abilityName,
+        ...definition
+      };
+    });
+    
     const pokemon = {
       id: species.Number,
       name: species.Species,
       level: level,
       types: species['Basic Information'].Type,
-      abilities: this.selectAbilities(species, level),
-      shiny: options.shiny || Math.random() < 0.0625, // 1/16 chance
+      abilities: abilitiesWithDefinitions,
+      shiny: options.shiny || Math.random() < 0.01, // 1/100 chance
       nature: nature,
       stats: stats,
       hitPoints: this.calculateHitPoints(level, stats.HP, hpFormula),
@@ -560,7 +589,14 @@ class PokemonGenerator {
    * Select a random nature with stat modifiers
    */
   static selectNature() {
-    const natures = [
+    return this.getAllNatures()[Math.floor(Math.random() * this.getAllNatures().length)];
+  }
+
+  /**
+   * Get all available natures
+   */
+  static getAllNatures() {
+    return [
       { name: 'Cuddly', raise: 'HP', lower: 'atk' },
       { name: 'Distracted', raise: 'HP', lower: 'def' },
       { name: 'Proud', raise: 'HP', lower: 'spA' },
@@ -598,8 +634,57 @@ class PokemonGenerator {
       { name: 'Quirky', raise: 'spD', lower: 'spD' },
       { name: 'Serious', raise: 'spe', lower: 'spe' }
     ];
+  }
+
+  /**
+   * Get nature by name
+   */
+  static getNatureByName(natureName) {
+    const nature = this.getAllNatures().find(n => n.name.toLowerCase() === natureName.toLowerCase());
+    if (!nature) {
+      throw new Error(`Nature not found: ${natureName}`);
+    }
+    return nature;
+  }
+
+  /**
+   * Get move definition from moves database
+   */
+  static getMoveDefinition(moveName) {
+    // Try exact match first
+    if (movesDatabase[moveName]) {
+      return movesDatabase[moveName];
+    }
     
-    return natures[Math.floor(Math.random() * natures.length)];
+    // Try case-insensitive match
+    const lowerName = moveName.toLowerCase();
+    for (const key in movesDatabase) {
+      if (key.toLowerCase() === lowerName) {
+        return movesDatabase[key];
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get ability definition from abilities database
+   */
+  static getAbilityDefinition(abilityName) {
+    // Try exact match first
+    if (abilitiesDatabase[abilityName]) {
+      return abilitiesDatabase[abilityName];
+    }
+    
+    // Try case-insensitive match
+    const lowerName = abilityName.toLowerCase();
+    for (const key in abilitiesDatabase) {
+      if (key.toLowerCase() === lowerName) {
+        return abilitiesDatabase[key];
+      }
+    }
+    
+    return null;
   }
 
   /**
@@ -618,7 +703,11 @@ class PokemonGenerator {
     // Select random moves from level-up moves only
     const selected = [];
     if (allMoves.length === 0) {
-      return [{ name: 'Tackle', type: 'Normal', method: 'Level Up' }];
+      const tackleDefinition = this.getMoveDefinition('Tackle') || {};
+      return [{
+        Name: 'Tackle',
+        ...tackleDefinition
+      }];
     }
     
     // Sort moves by level in descending order to prefer later-learned moves
@@ -627,12 +716,17 @@ class PokemonGenerator {
     // Take the most recent moves up to the count, or fill with earlier moves
     for (let i = 0; i < Math.min(count, sortedMoves.length); i++) {
       const move = sortedMoves[i];
-      if (!selected.some(m => m.name === move.Move)) {
-        selected.push({
-          name: move.Move,
-          type: move.Type,
-          method: 'Level Up'
-        });
+      if (!selected.some(m => m.Name === move.Move)) {
+        const moveDefinition = this.getMoveDefinition(move.Move);
+        if (moveDefinition) {
+          // Add Name property and include move definition
+          selected.push({
+            Name: move.Move,
+            ...moveDefinition
+          });
+        } else {
+          selected.push({ Name: move.Move });
+        }
       }
     }
     

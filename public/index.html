@@ -302,16 +302,50 @@
         }
 
         .ability-list {
-            display: grid;
-            gap: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         .ability {
             background: #f0f0f0;
-            padding: 10px 15px;
+            padding: 12px 15px;
             border-radius: 5px;
-            border-left: 3px solid #764ba2;
+            border-left: 4px solid #764ba2;
             color: #333;
+            font-size: 0.9em;
+        }
+
+        .ability-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            color: #764ba2;
+        }
+
+        .ability-field {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .ability-field strong {
+            font-weight: 600;
+        }
+
+        .ability-field.main-text {
+            font-size: 0.85em;
+            color: #555;
+            margin-top: 5px;
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        .ability-field.note {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 5px;
+            font-style: italic;
         }
 
         .moves {
@@ -326,23 +360,50 @@
         }
 
         .moves-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         .move {
             background: #f0f0f0;
-            padding: 10px 12px;
+            padding: 12px 15px;
             border-radius: 5px;
             font-size: 0.9em;
             color: #333;
+            border-left: 4px solid #667eea;
         }
 
-        .move-type {
-            font-size: 0.75em;
+        .move-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            color: #667eea;
+        }
+
+        .move-field {
+            font-size: 0.9em;
             color: #666;
-            margin-top: 2px;
+            margin-bottom: 6px;
+        }
+
+        .move-field strong {
+            font-weight: 600;
+        }
+
+        .move-field.main-text {
+            font-size: 0.85em;
+            color: #555;
+            margin-top: 5px;
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        .move-field.note {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 5px;
+            font-style: italic;
         }
 
         .nature-box {
@@ -538,6 +599,16 @@
             <div class="panel">
                 <h2>⚙️ Settings</h2>
                 <form id="generatorForm" autocomplete="off">
+                    <!-- Dataset -->
+                    <div class="form-group">
+                        <label>Dataset</label>
+                        <select id="dataset">
+                            <option value="core">Core</option>
+                            <option value="community">Community</option>
+                            <option value="homebrew">Homebrew</option>
+                        </select>
+                    </div>
+
                     <!-- Level -->
                     <div class="form-group">
                         <label>Level</label>
@@ -552,16 +623,6 @@
                                 <span style="font-size: 0.85em; margin-left: 5px;">Range?</span>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Dataset -->
-                    <div class="form-group">
-                        <label>Dataset</label>
-                        <select id="dataset">
-                            <option value="core">Core</option>
-                            <option value="community">Community</option>
-                            <option value="homebrew">Homebrew</option>
-                        </select>
                     </div>
 
                     <div class="form-row" id="rangeInputs" style="display: none;">
@@ -597,6 +658,14 @@
                             <option value="RANDOM">Random (RANDOM)</option>
                             <option value="BALANCED">Balanced (BALANCED)</option>
                             <option value="MINMAXED">Extremes (MINMAXED)</option>
+                        </select>
+                    </div>
+
+                    <!-- Nature -->
+                    <div class="form-group">
+                        <label>Nature</label>
+                        <select id="nature">
+                            <option value="">Random Nature</option>
                         </select>
                     </div>
 
@@ -831,6 +900,10 @@
 
                 params.append('dataset', document.getElementById('dataset').value);
 
+                if (document.getElementById('nature').value) {
+                    params.append('nature', document.getElementById('nature').value);
+                }
+
                 if (document.getElementById('ignoreBaseRelation').value) {
                     params.append('ignoreBaseRelation', document.getElementById('ignoreBaseRelation').value);
                 }
@@ -908,7 +981,17 @@
                 <div class="abilities">
                     <div class="abilities-title">🎯 Abilities</div>
                     <div class="ability-list">
-                        ${pokemon.abilities.map(ability => `<div class="ability">${ability}</div>`).join('')}
+                        ${pokemon.abilities.map(ability => `
+                            <div class="ability">
+                                <div class="ability-name">${ability.Name}</div>
+                                ${ability.Frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.Frequency}</div>` : ''}
+                                ${ability.Trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.Trigger}</div>` : ''}
+                                ${ability.Effect ? `<div class="ability-field main-text"><strong>Effect:</strong> ${ability.Effect}</div>` : ''}
+                                ${ability.Bonus ? `<div class="ability-field main-text"><strong>Bonus:</strong> ${ability.Bonus}</div>` : ''}
+                                ${ability.Special ? `<div class="ability-field main-text"><strong>Special:</strong> ${ability.Special}</div>` : ''}
+                                ${ability.Note ? `<div class="ability-field note"><strong>Note:</strong> ${ability.Note}</div>` : ''}
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
 
@@ -917,8 +1000,13 @@
                     <div class="moves-list">
                         ${pokemon.moves.map(move => `
                             <div class="move">
-                                <div>${move.name}</div>
-                                <div class="move-type">${move.type} (${move.method})</div>
+                                <div class="move-name">${move.Name}</div>
+                                <div class="move-field"><strong>Type:</strong> ${move.Type || 'N/A'}</div>
+                                <div class="move-field"><strong>Frequency:</strong> ${move.Frequency || 'N/A'}</div>
+                                <div class="move-field"><strong>Class:</strong> ${move.Class || 'N/A'}</div>
+                                <div class="move-field"><strong>Range:</strong> ${move.Range || 'N/A'}</div>
+                                ${move['Damage Base'] ? `<div class="move-field"><strong>Damage Base:</strong> ${move['Damage Base']}</div>` : ''}
+                                ${move.Effect ? `<div class="move-field main-text"><strong>Effect:</strong> ${move.Effect}</div>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -942,9 +1030,29 @@
             icon.classList.toggle('open');
         }
 
+        // Load available natures
+        async function loadNatures() {
+            try {
+                const response = await fetch('/api/pokemon/natures');
+                if (response.ok) {
+                    const data = await response.json();
+                    const natureSelect = document.getElementById('nature');
+                    data.natures.forEach(nature => {
+                        const option = document.createElement('option');
+                        option.value = nature.name;
+                        option.textContent = `${nature.name} (+${nature.raise} -${nature.lower})`;
+                        natureSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load natures:', error);
+            }
+        }
+
         // Generate Pokémon on page load
         window.addEventListener('load', function() {
             loadPokemonList();
+            loadNatures();
             // Optional: auto-generate
             // generatePokemon();
         });

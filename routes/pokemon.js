@@ -22,6 +22,7 @@ const PokemonGenerator = require('../utils/pokemonGenerator');
  *   - hpFormula: string - Custom HP calculation formula (default: 'LEVEL + (HP * 3) + 10')
  *     * Can use 'LEVEL' and 'HP' placeholders, e.g., 'LEVEL + (HP * 2)'
  *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ *   - nature: string - Specific nature name (e.g., 'Adamant', 'Timid'). If not specified, a random nature is chosen
  */
 router.get('/generate', async (req, res) => {
   try {
@@ -34,7 +35,8 @@ router.get('/generate', async (req, res) => {
       distribution: req.query.distribution || 'RANDOM',
       ignoreBaseRelation: req.query.ignoreBaseRelation,
       hpFormula: req.query.hpFormula,
-      dataset: req.query.dataset || 'core'
+      dataset: req.query.dataset || 'core',
+      nature: req.query.nature
     };
 
     const pokemon = await PokemonGenerator.generatePokemon(options);
@@ -121,6 +123,22 @@ router.get('/datasets', (req, res) => {
     res.json({
       current: PokemonGenerator.getCurrentDataset(),
       datasets: datasets
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/pokemon/natures
+ * List all available natures
+ */
+router.get('/natures', (req, res) => {
+  try {
+    const natures = PokemonGenerator.getAllNatures();
+    res.json({
+      count: natures.length,
+      natures: natures
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
