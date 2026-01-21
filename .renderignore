@@ -1,0 +1,17 @@
+# Configuration pour Render.com
+# Cette file ignore les fichiers non nécessaires au déploiement
+
+node_modules/
+.env
+.env.local
+.env.*.local
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+.git/
+.gitignore
+*.md
