@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Details</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Pokémon Details</h1>
+            <a href="index.html">← Back to Generator</a>
+        </div>
+
+        <div id="pokemonDisplay" class="pokemon-display">
+            <div style="text-align: center; color: #999;">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        function loadPokemonDetails() {
+            const pokemon = JSON.parse(localStorage.getItem('selectedPokemon'));
+            
+            if (!pokemon) {
+                document.getElementById('pokemonDisplay').innerHTML = '<div class="error">❌ No Pokémon data found. Please generate a Pokémon first.</div>';
+                return;
+            }
+
+            const typeClass = pokemon.types[0].toLowerCase().replace(' ', '-');
+            const statsEntries = Object.entries(pokemon.stats);
+            const maxStat = Math.max(...statsEntries.map(([_, v]) => v));
+
+            let html = `
+                <div class="pokemon-header">
+                    <div>
+                        <div class="pokemon-title">#${pokemon.id} ${pokemon.name}</div>
+                        <div class="pokemon-meta">Level ${pokemon.level}</div>
+                    </div>
+                    ${pokemon.shiny ? '<div class="shiny-badge">✨ SHINY</div>' : ''}
+                </div>
+
+                <div class="details-content">
+                    <div class="details-left">
+                        <div class="pokemon-info">
+                            <div class="info-box">
+                                <div class="info-label">Type(s)</div>
+                                <div class="types">
+                                    ${pokemon.types.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('')}
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">Hit Points</div>
+                                <div class="info-value">${pokemon.hitPoints} HP</div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">Nature</div>
+                                <div class="info-value">${pokemon.nature.name}</div>
+                                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 8px;">
+                                    <span class="nature-raise">+${pokemon.nature.raise}</span>
+                                    <span class="nature-lower">-${pokemon.nature.lower}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 style="margin-bottom: 15px; color: #667eea;">📈 Stats</h3>
+                            <div class="stats-grid">
+                                ${statsEntries.map(([name, value]) => `
+                                    <div class="stat-bar">
+                                        <div class="stat-name">${name.toUpperCase()}</div>
+                                        <div class="stat-value">
+                                            <span class="stat-number">${value}</span>
+                                            <div class="stat-progress">
+                                                <div class="stat-fill" style="width: ${(value / maxStat) * 100}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        ${pokemon.capabilities.length > 0 ? `
+                            <div style="padding: 15px; background: #f0f7ff; border-radius: 5px; border-left: 4px solid #667eea;">
+                                <h3 style="color: #667eea; margin-bottom: 10px; font-size: 1em;">🔧 Capabilities</h3>
+                                <p style="color: #666; font-size: 0.9em; margin: 0;">${pokemon.capabilities.join(', ')}</p>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="abilities">
+                            <div class="abilities-title">🎯 Abilities</div>
+                            <div class="ability-list">
+                                ${pokemon.abilities.map(ability => `
+                                    <div class="ability">
+                                        <div class="ability-name">${ability.Name}</div>
+                                        ${ability.Frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.Frequency}</div>` : ''}
+                                        ${ability.Trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.Trigger}</div>` : ''}
+                                        ${ability.Effect ? `<div class="ability-field"><strong>Effect:</strong> ${ability.Effect}</div>` : ''}
+                                        ${ability.Bonus ? `<div class="ability-field"><strong>Bonus:</strong> ${ability.Bonus}</div>` : ''}
+                                        ${ability.Special ? `<div class="ability-field"><strong>Special:</strong> ${ability.Special}</div>` : ''}
+                                        ${ability.Note ? `<div class="ability-field note"><strong>Note:</strong> ${ability.Note}</div>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="details-right">
+                        <div class="moves">
+                            <div class="moves-title">⚔️ Moves</div>
+                            <div class="moves-list">
+                                ${pokemon.moves.map(move => `
+                                    <div class="move type-${(move.Type || 'normal').toLowerCase().replace(' ', '-')}">
+                                        <div class="move-name">${move.Name}</div>
+                                        <div class="move-field"><strong>Type:</strong> ${move.Type || 'N/A'}</div>
+                                        <div class="move-field"><strong>Frequency:</strong> ${move.Frequency || 'N/A'}</div>
+                                        <div class="move-field"><strong>Class:</strong> ${move.Class || 'N/A'}</div>
+                                        <div class="move-field"><strong>Range:</strong> ${move.Range || 'N/A'}</div>
+                                        ${move['Damage Base'] ? `<div class="move-field"><strong>Damage Base:</strong> ${move['Damage Base']}</div>` : ''}
+                                        ${move.Effect ? `<div class="move-field"><strong>Effect:</strong> ${move.Effect}</div>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('pokemonDisplay').innerHTML = html;
+        }
+
+        // Load on page load
+        window.addEventListener('load', loadPokemonDetails);
+    </script>
+</body>
+</html>
