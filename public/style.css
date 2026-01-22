@@ -418,6 +418,13 @@ button {
     margin: 20px 0;
 }
 
+.section-title {
+    font-weight: 600;
+    color: #667eea;
+    margin: 0;
+    font-size: 1em;
+}
+
 .abilities-title {
     font-weight: 600;
     color: #667eea;
@@ -1034,5 +1041,29 @@ button {
     color: #4caf50 !important;
     font-weight: bold !important;
     margin-left: 8px !important;
+}
+
+/* Edit action buttons (small buttons for Add Move, Add Ability, Edit Types) */
+.edit-action-btn {
+    padding: 6px 12px !important;
+    background: #667eea !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 0.75em !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    display: inline-block !important;
+}
+
+.edit-action-btn:hover {
+    background: #5568d3 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3) !important;
+}
+
+.edit-action-btn:active {
+    transform: translateY(0) !important;
 }
 

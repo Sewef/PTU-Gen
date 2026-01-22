@@ -227,7 +227,7 @@
                             <div class="info-box">
                                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                                     <div class="info-label">Type(s)</div>
-                                    <button id="editTypesBtn" title="Edit types" style="padding: 4px 8px; background: #f0f0f0; color: #667eea; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">✎ Edit</button>
+                                    <button id="editTypesBtn" title="Edit types" class="edit-action-btn">✎ Edit</button>
                                 </div>
                                 <div id="typesDisplay" class="types">
                                     ${pokemon.types.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('')}
@@ -276,7 +276,7 @@
                             
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <h3 style="margin: 0; color: #667eea;">📈 Stats</h3>
+                                <h3 class="section-title">📈 Stats</h3>
                                 <div style="display: flex; gap: 5px; align-items: center;">
                                     <button id="distributionRandomBtn" title="Random distribution" style="padding: 4px 10px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">RANDOM</button>
                                     <button id="distributionBalancedBtn" title="Balanced distribution" style="padding: 4px 10px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">BALANCED</button>
@@ -290,8 +290,8 @@
                         </div>
 
                         ${pokemon.capabilities.length > 0 ? `
+                            <h3 class="section-title">🔧 Capabilities</h3>
                             <div style="padding: 15px; background: #f0f7ff; border-radius: 5px; border-left: 4px solid #667eea;">
-                                <h3 style="color: #667eea; margin-bottom: 10px; font-size: 1em;">🔧 Capabilities</h3>
                                 <div id="capabilitiesContainer" style="display: flex; flex-direction: column; gap: 8px;">
                                     ${(() => {
                         const withValues = [];
@@ -329,7 +329,7 @@
                         
                         <div class="abilities">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <div class="abilities-title">🎯 Abilities</div>
+                                <h3 class="section-title">🎯 Abilities</h3>
                                 <button id="addAbilityBtn" title="Add ability" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">✎ Edit</button>
                             </div>
                             <div class="ability-list" id="abilitiesList">
@@ -367,8 +367,8 @@
 
                         <div class="moves">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <div class="moves-title">⚔️ Moves</div>
-                                <button id="addMoveBtn" title="Edit" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">✎ Edit</button>
+                                <h3 class="section-title">⚔️ Moves</h3>
+                                <button id="addMoveBtn" title="Edit" class="edit-action-btn">✎ Edit</button>
                             </div>
                             <div class="moves-list" id="movesList">
                                 ${pokemon.moves.map(move => `
@@ -381,7 +381,8 @@
                                         <div class="move-field"><strong>Frequency:</strong> ${move.frequency || 'N/A'}</div>
                                         <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
                                         <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
-                                        ${move.damageBase ? `<div class="move-field"><strong>Damage Base:</strong> ${move.damageBase}</div>` : ''}
+                                        ${move.ac ? `<div class="move-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
+                                        ${move.damageBase ? `<div class="move-field"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})</div>` : ''}
                                         ${move.effect ? `<div class="move-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                                     </div>
                                 `).join('')}
@@ -1141,7 +1142,8 @@
                     <div class="move-field"><strong>Frequency:</strong> ${move.frequency || 'N/A'}</div>
                     <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
                     <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
-                    ${move.damageBase ? `<div class="move-field"><strong>Damage Base:</strong> ${move.damageBase}</div>` : ''}
+                    ${move.ac ? `<div class="move-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
+                    ${move.damageBase ? `<div class="move-field"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})</div>` : ''}
                     ${move.effect ? `<div class="move-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                 </div>
             `).join('');
