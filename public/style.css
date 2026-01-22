@@ -130,7 +130,6 @@ button {
 .btn-generate {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    grid-column: 1 / -1;
 }
 
 .btn-generate:hover {

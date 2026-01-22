@@ -73,13 +73,12 @@
                     </div>
 
                     <!-- Habitat -->
-                    <div class="form-group form-group-autocomplete">
+                    <div class="form-group">
                         <label>Habitat (Optional)</label>
-                        <input type="text" id="habitat" placeholder="ex: Forest, Desert, Mountain..." value=""
-                            autocomplete="off">
-                        <div class="autocomplete-suggestions" id="habitatSuggestions"></div>
-                        <small style="display: block; margin-top: 5px; color: #666;">Leave empty for any habitat.
-                            Overridden if species is specified.</small>
+                        <select id="habitat">
+                            <option value="">Random Habitat</option>
+                        </select>
+                        <small style="display: block; margin-top: 5px; color: #666;">Leave empty for any habitat. Overridden if species is specified.</small>
                     </div>
 
                     <!-- Shiny -->
@@ -276,10 +275,16 @@
                         searchName: name.toLowerCase()
                     }));
                     console.log(`✓ Loaded ${allHabitats.length} habitats from ${dataset} dataset`);
-                    // Clear habitat input when dataset changes
-                    habitatInput.value = '';
-                    habitatSuggestionsList.classList.remove('open');
-                    habitatSuggestionsList.innerHTML = '';
+                    
+                    // Populate habitat dropdown
+                    const habitatSelect = document.getElementById('habitat');
+                    habitatSelect.innerHTML = '<option value="">Random Habitat</option>';
+                    allHabitats.forEach(habitat => {
+                        const option = document.createElement('option');
+                        option.value = habitat.name;
+                        option.textContent = habitat.name;
+                        habitatSelect.appendChild(option);
+                    });
                 }
             } catch (error) {
                 console.error('Failed to load habitat list:', error);
@@ -576,7 +581,13 @@
             let html = '<div class="pokemon-cards-grid">';
 
             pokemons.forEach((pokemon, index) => {
-                const typesHtml = pokemon.types.map(type =>
+                // Get actual types, handling forme variants
+                let typesToShow = pokemon.actualTypes || pokemon.types || [];
+                if (typesToShow.isFormeVariant) {
+                    typesToShow = typesToShow.formes[typesToShow.selectedForme] || [];
+                }
+                
+                const typesHtml = typesToShow.map(type =>
                     `<span class="pokemon-card-type type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`
                 ).join('');
 

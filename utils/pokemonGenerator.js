@@ -244,6 +244,69 @@ async function initializeDatasets() {
   }
 }
 
+/**
+ * Extract types from a Pokemon's Type field
+ * Handles both simple types (string array) and complex types (object with forme alternatives)
+ * @param {any} typeField - Type field from Basic Information
+ * @returns {Array} Array of type strings, or forme information if applicable
+ */
+function extractPokemonTypes(typeField) {
+  if (!typeField) return ['Normal'];
+  
+  // Handle nested array with object inside (e.g., Oricorio: [{ Baille: [...], Pom Pom: [...], ... }])
+  if (Array.isArray(typeField) && typeField.length > 0 && typeof typeField[0] === 'object') {
+    const formeObj = typeField[0];
+    const formeKeys = Object.keys(formeObj);
+    
+    if (formeKeys.length > 0) {
+      // Pick a random forme
+      const selectedForme = formeKeys[Math.floor(Math.random() * formeKeys.length)];
+      return {
+        isFormeVariant: true,
+        formes: formeObj,
+        selectedForme: selectedForme
+      };
+    }
+  }
+  
+  // Handle array of simple types (normal case)
+  if (Array.isArray(typeField)) {
+    return typeField.filter(t => typeof t === 'string');
+  }
+  
+  // Handle object with forme alternatives (e.g., if structured differently)
+  if (typeof typeField === 'object' && !Array.isArray(typeField)) {
+    const formeKeys = Object.keys(typeField);
+    if (formeKeys.length > 0) {
+      const selectedForme = formeKeys[Math.floor(Math.random() * formeKeys.length)];
+      return {
+        isFormeVariant: true,
+        formes: typeField,
+        selectedForme: selectedForme
+      };
+    }
+  }
+  
+  return ['Normal'];
+}
+
+/**
+ * Get actual type array from extracted types
+ * If it's a forme variant, returns the types for the selected forme
+ * @param {any} extractedTypes - Result from extractPokemonTypes
+ * @returns {Array} Array of type strings
+ */
+function getActualTypes(extractedTypes) {
+  if (!extractedTypes) return ['Normal'];
+  
+  if (extractedTypes.isFormeVariant) {
+    const formes = extractedTypes.formes[extractedTypes.selectedForme];
+    return Array.isArray(formes) ? formes : ['Normal'];
+  }
+  
+  return Array.isArray(extractedTypes) ? extractedTypes : ['Normal'];
+}
+
 class PokemonGenerator {
   /**
    * Generate a random Pokemon with PTU 1.05 stats
@@ -354,12 +417,17 @@ class PokemonGenerator {
       spe: Math.max(1, (baseStatsData.Speed || 0) + (nature.raise === 'spe' ? 2 : 0) + (nature.lower === 'spe' ? -2 : 0))
     };
     
+    // Extract types, handling forme variants like Oricorio
+    const extractedTypes = extractPokemonTypes(species['Basic Information'].Type);
+    const actualTypes = getActualTypes(extractedTypes);
+    
     const pokemon = {
       id: species.Number,
       Icon: species.Icon,
       name: species.Species,
       level: level,
-      types: species['Basic Information'].Type,
+      types: extractedTypes,
+      actualTypes: actualTypes,
       abilities: abilitiesWithDefinitions,
       shiny: options.shiny === true ? true : Math.random() < ((options.shinyodds || 1) / 100), // Use custom odds or default 1%
       nature: nature,
@@ -808,7 +876,9 @@ class PokemonGenerator {
    */
   static selectMovesForPokemon(species, level, count = 6) {
     const allMoves = [];
-    const pokemonTypes = species['Basic Information']?.Type || [];
+    const typeField = species['Basic Information']?.Type || [];
+    const extractedTypes = extractPokemonTypes(typeField);
+    const pokemonTypes = getActualTypes(extractedTypes);
     
     // Get only level-up moves that the Pokemon can learn at this level
     if (species.Moves && species.Moves['Level Up Move List']) {

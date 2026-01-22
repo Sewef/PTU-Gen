@@ -88,8 +88,17 @@
         }
 
         function displayTypeEffectiveness(pokemon) {
-            console.log('displayTypeEffectiveness called with:', pokemon.types);
-            const effectiveness = calculateTypeEffectiveness(pokemon.types);
+            // Get the actual types to use
+            let typesToUse = pokemon.actualTypes || pokemon.types || [];
+            
+            // If types is a forme variant object, extract the actual types
+            if (typesToUse.isFormeVariant) {
+                const selectedForme = typesToUse.selectedForme;
+                typesToUse = typesToUse.formes[selectedForme] || [];
+            }
+            
+            console.log('displayTypeEffectiveness called with:', typesToUse);
+            const effectiveness = calculateTypeEffectiveness(typesToUse);
             console.log('Effectiveness calculated:', effectiveness);
             const container = document.getElementById('typeEffectiveness');
 
@@ -203,7 +212,12 @@
             const iconNumber = pokemon.Icon || pokemon.id;
             document.getElementById('dynamicFavicon').href = `https://sewef.github.io/ptu/img/pokemon/full/${iconNumber}.png`;
 
-            const typeClass = pokemon.types[0].toLowerCase().replace(' ', '-');
+            // Get the actual types for styling
+            let typesToUse = pokemon.actualTypes || pokemon.types || ['Normal'];
+            if (typesToUse.isFormeVariant) {
+                typesToUse = typesToUse.formes[typesToUse.selectedForme] || ['Normal'];
+            }
+            const typeClass = (typeof typesToUse[0] === 'string' ? typesToUse[0] : 'Normal').toLowerCase().replace(' ', '-');
             const statsEntries = Object.entries(pokemon.stats);
             const maxStat = Math.max(...statsEntries.map(([_, v]) => v));
 
@@ -219,6 +233,7 @@
                                 <div class="pokemon-title">#${pokemon.id} ${pokemon.name}</div>
                                 ${pokemon.shiny ? '<div class="shiny-badge">✨ SHINY</div>' : ''}
                             </div>
+                            <input type="text" id="nicknameInput" placeholder="Nickname" value="${pokemon.nickname || ''}" style="width: 200px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; margin-top: 6px; font-style: italic;" maxlength="20" />
                             <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level}</div>
                         </div>
                     </div>
@@ -233,7 +248,13 @@
                                     <button id="editTypesBtn" title="Edit types" class="edit-action-btn">✎ Edit</button>
                                 </div>
                                 <div id="typesDisplay" class="types">
-                                    ${pokemon.types.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('')}
+                                    ${(() => {
+                                        let typesToShow = pokemon.actualTypes || pokemon.types || [];
+                                        if (typesToShow.isFormeVariant) {
+                                            typesToShow = typesToShow.formes[typesToShow.selectedForme] || [];
+                                        }
+                                        return typesToShow.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('');
+                                    })()}
                                 </div>
                             </div>
 
@@ -545,6 +566,15 @@
             // Setup abilities editor
             setupAbilitiesEditor(pokemon);
 
+            // Setup nickname input
+            const nicknameInput = document.getElementById('nicknameInput');
+            if (nicknameInput) {
+                nicknameInput.addEventListener('input', function () {
+                    pokemon.nickname = this.value;
+                    updateDisplayName(pokemon);
+                });
+            }
+
             // Setup export button
             const exportBtn = document.getElementById('exportBtn');
             if (exportBtn) {
@@ -742,7 +772,13 @@
                     ">
                         <h2 style="margin-top: 0; color: #667eea; margin-bottom: 20px;">Select Types</h2>
                         <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 5px;">
-                            <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #666;">Selected types: <span id="selectedTypesDisplay">${pokemon.types.length > 0 ? pokemon.types.map(t => `<span class="type-badge type-${t.toLowerCase().replace(' ', '-')}">${t}</span>`).join('') : '<span style="color: #999;">None</span>'}</span></p>
+                            <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #666;">Selected types: <span id="selectedTypesDisplay">${(() => {
+                                let typesToShow = pokemon.actualTypes || pokemon.types || [];
+                                if (typesToShow.isFormeVariant) {
+                                    typesToShow = typesToShow.formes[typesToShow.selectedForme] || [];
+                                }
+                                return typesToShow.length > 0 ? typesToShow.map(t => `<span class="type-badge type-${t.toLowerCase().replace(' ', '-')}">${t}</span>`).join('') : '<span style="color: #999;">None</span>';
+                            })()}</span></p>
                         </div>
                         <div style="
                             display: grid;
@@ -841,10 +877,70 @@
             });
         }
 
+        // Update display name with nickname
+        function updateDisplayName(pokemon) {
+            const headerText = document.querySelector('.pokemon-title');
+            if (headerText) {
+                if (pokemon.nickname) {
+                    headerText.textContent = `"${pokemon.nickname}" (${pokemon.name})`;
+                    document.title = `"${pokemon.nickname}" (${pokemon.name}) - PTU Generator`;
+                } else {
+                    headerText.textContent = `#${pokemon.id} ${pokemon.name}`;
+                    document.title = `${pokemon.name} - PTU Generator`;
+                }
+            }
+        }
+
         // Update types display
         function updateTypesDisplay(pokemon) {
             const typesDisplay = document.getElementById('typesDisplay');
-            typesDisplay.innerHTML = pokemon.types.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('');
+            const typesContainer = typesDisplay.parentElement;
+            
+            // Check if pokemon has forme variants
+            if (pokemon.types && pokemon.types.isFormeVariant) {
+                // Display forme selector and selected types
+                const formeNames = Object.keys(pokemon.types.formes);
+                const selectedForme = pokemon.types.selectedForme;
+                const selectedTypes = pokemon.types.formes[selectedForme] || [];
+                
+                // Create forme dropdown if it doesn't exist
+                let formeSelect = document.getElementById('formeSelect');
+                if (!formeSelect) {
+                    formeSelect = document.createElement('select');
+                    formeSelect.id = 'formeSelect';
+                    formeSelect.style.cssText = 'margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
+                    
+                    formeNames.forEach(forme => {
+                        const option = document.createElement('option');
+                        option.value = forme;
+                        option.textContent = forme;
+                        option.selected = forme === selectedForme;
+                        formeSelect.appendChild(option);
+                    });
+                    
+                    formeSelect.addEventListener('change', function () {
+                        pokemon.types.selectedForme = this.value;
+                        pokemon.actualTypes = pokemon.types.formes[this.value] || [];
+                        updateTypesDisplay(pokemon);
+                    });
+                    
+                    typesContainer.insertBefore(formeSelect, typesDisplay);
+                } else {
+                    formeSelect.value = selectedForme;
+                }
+                
+                // Display types
+                typesDisplay.innerHTML = selectedTypes.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('');
+            } else {
+                // Regular pokemon - remove forme selector if it exists
+                const formeSelect = document.getElementById('formeSelect');
+                if (formeSelect) formeSelect.remove();
+                
+                // Display normal types
+                const typesToDisplay = pokemon.actualTypes || pokemon.types || [];
+                typesDisplay.innerHTML = typesToDisplay.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('');
+            }
+            
             // Update type effectiveness display as well
             displayTypeEffectiveness(pokemon);
         }
@@ -1979,7 +2075,10 @@
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${pokemon.name}_Lvl${pokemon.level}.json`;
+            const filename = pokemon.nickname 
+                ? `${pokemon.nickname}_${pokemon.name}_Lvl${pokemon.level}.json`
+                : `${pokemon.name}_Lvl${pokemon.level}.json`;
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
