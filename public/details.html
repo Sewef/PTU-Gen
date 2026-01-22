@@ -1,11 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pokémon Details</title>
+    <title id="pageTitle">Pokémon Details</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" id="dynamicFavicon" type="image/png" href="" sizes="192x192">
+    <style>
+        .multiplier-btn {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .multiplier-btn.inactive {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .multiplier-btn.active {
+            background: #667eea;
+            color: white;
+        }
+    </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -19,9 +41,149 @@
     </div>
 
     <script>
+        // Global state for type effectiveness multiplier
+        let currentTypeMultiplier = 2;
+        let currentPokemon = null;
+        
+        // Type effectiveness chart - structured as [defendingType][attackingType]
+        // Based on Vue.js reference (X=attacking type, Y=defending type)
+        const typeEffectiveness = {"normal": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 2, "fire": 1, "flying": 1, "ghost": 0, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 1, "water": 1}, "fire": {"bug": 0.5, "dark": 1, "dragon": 1, "electric": 1, "fairy": 0.5, "fighting": 1, "fire": 0.5, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 2, "ice": 0.5, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 0.5, "water": 2}, "water": {"bug": 1, "dark": 1, "dragon": 1, "electric": 2, "fairy": 1, "fighting": 1, "fire": 0.5, "flying": 1, "ghost": 1, "grass": 2, "ground": 1, "ice": 0.5, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 0.5, "water": 0.5}, "grass": {"bug": 2, "dark": 1, "dragon": 1, "electric": 0.5, "fairy": 1, "fighting": 1, "fire": 2, "flying": 2, "ghost": 1, "grass": 0.5, "ground": 0.5, "ice": 2, "normal": 1, "poison": 2, "psychic": 1, "rock": 1, "steel": 1, "water": 0.5}, "flying": {"bug": 0.5, "dark": 1, "dragon": 1, "electric": 2, "fairy": 1, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 0, "ice": 2, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 1, "water": 1}, "fighting": {"bug": 0.5, "dark": 0.5, "dragon": 1, "electric": 1, "fairy": 2, "fighting": 1, "fire": 1, "flying": 2, "ghost": 1, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 2, "rock": 0.5, "steel": 1, "water": 1}, "poison": {"bug": 0.5, "dark": 1, "dragon": 1, "electric": 1, "fairy": 0.5, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 2, "ice": 1, "normal": 1, "poison": 0.5, "psychic": 2, "rock": 1, "steel": 1, "water": 1}, "ground": {"bug": 1, "dark": 1, "dragon": 1, "electric": 0, "fairy": 1, "fighting": 1, "fire": 1, "flying": 1, "ghost": 1, "grass": 2, "ground": 1, "ice": 2, "normal": 1, "poison": 0.5, "psychic": 1, "rock": 0.5, "steel": 1, "water": 2}, "rock": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 2, "fire": 0.5, "flying": 0.5, "ghost": 1, "grass": 2, "ground": 2, "ice": 1, "normal": 0.5, "poison": 0.5, "psychic": 1, "rock": 1, "steel": 2, "water": 2}, "psychic": {"bug": 2, "dark": 2, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 2, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 0.5, "rock": 1, "steel": 1, "water": 1}, "ice": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 2, "fire": 2, "flying": 1, "ghost": 1, "grass": 1, "ground": 1, "ice": 0.5, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 2, "water": 1}, "bug": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 0.5, "fire": 2, "flying": 2, "ghost": 1, "grass": 0.5, "ground": 0.5, "ice": 1, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 0.5, "water": 1}, "ghost": {"bug": 0.5, "dark": 2, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 0, "fire": 1, "flying": 1, "ghost": 2, "grass": 1, "ground": 1, "ice": 1, "normal": 0, "poison": 0.5, "psychic": 1, "rock": 1, "steel": 1, "water": 1}, "steel": {"bug": 0.5, "dark": 1, "dragon": 0.5, "electric": 1, "fairy": 0.5, "fighting": 2, "fire": 2, "flying": 0.5, "ghost": 1, "grass": 0.5, "ground": 2, "ice": 0.5, "normal": 0.5, "poison": 0, "psychic": 0.5, "rock": 0.5, "steel": 0.5, "water": 1}, "dragon": {"bug": 1, "dark": 1, "dragon": 2, "electric": 0.5, "fairy": 2, "fighting": 1, "fire": 0.5, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 1, "ice": 2, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 1, "water": 0.5}, "dark": {"bug": 2, "dark": 0.5, "dragon": 1, "electric": 1, "fairy": 2, "fighting": 2, "fire": 1, "flying": 1, "ghost": 0.5, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 0, "rock": 1, "steel": 1, "water": 1}, "fairy": {"bug": 0.5, "dark": 0.5, "dragon": 0, "electric": 1, "fairy": 1, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 1, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 2, "psychic": 1, "rock": 1, "steel": 2, "water": 1}, "electric": {"bug": 1, "dark": 1, "dragon": 1, "electric": 0.5, "fairy": 1, "fighting": 1, "fire": 1, "flying": 0.5, "ghost": 1, "grass": 1, "ground": 2, "ice": 1, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 0.5, "water": 1}};
+
+
+        function calculateTypeEffectiveness(types) {
+            const effectiveness = {};
+            const allTypes = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
+
+            // Initialize all attacking types with 1x effectiveness
+            allTypes.forEach(attackingType => {
+                effectiveness[attackingType] = 1;
+            });
+
+            // For each attacking type, multiply effectiveness against each defending type
+            allTypes.forEach(attackingType => {
+                types.forEach(defendingType => {
+                    const defendingTypeLower = defendingType.toLowerCase();
+                    const defendingTypeData = typeEffectiveness[defendingTypeLower];
+                    
+                    if (!defendingTypeData) {
+                        console.warn(`No type data for defending type: ${defendingTypeLower}`);
+                        return;
+                    }
+                    
+                    const eff = defendingTypeData[attackingType];
+                    
+                    if (eff === undefined) {
+                        console.warn(`No effectiveness data for ${attackingType} vs ${defendingTypeLower}`);
+                        return;
+                    }
+                    
+                    effectiveness[attackingType] = effectiveness[attackingType] * eff;
+                });
+            });
+
+            return effectiveness;
+        }
+
+        function displayTypeEffectiveness(pokemon) {
+            console.log('displayTypeEffectiveness called with:', pokemon.types);
+            const effectiveness = calculateTypeEffectiveness(pokemon.types);
+            console.log('Effectiveness calculated:', effectiveness);
+            const container = document.getElementById('typeEffectiveness');
+
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            const allTypes = ['Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'];
+            const midpoint = Math.ceil(allTypes.length / 2);
+            const firstHalf = allTypes.slice(0, midpoint);
+            const secondHalf = allTypes.slice(midpoint);
+
+            // Create function to render a table half
+            const renderHalf = (types) => {
+                let html = `
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.8em; margin-bottom: 8px;">
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #ddd; height: 36px;">
+                `;
+
+                // First row: Type badges
+                types.forEach(type => {
+                    html += `
+                        <td style="padding: 4px; text-align: center; border-right: 1px solid #ddd; vertical-align: middle;">
+                            <span class="type-badge type-${type.toLowerCase().replace(' ', '-')}" style="display: inline-block; padding: 4px 8px; font-size: 0.7em; font-weight: 600; min-width: 50px; white-space: nowrap;">${type}</span>
+                        </td>
+                    `;
+                });
+
+                html += `
+                            </tr>
+                            <tr style="background: #fafafa; height: 30px;">
+                `;
+
+                // Second row: Effectiveness values
+                types.forEach(type => {
+                    let eff = effectiveness[type.toLowerCase()];
+                    
+                    // Apply multiplier only to 2x values
+                    if (eff === 2 && currentTypeMultiplier !== 2) {
+                        eff = 2 * (currentTypeMultiplier / 2);
+                    }
+                    
+                    let effColor = '#333'; // Normal
+                    let effText = '1x';
+                    
+                    // Format effectiveness with minimal decimals
+                    const formatEff = (value) => {
+                        if (value === 0) return '0x';
+                        if (value === 1) return '1x';
+                        if (Number.isInteger(value)) return value + 'x';
+                        // Show minimal decimals (remove trailing zeros)
+                        return parseFloat(value.toFixed(2)).toString() + 'x';
+                    };
+
+                    if (eff === 0) {
+                        effColor = '#27ae60'; // Immune
+                        effText = '0x';
+                    } else if (eff <= 0.25) {
+                        effColor = '#3498db'; // Strong resist
+                        effText = formatEff(eff);
+                    } else if (eff <= 0.5) {
+                        effColor = '#5dade2'; // Resist
+                        effText = formatEff(eff);
+                    } else if (eff === 1) {
+                        effColor = '#333';
+                        effText = '1x';
+                    } else if (eff <= 2) {
+                        effColor = '#e67e22'; // Weak
+                        effText = formatEff(eff);
+                    } else {
+                        effColor = '#e74c3c'; // Strong weak
+                        effText = formatEff(eff);
+                    }
+
+                    html += `
+                        <td style="padding: 4px; text-align: center; border-right: 1px solid #ddd; font-weight: 600; color: ${effColor}; font-size: 0.95em; vertical-align: middle;">
+                            ${effText}
+                        </td>
+                    `;
+                });
+
+                html += `
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+
+                return html;
+            };
+
+            container.innerHTML = renderHalf(firstHalf) + renderHalf(secondHalf);
+        }
+
         function loadPokemonDetails() {
             const pokemon = JSON.parse(localStorage.getItem('selectedPokemon'));
-            
+
             if (!pokemon) {
                 document.getElementById('pokemonDisplay').innerHTML = '<div class="error">❌ No Pokémon data found. Please generate a Pokémon first.</div>';
                 return;
@@ -32,13 +194,19 @@
             console.log('baseStats:', pokemon.baseStats);
             console.log('stats:', pokemon.stats);
 
+            // Update page title and favicon
+            const pageTitle = `${pokemon.name} - Lvl ${pokemon.level} - Pokémon Details`;
+            document.getElementById('pageTitle').textContent = pageTitle;
+            const iconNumber = pokemon.Icon || pokemon.id;
+            document.getElementById('dynamicFavicon').href = `https://sewef.github.io/ptu/img/pokemon/full/${iconNumber}.png`;
+
             const typeClass = pokemon.types[0].toLowerCase().replace(' ', '-');
             const statsEntries = Object.entries(pokemon.stats);
             const maxStat = Math.max(...statsEntries.map(([_, v]) => v));
 
             const imageNumber = pokemon.Icon || pokemon.id;
             const imageUrl = `https://sewef.github.io/ptu/img/pokemon/full/${imageNumber}.png`;
-            
+
             let html = `
                 <div class="pokemon-header">
                     <div class="pokemon-header-content">
@@ -48,7 +216,7 @@
                                 <div class="pokemon-title">#${pokemon.id} ${pokemon.name}</div>
                                 ${pokemon.shiny ? '<div class="shiny-badge">✨ SHINY</div>' : ''}
                             </div>
-                            <div class="pokemon-meta">Level ${pokemon.level}</div>
+                            <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level}</div>
                         </div>
                     </div>
                 </div>
@@ -57,29 +225,78 @@
                     <div class="details-left">
                         <div class="pokemon-info">
                             <div class="info-box">
-                                <div class="info-label">Type(s)</div>
-                                <div class="types">
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                                    <div class="info-label">Type(s)</div>
+                                    <button id="editTypesBtn" title="Edit types" style="padding: 4px 8px; background: #f0f0f0; color: #667eea; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">✎ Edit</button>
+                                </div>
+                                <div id="typesDisplay" class="types">
                                     ${pokemon.types.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('')}
                                 </div>
                             </div>
 
                             <div class="info-box">
-                                <div class="info-label">Hit Points</div>
-                                <div class="info-value">${pokemon.hitPoints} HP</div>
+                                <div class="info-label">Level & HP</div>
+                                <div style="display: flex; gap: 20px; align-items: center; justify-content: center; margin-top: 8px;">
+                                    <div style="display: flex; gap: 6px; align-items: center;">
+                                        <span style="font-size: 0.9em; color: #666; min-width: 30px;">Lvl:</span>
+                                        <input type="number" id="levelInput" min="1" max="100" value="${pokemon.level}" style="width: 50px; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-weight: 600; text-align: center;" />
+                                    </div>
+                                    <div style="display: flex; gap: 6px; align-items: center;">
+                                        <span style="font-size: 0.9em; color: #666; min-width: 30px;">HP:</span>
+                                        <div id="hpDisplay" class="info-value" style="margin: 0; min-width: 40px; text-align: center;">${pokemon.hitPoints}</div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="info-box">
                                 <div class="info-label">Nature</div>
-                                <div class="info-value">${pokemon.nature.name}</div>
+                                <select id="natureSelect" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 8px;">
+                                    <option value="">Loading natures...</option>
+                                </select>
                                 <div style="display: flex; gap: 15px; justify-content: center; margin-top: 8px;">
-                                    <span class="nature-raise">+${pokemon.nature.raise}</span>
-                                    <span class="nature-lower">-${pokemon.nature.lower}</span>
+                                    <span class="nature-raise" id="natureRaise">+${pokemon.nature.raise}</span>
+                                    <span class="nature-lower" id="natureLower">-${pokemon.nature.lower}</span>
                                 </div>
                             </div>
+
+                            ${pokemon.otherInfo ? `
+                                <div class="info-box">
+                                    <div class="info-label">Other Information</div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.9em;">
+                                        <div><strong>Size:</strong> ${pokemon.otherInfo.sizeCategory || 'Unknown'}</div>
+                                        <div><strong>Weight Class:</strong> ${pokemon.otherInfo.weightClass || 'Unknown'}</div>
+                                        <div><strong>Gender:</strong> ${pokemon.otherInfo.gender || 'Unknown'}</div>
+                                        <div><strong>Diet:</strong> ${pokemon.otherInfo.diet || 'Unknown'}</div>
+                                        <div style="grid-column: 1 / -1;"><strong>Habitat:</strong> ${pokemon.otherInfo.habitat || 'Unknown'}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+
                         </div>
 
+                        <div class="info-box">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <div class="info-label">Type Effectiveness</div>
+                                <div style="display: flex; gap: 5px;">
+                                    <button id="multiplyBtn15" class="multiplier-btn inactive" title="Multiply by 1.5">×1.5</button>
+                                    <button id="multiplyBtn2" class="multiplier-btn active" title="Multiply by 2">×2</button>
+                                </div>
+                            </div>
+                            <div id="typeEffectiveness" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;">
+                                <!-- Type effectiveness will be generated here -->
+                            </div>
+                        </div>
+                            
                         <div>
-                            <h3 style="margin-bottom: 15px; color: #667eea;">📈 Stats</h3>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3 style="margin: 0; color: #667eea;">📈 Stats</h3>
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <button id="distributionRandomBtn" title="Random distribution" style="padding: 4px 10px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">RANDOM</button>
+                                    <button id="distributionBalancedBtn" title="Balanced distribution" style="padding: 4px 10px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">BALANCED</button>
+                                    <button id="distributionMinmaxedBtn" title="MinMaxed distribution" style="padding: 4px 10px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">MINMAXED</button>
+                                    <div id="remainingPointsDisplay" style="padding: 6px 10px; background: #f0f7ff; border: 1px solid #667eea; border-radius: 4px; font-size: 0.75em; font-weight: 600; color: #667eea; white-space: nowrap;">Remaining: 0</div>
+                                </div>
+                            </div>
                             <div class="stats-breakdown" id="statsBreakdown">
                                 <!-- Stats will be generated here -->
                             </div>
@@ -90,35 +307,35 @@
                                 <h3 style="color: #667eea; margin-bottom: 10px; font-size: 1em;">🔧 Capabilities</h3>
                                 <div id="capabilitiesContainer" style="display: flex; flex-direction: column; gap: 8px;">
                                     ${(() => {
-                                        const withValues = [];
-                                        const withoutValues = [];
-                                        
-                                        pokemon.capabilities.forEach((cap, idx) => {
-                                            const match = cap.match(/^(.+?)\s+([\d/]+)$/);
-                                            if (match) {
-                                                withValues.push({ idx, name: match[1], value: match[2] });
-                                            } else {
-                                                withoutValues.push(cap);
-                                            }
-                                        });
-                                        
-                                        let html = '';
-                                        
-                                        // Capabilities with values
-                                        withValues.forEach(({ idx, name, value }) => {
-                                            html += `<div class="capability-row" data-index="${idx}">
+                        const withValues = [];
+                        const withoutValues = [];
+
+                        pokemon.capabilities.forEach((cap, idx) => {
+                            const match = cap.match(/^(.+?)\s+([\d/]+)$/);
+                            if (match) {
+                                withValues.push({ idx, name: match[1], value: match[2] });
+                            } else {
+                                withoutValues.push(cap);
+                            }
+                        });
+
+                        let html = '';
+
+                        // Capabilities with values
+                        withValues.forEach(({ idx, name, value }) => {
+                            html += `<div class="capability-row" data-index="${idx}">
                                                 <label style="flex: 1; color: #666; font-size: 0.9em;">${name}</label>
                                                 <input type="text" class="capability-value-input" data-index="${idx}" value="${value}" style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;" />
                                             </div>`;
-                                        });
-                                        
-                                        // Capabilities without values on one line
-                                        if (withoutValues.length > 0) {
-                                            html += `<div style="color: #666; font-size: 0.9em;">${withoutValues.join(', ')}</div>`;
-                                        }
-                                        
-                                        return html;
-                                    })()}
+                        });
+
+                        // Capabilities without values on one line
+                        if (withoutValues.length > 0) {
+                            html += `<div style="color: #666; font-size: 0.9em;">${withoutValues.join(', ')}</div>`;
+                        }
+
+                        return html;
+                    })()}
                                 </div>
                             </div>
                         ` : ''}
@@ -128,13 +345,13 @@
                             <div class="ability-list">
                                 ${pokemon.abilities.map(ability => `
                                     <div class="ability">
-                                        <div class="ability-name">${ability.Name}</div>
-                                        ${ability.Frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.Frequency}</div>` : ''}
-                                        ${ability.Trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.Trigger}</div>` : ''}
-                                        ${ability.Effect ? `<div class="ability-field"><strong>Effect:</strong> ${ability.Effect}</div>` : ''}
-                                        ${ability.Bonus ? `<div class="ability-field"><strong>Bonus:</strong> ${ability.Bonus}</div>` : ''}
-                                        ${ability.Special ? `<div class="ability-field"><strong>Special:</strong> ${ability.Special}</div>` : ''}
-                                        ${ability.Note ? `<div class="ability-field note"><strong>Note:</strong> ${ability.Note}</div>` : ''}
+                                        <div class="ability-name">${ability.name}</div>
+                                        ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}</div>` : ''}
+                                        ${ability.trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
+                                        ${ability.effect ? `<div class="ability-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
+                                        ${ability.bonus ? `<div class="ability-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
+                                        ${ability.special ? `<div class="ability-field"><strong>Special:</strong> ${ability.special}</div>` : ''}
+                                        ${ability.note ? `<div class="ability-field note"><strong>Note:</strong> ${ability.note}</div>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
@@ -146,14 +363,14 @@
                             <div class="moves-title">⚔️ Moves</div>
                             <div class="moves-list">
                                 ${pokemon.moves.map(move => `
-                                    <div class="move type-${(move.Type || 'normal').toLowerCase().replace(' ', '-')}">
-                                        <div class="move-name">${move.Name}</div>
-                                        <div class="move-field"><strong>Type:</strong> ${move.Type || 'N/A'}</div>
-                                        <div class="move-field"><strong>Frequency:</strong> ${move.Frequency || 'N/A'}</div>
-                                        <div class="move-field"><strong>Class:</strong> ${move.Class || 'N/A'}</div>
-                                        <div class="move-field"><strong>Range:</strong> ${move.Range || 'N/A'}</div>
-                                        ${move['Damage Base'] ? `<div class="move-field"><strong>Damage Base:</strong> ${move['Damage Base']}</div>` : ''}
-                                        ${move.Effect ? `<div class="move-field"><strong>Effect:</strong> ${move.Effect}</div>` : ''}
+                                    <div class="move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}">
+                                        <div class="move-name">${move.name}</div>
+                                        <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
+                                        <div class="move-field"><strong>Frequency:</strong> ${move.frequency || 'N/A'}</div>
+                                        <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
+                                        <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
+                                        ${move.damageBase ? `<div class="move-field"><strong>Damage Base:</strong> ${move.damageBase}</div>` : ''}
+                                        ${move.effect ? `<div class="move-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
@@ -195,17 +412,21 @@
             };
 
             statsEntries.forEach(([statName, finalValue]) => {
-                // Get base stat from pokemon data using the mapped key
+                // Get base stat with nature applied from pokemon data
+                let baseWithNature = pokemon.baseWithNature?.[statName] || 0;
+
+                // Also get the raw base stat for display
                 const baseStatKey = baseStatsKeyMap[statName];
                 let baseStat = pokemon.baseStats?.[baseStatKey] || 0;
-                
-                // Calculate level points: finalValue - baseStat
-                // The final value already includes nature bonus/malus, but we're showing the progression
-                let levelPoints = Math.max(0, finalValue - baseStat);
+
+                // Calculate level points: finalValue - baseWithNature
+                // finalValue = baseWithNature + levelPoints
+                // so levelPoints = finalValue - baseWithNature
+                let levelPoints = finalValue - baseWithNature;
                 let cs = 0;
-                
+
                 const isHP = statName === 'HP';
-                
+
                 statsHTML += `
                     <div class="stat-breakdown-row" data-stat="${statName}">
                         <div class="stat-breakdown-label">${statDisplayNames[statName] || statName}</div>
@@ -239,40 +460,603 @@
 
             // Add event listeners for stat modifications
             document.querySelectorAll('.base-stat-input, .level-points-input, .cs-input').forEach(input => {
-                input.addEventListener('change', updateStatTotal);
+                input.addEventListener('change', function (e) {
+                    updateStatTotal(e);
+                    updateRemainingPoints(pokemon);
+                });
+                // Also listen to 'input' event for real-time updates of remaining points
+                if (input.classList.contains('level-points-input')) {
+                    input.addEventListener('input', function (e) {
+                        updateStatTotal(e);
+                        updateRemainingPoints(pokemon);
+                    });
+                }
             });
+
+            // Initial update of remaining points
+            updateRemainingPoints(pokemon);
 
             function updateStatTotal(e) {
                 const statName = e.target.dataset.stat;
                 const row = document.querySelector(`[data-stat="${statName}"]`);
-                
+
                 const baseInput = row.querySelector('.base-stat-input');
                 const levelInput = row.querySelector('.level-points-input');
                 const csInput = row.querySelector('.cs-input');
-                
+
                 let base = parseInt(baseInput?.value) || 0;
                 let levelPts = parseInt(levelInput?.value) || 0;
                 let cs = parseInt(csInput?.value) || 0;
-                
+
                 // Calculate total: (base + levelPts) * csMultiplier
                 let subtotal = base + levelPts;
                 let multiplier = csMultipliers[cs] || 1;
                 let total = Math.floor(subtotal * multiplier);
-                
+
                 row.querySelector('.stat-total').textContent = total;
             }
 
             // Handle capability value changes
             document.querySelectorAll('.capability-value-input').forEach(input => {
-                input.addEventListener('change', function() {
+                input.addEventListener('change', function () {
                     // Just update the value - it's already modifiable
                     // Values persist in the input element
                 });
             });
+
+            // Setup nature dropdown
+            setupNatureDropdown(pokemon);
+
+            // Setup type editor
+            setupTypeEditor(pokemon);
+
+            // Setup level editor
+            setupLevelEditor(pokemon);
+
+            // Display type effectiveness
+            currentPokemon = pokemon;
+            displayTypeEffectiveness(pokemon);
+
+            // Setup stat distribution buttons
+            setupStatDistributionButtons(pokemon);
+
+            // Setup type effectiveness multiplier buttons
+            setupTypeMultiplierButtons(pokemon);
+        }
+
+        // Load available natures and setup dropdown
+        async function setupNatureDropdown(pokemon) {
+            try {
+                const response = await fetch('/api/pokemon/natures');
+                if (response.ok) {
+                    const data = await response.json();
+                    const natureSelect = document.getElementById('natureSelect');
+
+                    // Clear existing options
+                    natureSelect.innerHTML = '';
+
+                    // Add options for each nature
+                    data.natures.forEach(nature => {
+                        const option = document.createElement('option');
+                        option.value = nature.name;
+                        option.textContent = `${nature.name} (+${nature.raise} -${nature.lower})`;
+                        if (nature.name === pokemon.nature.name) {
+                            option.selected = true;
+                        }
+                        natureSelect.appendChild(option);
+                    });
+
+                    // Add event listener for nature changes
+                    natureSelect.addEventListener('change', function () {
+                        const selectedNature = data.natures.find(n => n.name === this.value);
+                        if (selectedNature) {
+                            // Update nature display
+                            document.getElementById('natureRaise').textContent = `+${selectedNature.raise}`;
+                            document.getElementById('natureLower').textContent = `-${selectedNature.lower}`;
+
+                            // Update pokemon object
+                            pokemon.nature = selectedNature;
+
+                            // Recalculate and update stats with new nature
+                            updateStatsWithNature(selectedNature);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load natures:', error);
+            }
+        }
+
+        // Recalculate stats when nature changes
+        function updateStatsWithNature(newNature) {
+            const statsBreakdownContainer = document.getElementById('statsBreakdown');
+            const statRows = statsBreakdownContainer.querySelectorAll('.stat-breakdown-row');
+
+            const statNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+            const statDisplayNames = {
+                'HP': 'HP',
+                'atk': 'Attack',
+                'def': 'Defense',
+                'spA': 'Special Attack',
+                'spD': 'Special Defense',
+                'spe': 'Speed'
+            };
+
+            statRows.forEach(row => {
+                const statName = row.getAttribute('data-stat');
+                const baseInput = row.querySelector('.base-stat-input');
+                const levelInput = row.querySelector('.level-points-input');
+                const csInput = row.querySelector('.cs-input');
+
+                let base = parseInt(baseInput?.value) || 0;
+                let levelPts = parseInt(levelInput?.value) || 0;
+                let cs = parseInt(csInput?.value) || 0;
+
+                // Apply nature modifier to base stat (for display purposes)
+                let baseWithNature = base;
+                if (statName === 'HP') {
+                    if (newNature.raise === statName) baseWithNature += 1;
+                    if (newNature.lower === statName) baseWithNature -= 1;
+                } else {
+                    if (newNature.raise === statName) baseWithNature += 2;
+                    if (newNature.lower === statName) baseWithNature -= 2;
+                }
+
+                // Calculate total with nature applied
+                let subtotal = baseWithNature + levelPts;
+                const csMultipliers = {
+                    '-6': 0.4, '-5': 0.5, '-4': 0.6, '-3': 0.7, '-2': 0.8, '-1': 0.9,
+                    '0': 1, '1': 1.2, '2': 1.4, '3': 1.6, '4': 1.8, '5': 2, '6': 2.2
+                };
+                let multiplier = csMultipliers[cs] || 1;
+                let total = Math.floor(subtotal * multiplier);
+
+                row.querySelector('.stat-total').textContent = total;
+            });
+        }
+
+        // Setup type editor
+        function setupTypeEditor(pokemon) {
+            const editTypesBtn = document.getElementById('editTypesBtn');
+            if (!editTypesBtn) return;
+
+            editTypesBtn.addEventListener('click', function () {
+                showTypeModal(pokemon);
+            });
+        }
+
+        // Setup type effectiveness multiplier buttons
+        function setupTypeMultiplierButtons(pokemon) {
+            const multiplyBtn15 = document.getElementById('multiplyBtn15');
+            const multiplyBtn2 = document.getElementById('multiplyBtn2');
+
+            if (!multiplyBtn15 || !multiplyBtn2) return;
+            
+            // Initialize with x2 active
+            updateMultiplierButtonStyles();
+
+            multiplyBtn15.addEventListener('click', function () {
+                if (currentTypeMultiplier === 1.5) {
+                    currentTypeMultiplier = 2;
+                } else {
+                    currentTypeMultiplier = 1.5;
+                }
+                updateMultiplierButtonStyles();
+                if (currentPokemon) {
+                    displayTypeEffectiveness(currentPokemon);
+                }
+            });
+
+            multiplyBtn2.addEventListener('click', function () {
+                if (currentTypeMultiplier === 2) {
+                    currentTypeMultiplier = 1.5;
+                } else {
+                    currentTypeMultiplier = 2;
+                }
+                updateMultiplierButtonStyles();
+                if (currentPokemon) {
+                    displayTypeEffectiveness(currentPokemon);
+                }
+            });
+        }
+        
+        // Update multiplier button visual styles
+        function updateMultiplierButtonStyles() {
+            const multiplyBtn15 = document.getElementById('multiplyBtn15');
+            const multiplyBtn2 = document.getElementById('multiplyBtn2');
+            
+            if (!multiplyBtn15 || !multiplyBtn2) return;
+            
+            if (currentTypeMultiplier === 1.5) {
+                multiplyBtn15.classList.remove('inactive');
+                multiplyBtn15.classList.add('active');
+                multiplyBtn2.classList.remove('active');
+                multiplyBtn2.classList.add('inactive');
+            } else {
+                multiplyBtn2.classList.remove('inactive');
+                multiplyBtn2.classList.add('active');
+                multiplyBtn15.classList.remove('active');
+                multiplyBtn15.classList.add('inactive');
+            }
+        }
+
+        // Show type selection modal
+        function showTypeModal(pokemon) {
+            const availableTypes = [
+                'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting',
+                'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost',
+                'Dragon', 'Dark', 'Steel', 'Fairy'
+            ];
+
+            // Create modal HTML
+            const modalHTML = `
+                <div id="typeModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 2000;
+                ">
+                    <div style="
+                        background: white;
+                        border-radius: 10px;
+                        padding: 30px;
+                        max-width: 500px;
+                        width: 90%;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                    ">
+                        <h2 style="margin-top: 0; color: #667eea; margin-bottom: 20px;">Select Types</h2>
+                        <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 5px;">
+                            <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #666;">Selected types: <span id="selectedTypesDisplay">${pokemon.types.length > 0 ? pokemon.types.map(t => `<span class="type-badge type-${t.toLowerCase().replace(' ', '-')}">${t}</span>`).join('') : '<span style="color: #999;">None</span>'}</span></p>
+                        </div>
+                        <div style="
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+                            gap: 8px;
+                            margin-bottom: 20px;
+                        " id="typeGrid"></div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="saveTypesBtn" style="
+                                flex: 1;
+                                padding: 10px;
+                                background: #667eea;
+                                color: white;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            ">Save</button>
+                            <button id="closeTypesBtn" style="
+                                flex: 1;
+                                padding: 10px;
+                                background: #f0f0f0;
+                                color: #333;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            ">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            const modal = document.getElementById('typeModal');
+            const typeGrid = document.getElementById('typeGrid');
+            const selectedTypes = [...pokemon.types];
+
+            // Create type buttons
+            availableTypes.forEach(type => {
+                const isSelected = selectedTypes.includes(type);
+                const btn = document.createElement('button');
+                btn.textContent = type;
+                btn.className = `type-badge type-${type.toLowerCase().replace(' ', '-')}`;
+                btn.style.cssText = `
+                    padding: 8px 12px;
+                    border: 2px solid ${isSelected ? '#333' : 'transparent'};
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: all 0.2s;
+                    opacity: ${isSelected ? '1' : '0.6'};
+                `;
+
+                btn.addEventListener('click', function () {
+                    const idx = selectedTypes.indexOf(type);
+                    if (idx > -1) {
+                        selectedTypes.splice(idx, 1);
+                    } else {
+                        selectedTypes.push(type);
+                    }
+                    // Update button styling and selected types display
+                    const isNowSelected = selectedTypes.includes(type);
+                    btn.style.borderColor = isNowSelected ? '#333' : 'transparent';
+                    btn.style.opacity = isNowSelected ? '1' : '0.6';
+
+                    // Update selected types display
+                    const selectedDisplay = document.getElementById('selectedTypesDisplay');
+                    selectedDisplay.innerHTML = selectedTypes.length > 0 ? selectedTypes.map(t => `<span class="type-badge type-${t.toLowerCase().replace(' ', '-')}">${t}</span>`).join('') : '<span style="color: #999;">None</span>';
+                });
+
+                typeGrid.appendChild(btn);
+            });
+
+            // Save button handler
+            document.getElementById('saveTypesBtn').addEventListener('click', function () {
+                if (selectedTypes.length === 0) {
+                    alert('Please select at least one type');
+                    return;
+                }
+                pokemon.types = selectedTypes;
+                updateTypesDisplay(pokemon);
+                modal.remove();
+            });
+
+            // Close button handler
+            document.getElementById('closeTypesBtn').addEventListener('click', function () {
+                modal.remove();
+            });
+
+            // Close on outside click
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        // Update types display
+        function updateTypesDisplay(pokemon) {
+            const typesDisplay = document.getElementById('typesDisplay');
+            typesDisplay.innerHTML = pokemon.types.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('');
+            // Update type effectiveness display as well
+            displayTypeEffectiveness(pokemon);
+        }
+
+        // Update remaining points display
+        function updateRemainingPoints(pokemon) {
+            const totalPoints = pokemon.level + 10;
+            const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+            const baseStatsKeyMap = {
+                'HP': 'HP',
+                'atk': 'Attack',
+                'def': 'Defense',
+                'spA': 'Special Attack',
+                'spD': 'Special Defense',
+                'spe': 'Speed'
+            };
+
+            let distributedPoints = 0;
+
+            // Calculate distributed points from the input fields, not from pokemon.stats
+            shortNames.forEach(shortName => {
+                const row = document.querySelector(`[data-stat="${shortName}"]`);
+                if (row) {
+                    const levelInput = row.querySelector('.level-points-input');
+                    const levelPts = parseInt(levelInput?.value) || 0;
+                    distributedPoints += levelPts;
+                }
+            });
+
+            const remaining = totalPoints - distributedPoints;
+            const display = document.getElementById('remainingPointsDisplay');
+            if (display) {
+                display.textContent = `Remaining: ${remaining}`;
+                // Color it based on remaining points
+                if (remaining === 0) {
+                    display.style.background = '#d4edda';
+                    display.style.borderColor = '#28a745';
+                    display.style.color = '#28a745';
+                } else if (remaining < 0) {
+                    display.style.background = '#f8d7da';
+                    display.style.borderColor = '#dc3545';
+                    display.style.color = '#dc3545';
+                } else {
+                    display.style.background = '#f0f7ff';
+                    display.style.borderColor = '#667eea';
+                    display.style.color = '#667eea';
+                }
+            }
+        }
+
+        // Setup level editor
+        function setupLevelEditor(pokemon) {
+            const levelInput = document.getElementById('levelInput');
+            if (!levelInput) return;
+
+            levelInput.addEventListener('change', function () {
+                const newLevel = parseInt(this.value);
+                if (newLevel >= 1 && newLevel <= 100) {
+                    pokemon.level = newLevel;
+                    // Recalculate HP with new level (keeping same base and distribution)
+                    const baseHP = pokemon.baseStats.HP;
+                    const nature = pokemon.nature;
+                    let hpStat = baseHP;
+                    if (nature.raise === 'HP') hpStat += 1;
+                    if (nature.lower === 'HP') hpStat -= 1;
+
+                    pokemon.hitPoints = Math.max(1, Math.floor(newLevel + (pokemon.stats.HP * 3) + 10));
+
+                    // Update HP display
+                    const hpDisplay = document.getElementById('hpDisplay');
+                    if (hpDisplay) hpDisplay.textContent = pokemon.hitPoints;
+
+                    // Update header level
+                    const headerLevel = document.getElementById('headerLevel');
+                    if (headerLevel) headerLevel.textContent = `Level ${newLevel}`;
+
+                    // Update page title
+                    const pageTitle = `${pokemon.name} - Lvl ${newLevel} - Pokémon Details`;
+                    document.getElementById('pageTitle').textContent = pageTitle;
+
+                    // Update remaining points display
+                    updateRemainingPoints(pokemon);
+                } else {
+                    this.value = pokemon.level;
+                }
+            });
+        }
+
+        // Setup stat distribution buttons
+        function setupStatDistributionButtons(pokemon) {
+            const randomBtn = document.getElementById('distributionRandomBtn');
+            const balancedBtn = document.getElementById('distributionBalancedBtn');
+            const minmaxedBtn = document.getElementById('distributionMinmaxedBtn');
+
+            if (!randomBtn || !balancedBtn || !minmaxedBtn) return;
+
+            randomBtn.addEventListener('click', function () {
+                recalculateStatsWithDistribution(pokemon, 'RANDOM');
+            });
+
+            balancedBtn.addEventListener('click', function () {
+                recalculateStatsWithDistribution(pokemon, 'BALANCED');
+            });
+
+            minmaxedBtn.addEventListener('click', function () {
+                recalculateStatsWithDistribution(pokemon, 'MINMAXED');
+            });
+        }
+
+        // Recalculate stats with a specific distribution
+        function recalculateStatsWithDistribution(pokemon, distribution) {
+            const totalPoints = pokemon.level + 10;
+            const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+            const baseStatsKeyMap = {
+                'HP': 'HP',
+                'atk': 'Attack',
+                'def': 'Defense',
+                'spA': 'Special Attack',
+                'spD': 'Special Defense',
+                'spe': 'Speed'
+            };
+
+            // Get base stats without nature modifiers
+            const baseStats = {};
+            shortNames.forEach(shortName => {
+                baseStats[shortName] = pokemon.baseStats[baseStatsKeyMap[shortName]] || 0;
+            });
+
+            // Calculate distribution of level points
+            let distributedPoints = {};
+            shortNames.forEach(s => distributedPoints[s] = 0);
+
+            if (distribution === 'BALANCED') {
+                // Equal distribution
+                const pointsPerStat = Math.floor(totalPoints / shortNames.length);
+                const remainder = totalPoints % shortNames.length;
+                shortNames.forEach((s, index) => {
+                    distributedPoints[s] = pointsPerStat + (index < remainder ? 1 : 0);
+                });
+            } else if (distribution === 'MINMAXED') {
+                // More to high base stats, less to low
+                const basesWithValues = shortNames.map(s => ({
+                    stat: s,
+                    base: baseStats[s]
+                })).sort((a, b) => b.base - a.base);
+
+                const totalWeight = shortNames.length * (shortNames.length + 1) / 2;
+                basesWithValues.forEach((item, index) => {
+                    const weight = shortNames.length - index;
+                    const points = Math.round((weight / totalWeight) * totalPoints);
+                    distributedPoints[item.stat] = points;
+                });
+            } else {
+                // RANDOM - random distribution
+                for (let i = 0; i < totalPoints; i++) {
+                    const randomStat = shortNames[Math.floor(Math.random() * shortNames.length)];
+                    distributedPoints[randomStat]++;
+                }
+            }
+
+            // Apply nature modifiers and calculate final stats
+            shortNames.forEach(shortName => {
+                let baseValue = baseStats[shortName];
+                let levelPoints = distributedPoints[shortName];
+
+                // Apply nature modifier
+                let natureModifier = 0;
+                if (shortName === 'HP') {
+                    if (pokemon.nature.raise === shortName) natureModifier = 1;
+                    if (pokemon.nature.lower === shortName) natureModifier = -1;
+                } else {
+                    if (pokemon.nature.raise === shortName) natureModifier = 2;
+                    if (pokemon.nature.lower === shortName) natureModifier = -2;
+                }
+
+                pokemon.stats[shortName] = Math.max(1, baseValue + levelPoints + natureModifier);
+            });
+
+            // Update display
+            updateStatsDisplay(pokemon);
+            updateRemainingPoints(pokemon);
+        }
+
+        // Update stats display after recalculation
+        function updateStatsDisplay(pokemon) {
+            const statsBreakdownContainer = document.getElementById('statsBreakdown');
+            const statRows = statsBreakdownContainer.querySelectorAll('.stat-breakdown-row');
+            const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+            const baseStatsKeyMap = {
+                'HP': 'HP',
+                'atk': 'Attack',
+                'def': 'Defense',
+                'spA': 'Special Attack',
+                'spD': 'Special Defense',
+                'spe': 'Speed'
+            };
+
+            statRows.forEach(row => {
+                const statName = row.getAttribute('data-stat');
+                const baseInput = row.querySelector('.base-stat-input');
+                const levelInput = row.querySelector('.level-points-input');
+                const csInput = row.querySelector('.cs-input');
+
+                let baseStat = pokemon.baseStats[baseStatsKeyMap[statName]] || 0;
+                let finalStat = pokemon.stats[statName];
+
+                // Remove nature modifier to get level points
+                let natureModifier = 0;
+                if (statName === 'HP') {
+                    if (pokemon.nature.raise === statName) natureModifier = 1;
+                    if (pokemon.nature.lower === statName) natureModifier = -1;
+                } else {
+                    if (pokemon.nature.raise === statName) natureModifier = 2;
+                    if (pokemon.nature.lower === statName) natureModifier = -2;
+                }
+
+                let levelPts = finalStat - baseStat - natureModifier;
+                let cs = csInput ? parseInt(csInput.value) : 0;
+
+                baseInput.value = baseStat;
+                levelInput.value = Math.max(0, levelPts);
+
+                // Recalculate total with nature and CS
+                const csMultipliers = {
+                    '-6': 0.4, '-5': 0.5, '-4': 0.6, '-3': 0.7, '-2': 0.8, '-1': 0.9,
+                    '0': 1, '1': 1.2, '2': 1.4, '3': 1.6, '4': 1.8, '5': 2, '6': 2.2
+                };
+                let subtotal = baseStat + levelPts + natureModifier;
+                let multiplier = csMultipliers[cs] || 1;
+                let total = Math.floor(subtotal * multiplier);
+
+                row.querySelector('.stat-total').textContent = total;
+            });
         }
 
         // Load on page load
-        window.addEventListener('load', loadPokemonDetails);
+        window.addEventListener('load', function () {
+            loadPokemonDetails();
+        });
     </script>
 </body>
+
 </html>

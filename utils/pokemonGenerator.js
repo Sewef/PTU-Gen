@@ -238,14 +238,46 @@ class PokemonGenerator {
     const abilitiesWithDefinitions = abilityNames.map(abilityName => {
       const definition = this.getAbilityDefinition(abilityName);
       if (!definition) {
-        return { Name: abilityName };
+        return { name: abilityName };
       }
-      // Ensure Name is the first property
-      return {
-        Name: abilityName,
-        ...definition
-      };
+      // Convert all fields to camelCase and ensure name is the first property
+      const normalizedAbility = this.normalizeAbilityFields(abilityName, definition);
+      return normalizedAbility;
     });
+    
+    // Extract other information
+    const otherInfo = species['Other Information'] || {};
+    const sizeInfo = otherInfo['Size Information'] || {};
+    
+    // Extract size category from height (text in parentheses)
+    const heightStr = sizeInfo.Height || '';
+    const heightMatch = heightStr.match(/\(([^)]+)\)/);
+    const sizeCategory = heightMatch ? heightMatch[1] : 'Unknown';
+    
+    // Extract weight class from weight
+    const weightStr = sizeInfo.Weight || '';
+    const weightMatch = weightStr.match(/Weight Class (\d+)/);
+    const weightClass = weightMatch ? parseInt(weightMatch[1]) : 0;
+    
+    // Determine gender
+    const gendersStr = otherInfo.Genders || 'Unknown';
+    let gender = 'Unknown';
+    if (gendersStr !== 'Unknown') {
+      const maleMatch = gendersStr.match(/(\d+(?:\.\d+)?)\%\s*Male/);
+      const malePercent = maleMatch ? parseFloat(maleMatch[1]) : 0;
+      gender = Math.random() * 100 < malePercent ? 'Male' : 'Female';
+    }
+    
+    // Calculate baseWithNature for proper level points calculation on frontend
+    const baseStatsData = species['Base Stats'] || {};
+    const baseWithNature = {
+      HP: Math.max(1, (baseStatsData.HP || 0) + (nature.raise === 'HP' ? 1 : 0) + (nature.lower === 'HP' ? -1 : 0)),
+      atk: Math.max(1, (baseStatsData.Attack || 0) + (nature.raise === 'atk' ? 2 : 0) + (nature.lower === 'atk' ? -2 : 0)),
+      def: Math.max(1, (baseStatsData.Defense || 0) + (nature.raise === 'def' ? 2 : 0) + (nature.lower === 'def' ? -2 : 0)),
+      spA: Math.max(1, (baseStatsData['Special Attack'] || 0) + (nature.raise === 'spA' ? 2 : 0) + (nature.lower === 'spA' ? -2 : 0)),
+      spD: Math.max(1, (baseStatsData['Special Defense'] || 0) + (nature.raise === 'spD' ? 2 : 0) + (nature.lower === 'spD' ? -2 : 0)),
+      spe: Math.max(1, (baseStatsData.Speed || 0) + (nature.raise === 'spe' ? 2 : 0) + (nature.lower === 'spe' ? -2 : 0))
+    };
     
     const pokemon = {
       id: species.Number,
@@ -264,10 +296,18 @@ class PokemonGenerator {
         'Special Defense': species['Base Stats']?.['Special Defense'] || 0,
         Speed: species['Base Stats']?.Speed || 0
       },
+      baseWithNature: baseWithNature,
       stats: stats,
       hitPoints: this.calculateHitPoints(level, stats.HP, hpFormula),
       moves: this.selectMovesForPokemon(species, level, 6),
       item: this.selectItem(),
+      otherInfo: {
+        sizeCategory: sizeCategory,
+        weightClass: weightClass,
+        gender: gender,
+        diet: otherInfo.Diet || 'Unknown',
+        habitat: otherInfo.Habitat || 'Unknown'
+      },
       capabilities: species.Capabilities || []
     };
 
@@ -348,8 +388,8 @@ class PokemonGenerator {
     const statNames = ['HP', 'Attack', 'Defense', 'Special Attack', 'Special Defense', 'Speed'];
     const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
 
-    // Total stat points available: 10 base + (level - 1) from leveling
-    const totalPoints = 10 + (level - 1);
+    // Total stat points available: level + 10
+    const totalPoints = level + 10;
     
     // Calculate base stats with nature applied
     const baseWithNature = {};
@@ -462,15 +502,15 @@ class PokemonGenerator {
     const distributedPoints = {};
     shortNames.forEach(s => distributedPoints[s] = 0);
 
-    // Distribute points by randomly adding to groups
+    // Distribute points by randomly adding to stats, respecting Base Relation groups
     for (let i = 0; i < totalPoints; i++) {
       const groupIndex = Math.floor(Math.random() * groups.length);
       const group = groups[groupIndex];
 
-      // Add one point to each stat in the group
-      group.stats.forEach(stat => {
-        distributedPoints[stat]++;
-      });
+      // Add one point to a randomly chosen stat in the group
+      const statIndex = Math.floor(Math.random() * group.stats.length);
+      const stat = group.stats[statIndex];
+      distributedPoints[stat]++;
     }
 
     return distributedPoints;
@@ -485,23 +525,22 @@ class PokemonGenerator {
     const distributedPoints = {};
     shortNames.forEach(s => distributedPoints[s] = 0);
 
-    // Calculate points per group and remainder
-    const pointsPerGroup = Math.floor(totalPoints / groups.length);
-    const remainder = totalPoints % groups.length;
+    // Calculate points per stat (not per group)
+    const pointsPerStat = Math.floor(totalPoints / 6); // 6 total stats
+    const remainder = totalPoints % 6;
 
-    // Distribute equal points to each group
-    groups.forEach((group, index) => {
-      let groupPoints = pointsPerGroup;
+    // Distribute equal points to each stat
+    let extraPointsGiven = 0;
+    shortNames.forEach(stat => {
+      let statPoints = pointsPerStat;
       
-      // Distribute remainder randomly to groups
-      if (index < remainder) {
-        groupPoints++;
+      // Distribute remainder randomly to stats
+      if (extraPointsGiven < remainder) {
+        statPoints++;
+        extraPointsGiven++;
       }
 
-      // Add points to each stat in the group
-      group.stats.forEach(stat => {
-        distributedPoints[stat] = groupPoints;
-      });
+      distributedPoints[stat] = statPoints;
     });
 
     return distributedPoints;
@@ -517,27 +556,20 @@ class PokemonGenerator {
     const distributedPoints = {};
     shortNames.forEach(s => distributedPoints[s] = 0);
 
-    // Distribute points progressively: more to higher groups, fewer to lower
+    // Sort stats by their base value (highest first)
+    const statsByBase = shortNames.sort((a, b) => (baseWithNature[b] || 0) - (baseWithNature[a] || 0));
+
+    // Distribute points progressively: more to higher base stats
     let pointsRemaining = totalPoints;
-    const groupDistribution = [];
+    const weights = statsByBase.map((_, i) => shortNames.length - i); // Higher stats get higher weight
 
-    // Calculate distribution: higher base value groups get more priority
-    for (let i = 0; i < groups.length; i++) {
-      const weight = groups.length - i; // Higher groups get higher weight
-      groupDistribution.push(weight);
-    }
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
 
-    // Total weight
-    const totalWeight = groupDistribution.reduce((a, b) => a + b, 0);
-
-    // Distribute points proportionally
-    groups.forEach((group, index) => {
-      const groupWeight = groupDistribution[index];
-      const groupPoints = Math.round((groupWeight / totalWeight) * totalPoints);
-
-      group.stats.forEach(stat => {
-        distributedPoints[stat] = groupPoints;
-      });
+    // Distribute points proportionally based on weight
+    statsByBase.forEach((stat, index) => {
+      const weight = weights[index];
+      const statPoints = Math.round((weight / totalWeight) * totalPoints);
+      distributedPoints[stat] = statPoints;
     });
 
     return distributedPoints;
@@ -714,8 +746,8 @@ class PokemonGenerator {
     if (allMoves.length === 0) {
       const tackleDefinition = this.getMoveDefinition('Tackle') || {};
       return [{
-        Name: 'Tackle',
-        ...tackleDefinition
+        name: 'Tackle',
+        ...this.normalizeMoveFields(tackleDefinition)
       }];
     }
     
@@ -725,21 +757,49 @@ class PokemonGenerator {
     // Take the most recent moves up to the count, or fill with earlier moves
     for (let i = 0; i < Math.min(count, sortedMoves.length); i++) {
       const move = sortedMoves[i];
-      if (!selected.some(m => m.Name === move.Move)) {
+      if (!selected.some(m => m.name === move.Move)) {
         const moveDefinition = this.getMoveDefinition(move.Move);
         if (moveDefinition) {
-          // Add Name property and include move definition
-          selected.push({
-            Name: move.Move,
-            ...moveDefinition
-          });
+          // Add name property and include move definition with camelCase fields
+          const normalizedMove = this.normalizeMoveFields(moveDefinition, move.Move);
+          selected.push(normalizedMove);
         } else {
-          selected.push({ Name: move.Move });
+          selected.push({ name: move.Move });
         }
       }
     }
     
     return selected;
+  }
+
+  /**
+   * Normalize ability object fields to camelCase
+   */
+  static normalizeAbilityFields(abilityName, definition) {
+    return {
+      name: abilityName,
+      frequency: definition.Frequency,
+      trigger: definition.Trigger,
+      effect: definition.Effect,
+      bonus: definition.Bonus,
+      special: definition.Special,
+      note: definition.Note
+    };
+  }
+
+  /**
+   * Normalize move object fields to camelCase
+   */
+  static normalizeMoveFields(moveDefinition, moveName = moveDefinition.Name) {
+    return {
+      name: moveName || moveDefinition.Name,
+      type: moveDefinition.Type,
+      frequency: moveDefinition.Frequency,
+      class: moveDefinition.Class,
+      range: moveDefinition.Range,
+      damageBase: moveDefinition['Damage Base'],
+      effect: moveDefinition.Effect
+    };
   }
 
 
