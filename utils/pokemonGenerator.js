@@ -268,12 +268,18 @@ class PokemonGenerator {
     }
     let level;
     
-    if (options.minLevel && options.maxLevel) {
+    if (options.minlevel !== undefined && options.maxlevel !== undefined) {
       // Random level range
-      const min = Math.max(1, parseInt(options.minLevel));
-      const max = Math.min(100, parseInt(options.maxLevel));
+      let min = Math.max(1, parseInt(options.minlevel));
+      let max = Math.min(100, parseInt(options.maxlevel));
+      
+      // Ensure min <= max
+      if (min > max) {
+        [min, max] = [max, min];
+      }
+      
       level = Math.floor(Math.random() * (max - min + 1)) + min;
-    } else if (options.level) {
+    } else if (options.level !== undefined) {
       // Specific level
       level = parseInt(options.level);
     } else {
@@ -285,7 +291,9 @@ class PokemonGenerator {
     
     const species = options.species 
       ? this.getSpeciesByName(options.species)
-      : this.getRandomSpecies();
+      : options.habitat 
+        ? this.getRandomSpeciesByHabitat(options.habitat)
+        : this.getRandomSpecies();
 
     if (!species) {
       throw new Error(`Species not found: ${options.species}`);
@@ -295,8 +303,8 @@ class PokemonGenerator {
       ? this.getNatureByName(options.nature)
       : this.selectNature();
     const distribution = (options.distribution || 'RANDOM').toUpperCase();
-    const ignoreBaseRelation = options.ignoreBaseRelation ? (options.ignoreBaseRelation).toUpperCase() : undefined;
-    const hpFormula = options.hpFormula || 'LEVEL + (HP * 3) + 10';
+    const ignoreBaseRelation = options.ignorebaserelation ? (options.ignorebaserelation).toUpperCase() : undefined;
+    const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
     
     const stats = this.calculateStats(species['Base Stats'], level, nature, distribution, ignoreBaseRelation);
     
@@ -353,7 +361,7 @@ class PokemonGenerator {
       level: level,
       types: species['Basic Information'].Type,
       abilities: abilitiesWithDefinitions,
-      shiny: options.shiny || Math.random() < 0.0625, // 1/16 chance
+      shiny: options.shiny === true ? true : Math.random() < 0.01, // 1% chance if not forced
       nature: nature,
       baseStats: {
         HP: species['Base Stats']?.HP || 0,
@@ -901,6 +909,46 @@ class PokemonGenerator {
    */
   static getRandomSpecies() {
     return pokemonDatabase[Math.floor(Math.random() * pokemonDatabase.length)];
+  }
+
+  /**
+   * Get all available habitats
+   */
+  static getAvailableHabitats() {
+    const habitats = new Set();
+    pokemonDatabase.forEach(pokemon => {
+      const habitatStr = pokemon['Other Information']?.Habitat;
+      if (habitatStr) {
+        // Split by comma and add each habitat
+        habitatStr.split(',').forEach(habitat => {
+          habitats.add(habitat.trim());
+        });
+      }
+    });
+    return Array.from(habitats).sort();
+  }
+
+  /**
+   * Get Pokemon by habitat
+   */
+  static getPokemonByHabitat(habitat) {
+    if (!habitat) return [];
+    const habitatLower = habitat.toLowerCase();
+    return pokemonDatabase.filter(pokemon => {
+      const habitatStr = pokemon['Other Information']?.Habitat || '';
+      return habitatStr.toLowerCase().includes(habitatLower);
+    });
+  }
+
+  /**
+   * Get random Pokemon from a specific habitat
+   */
+  static getRandomSpeciesByHabitat(habitat) {
+    const pokemonInHabitat = this.getPokemonByHabitat(habitat);
+    if (pokemonInHabitat.length === 0) {
+      throw new Error(`No Pokemon found in habitat: ${habitat}`);
+    }
+    return pokemonInHabitat[Math.floor(Math.random() * pokemonInHabitat.length)];
   }
 
   /**

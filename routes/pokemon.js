@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const PokemonGenerator = require('../utils/pokemonGenerator');
 
+// Middleware to normalize query parameter keys to lowercase
+router.use((req, res, next) => {
+  const normalizedQuery = {};
+  for (const [key, value] of Object.entries(req.query)) {
+    normalizedQuery[key.toLowerCase()] = value;
+  }
+  req.query = normalizedQuery;
+  next();
+});
+
 /**
  * GET /api/pokemon/generate
  * Generate a random Pokemon with PTU 1.05 stats
@@ -9,7 +19,8 @@ const PokemonGenerator = require('../utils/pokemonGenerator');
  *   - level: number (1-100) - specific level
  *   - minLevel: number (1-100) - minimum level for random range
  *   - maxLevel: number (1-100) - maximum level for random range
- *   - species: string (Pokemon name)
+ *   - species: string (Pokemon name) - if not specified, random species is chosen
+ *   - habitat: string (habitat name) - if specified, random species from that habitat is chosen
  *   - shiny: boolean
  *   - distribution: string - RANDOM (default), BALANCED, or MINMAXED
  *     * RANDOM: Points distributed randomly to stat groups
@@ -28,14 +39,15 @@ router.get('/generate', async (req, res) => {
   try {
     const options = {
       level: req.query.level ? parseInt(req.query.level) : undefined,
-      minLevel: req.query.minLevel ? parseInt(req.query.minLevel) : undefined,
-      maxLevel: req.query.maxLevel ? parseInt(req.query.maxLevel) : undefined,
+      minlevel: req.query.minlevel ? parseInt(req.query.minlevel) : undefined,
+      maxlevel: req.query.maxlevel ? parseInt(req.query.maxlevel) : undefined,
       species: req.query.species,
+      habitat: req.query.habitat,
       shiny: req.query.shiny === 'true',
-      distribution: req.query.distribution || 'RANDOM',
-      ignoreBaseRelation: req.query.ignoreBaseRelation,
-      hpFormula: req.query.hpFormula,
-      dataset: req.query.dataset || 'core',
+      distribution: (req.query.distribution || 'RANDOM').toUpperCase(),
+      ignorebaserelation: req.query.ignorebaserelation?.toUpperCase(),
+      hpformula: req.query.hpformula,
+      dataset: (req.query.dataset || 'core').toLowerCase(),
       nature: req.query.nature
     };
 
@@ -53,7 +65,7 @@ router.get('/generate', async (req, res) => {
 router.get('/generateWild/:level', async (req, res) => {
   try {
     const level = parseInt(req.params.level);
-    const dataset = req.query.dataset || 'core';
+    const dataset = (req.query.dataset || 'core').toLowerCase();
     if (isNaN(level) || level < 1 || level > 100) {
       return res.status(400).json({ error: 'Level must be between 1 and 100' });
     }
@@ -78,7 +90,7 @@ router.get('/team', async (req, res) => {
     const options = {
       level: req.query.level ? parseInt(req.query.level) : 50,
       size: req.query.size ? Math.min(parseInt(req.query.size), 6) : 6,
-      dataset: req.query.dataset || 'core'
+      dataset: (req.query.dataset || 'core').toLowerCase()
     };
 
     if (options.level < 1 || options.level > 100) {
@@ -100,7 +112,7 @@ router.get('/team', async (req, res) => {
  */
 router.get('/list', async (req, res) => {
   try {
-    const dataset = req.query.dataset || 'core';
+    const dataset = (req.query.dataset || 'core').toLowerCase();
     const pokemon = await PokemonGenerator.listAvailablePokemon(dataset);
     const speciesNames = pokemon.map(p => p.name);
     res.json({
@@ -130,6 +142,62 @@ router.get('/datasets', (req, res) => {
 });
 
 /**
+ * GET /api/pokemon/habitats
+ * List all available habitats
+ */
+router.get('/habitats', async (req, res) => {
+  try {
+    const dataset = (req.query.dataset || 'core').toLowerCase();
+    
+    // Trigger dataset switch by calling any method that does it
+    await PokemonGenerator.listAvailablePokemon(dataset);
+    
+    const habitats = PokemonGenerator.getAvailableHabitats();
+    res.json({
+      habitats: habitats,
+      count: habitats.length,
+      dataset: dataset
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/pokemon/habitat/:habitatName
+ * List Pokemon species from a specific habitat
+ * Query params:
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ */
+router.get('/habitat/:habitatName', async (req, res) => {
+  try {
+    const habitat = req.params.habitatName;
+    const dataset = (req.query.dataset || 'core').toLowerCase();
+    
+    // Trigger dataset switch
+    await PokemonGenerator.listAvailablePokemon(dataset);
+    
+    const pokemonList = PokemonGenerator.getPokemonByHabitat(habitat);
+    if (pokemonList.length === 0) {
+      return res.status(400).json({ error: `No Pokemon found in habitat: ${habitat}` });
+    }
+    
+    res.json({
+      habitat: habitat,
+      species: pokemonList.map(p => ({
+        name: p.Species,
+        id: p.Number,
+        types: p['Basic Information']?.Type || []
+      })),
+      count: pokemonList.length,
+      dataset: dataset
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/pokemon/natures
  * List all available natures
  */
@@ -149,11 +217,14 @@ router.get('/natures', (req, res) => {
  * GET /api/pokemon/moves/:species
  * Get available moves for a specific Pokemon species
  * Returns moves organized by category: levelUp, tm, tutor
+ * Query params:
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
  */
 router.get('/moves/:species', async (req, res) => {
   try {
     const species = req.params.species;
-    const moves = await PokemonGenerator.getAvailableMovesForSpecies(species);
+    const dataset = (req.query.dataset || 'core').toLowerCase();
+    const moves = await PokemonGenerator.getAvailableMovesForSpecies(species, dataset);
     res.json(moves);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -164,11 +235,14 @@ router.get('/moves/:species', async (req, res) => {
  * GET /api/pokemon/abilities/:species
  * Get available abilities for a specific Pokemon species
  * Returns abilities organized by category: basic, advanced, high
+ * Query params:
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
  */
 router.get('/abilities/:species', async (req, res) => {
   try {
     const species = req.params.species;
-    const abilities = await PokemonGenerator.getAvailableAbilitiesForSpecies(species);
+    const dataset = (req.query.dataset || 'core').toLowerCase();
+    const abilities = await PokemonGenerator.getAvailableAbilitiesForSpecies(species, dataset);
     res.json(abilities);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -184,7 +258,7 @@ router.get('/abilities/:species', async (req, res) => {
  */
 router.get('/all-moves', async (req, res) => {
   try {
-    const dataset = req.query.dataset || 'core';
+    const dataset = (req.query.dataset || 'core').toLowerCase();
     const moves = await PokemonGenerator.getAllMovesFromDatabase(dataset);
     res.json(moves);
   } catch (error) {
@@ -201,7 +275,7 @@ router.get('/all-moves', async (req, res) => {
  */
 router.get('/all-abilities', async (req, res) => {
   try {
-    const dataset = req.query.dataset || 'core';
+    const dataset = (req.query.dataset || 'core').toLowerCase();
     const abilities = await PokemonGenerator.getAllAbilitiesFromDatabase(dataset);
     res.json(abilities);
   } catch (error) {

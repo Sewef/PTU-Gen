@@ -68,6 +68,14 @@
                         <div class="autocomplete-suggestions" id="speciesSuggestions"></div>
                     </div>
 
+                    <!-- Habitat -->
+                    <div class="form-group form-group-autocomplete">
+                        <label>Habitat (Optional)</label>
+                        <input type="text" id="habitat" placeholder="ex: Forest, Desert, Mountain..." value="" autocomplete="off">
+                        <div class="autocomplete-suggestions" id="habitatSuggestions"></div>
+                        <small style="display: block; margin-top: 5px; color: #666;">Leave empty for any habitat. Overridden if species is specified.</small>
+                    </div>
+
                     <!-- Shiny -->
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 8px;">
@@ -137,6 +145,7 @@
 
     <script>
         let allPokemon = [];
+        let allHabitats = [];
         let selectedSuggestionIndex = -1;
 
         const form = document.getElementById('generatorForm');
@@ -145,7 +154,9 @@
         const levelInput = document.getElementById('level');
         const pokemonDisplay = document.getElementById('pokemonDisplay');
         const speciesInput = document.getElementById('species');
+        const habitatInput = document.getElementById('habitat');
         const suggestionsList = document.getElementById('speciesSuggestions');
+        const habitatSuggestionsList = document.getElementById('habitatSuggestions');
         const datasetSelect = document.getElementById('dataset');
 
         // Load Pokémon list for a specific dataset
@@ -166,6 +177,27 @@
                 }
             } catch (error) {
                 console.error('Failed to load Pokémon list:', error);
+            }
+        }
+
+        // Load Habitats for a specific dataset
+        async function loadHabitatList(dataset = 'core') {
+            try {
+                const response = await fetch(`/api/pokemon/habitats?dataset=${dataset}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    allHabitats = data.habitats.map(name => ({
+                        name: name,
+                        searchName: name.toLowerCase()
+                    }));
+                    console.log(`✓ Loaded ${allHabitats.length} habitats from ${dataset} dataset`);
+                    // Clear habitat input when dataset changes
+                    habitatInput.value = '';
+                    habitatSuggestionsList.classList.remove('open');
+                    habitatSuggestionsList.innerHTML = '';
+                }
+            } catch (error) {
+                console.error('Failed to load habitat list:', error);
             }
         }
 
@@ -258,9 +290,95 @@
             }
         });
 
+        // Habitat autocomplete logic
+        habitatInput.addEventListener('input', function() {
+            const value = this.value.trim().toLowerCase();
+            selectedSuggestionIndex = -1;
+
+            if (value.length === 0) {
+                habitatSuggestionsList.classList.remove('open');
+                habitatSuggestionsList.innerHTML = '';
+                return;
+            }
+
+            if (allHabitats.length === 0) {
+                console.warn('Habitat list not loaded yet');
+                return;
+            }
+
+            const filtered = allHabitats.filter(h => 
+                h.searchName.includes(value)
+            ).slice(0, 10);
+
+            if (filtered.length === 0) {
+                habitatSuggestionsList.classList.remove('open');
+                habitatSuggestionsList.innerHTML = '';
+                return;
+            }
+
+            habitatSuggestionsList.innerHTML = filtered.map((habitat, index) => `
+                <div class="autocomplete-item" data-index="${index}" data-name="${habitat.name}">
+                    ${habitat.name}
+                </div>
+            `).join('');
+
+            habitatSuggestionsList.classList.add('open');
+
+            // Add click handlers
+            document.querySelectorAll('#habitatSuggestions .autocomplete-item').forEach((item, index) => {
+                item.addEventListener('click', function() {
+                    habitatInput.value = this.dataset.name;
+                    habitatSuggestionsList.classList.remove('open');
+                    habitatInput.focus();
+                });
+            });
+        });
+
+        // Keyboard navigation for habitat suggestions
+        habitatInput.addEventListener('keydown', function(e) {
+            const items = document.querySelectorAll('#habitatSuggestions .autocomplete-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, items.length - 1);
+                updateHabitatSuggestionSelection(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                updateHabitatSuggestionSelection(items);
+            } else if (e.key === 'Enter') {
+                if (selectedSuggestionIndex >= 0 && items[selectedSuggestionIndex]) {
+                    e.preventDefault();
+                    habitatInput.value = items[selectedSuggestionIndex].dataset.name;
+                    habitatSuggestionsList.classList.remove('open');
+                }
+            } else if (e.key === 'Escape') {
+                habitatSuggestionsList.classList.remove('open');
+            }
+        });
+
+        function updateHabitatSuggestionSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedSuggestionIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        // Close habitat suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target !== speciesInput && !e.target.closest('.autocomplete-suggestions')) {
+                suggestionsList.classList.remove('open');
+            }
+        });
+
         // Reload species list when dataset changes
         datasetSelect.addEventListener('change', function() {
             loadPokemonList(this.value);
+            loadHabitatList(this.value);
         });
 
         // Disable browser autocomplete on all inputs
@@ -319,6 +437,10 @@
 
                         if (document.getElementById('species').value) {
                             params.append('species', document.getElementById('species').value);
+                        }
+
+                        if (document.getElementById('habitat').value) {
+                            params.append('habitat', document.getElementById('habitat').value);
                         }
 
                         if (document.getElementById('shiny').checked) {
@@ -433,6 +555,7 @@
         // Generate Pokémon on page load
         window.addEventListener('load', function() {
             loadPokemonList();
+            loadHabitatList();
             loadNatures();
             // Optional: auto-generate
             // generatePokemon();

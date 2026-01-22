@@ -12,12 +12,14 @@ const { initializeDatasets } = require('./utils/pokemonGenerator');
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Static files FIRST (so index.html is served for root path)
 app.use(express.static('public'));
 
 // Import routes
 const pokemonRoutes = require('./routes/pokemon');
 
-// Routes
+// API Routes
 app.use('/api/pokemon', pokemonRoutes);
 
 // Health check
@@ -25,8 +27,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
+// API info endpoint
+app.get('/api/info', (req, res) => {
   res.json({
     name: 'PTU 1.05 Pokemon Generator API',
     version: '1.0.0',
