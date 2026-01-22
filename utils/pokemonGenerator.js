@@ -307,6 +307,55 @@ function getActualTypes(extractedTypes) {
   return Array.isArray(extractedTypes) ? extractedTypes : ['Normal'];
 }
 
+/**
+ * Extract base stats from a Pokemon's Base Stats field
+ * Handles both simple stats (object) and complex stats with variants (object with forme/size keys)
+ * @param {any} baseStatsField - Base Stats field from species data
+ * @returns {Object} Base stats object
+ */
+function extractBaseStats(baseStatsField) {
+  if (!baseStatsField) return {};
+  
+  // Check if it's a simple stats object (has standard stat keys like HP, Attack, etc)
+  if (baseStatsField.HP !== undefined || baseStatsField.Attack !== undefined) {
+    return baseStatsField;
+  }
+  
+  // Check if it has variants (Small, Average, Large, Super Size, etc)
+  const variantKeys = Object.keys(baseStatsField).filter(key => 
+    typeof baseStatsField[key] === 'object' && 
+    (baseStatsField[key].HP !== undefined || baseStatsField[key].Attack !== undefined)
+  );
+  
+  if (variantKeys.length > 0) {
+    // Pick a random variant
+    const selectedVariant = variantKeys[Math.floor(Math.random() * variantKeys.length)];
+    return {
+      isStatVariant: true,
+      variants: baseStatsField,
+      selectedVariant: selectedVariant,
+      stats: baseStatsField[selectedVariant]
+    };
+  }
+  
+  return baseStatsField;
+}
+
+/**
+ * Get actual base stats from extracted stats
+ * @param {any} extractedStats - Result from extractBaseStats
+ * @returns {Object} Base stats object
+ */
+function getActualBaseStats(extractedStats) {
+  if (!extractedStats) return {};
+  
+  if (extractedStats.isStatVariant) {
+    return extractedStats.stats || {};
+  }
+  
+  return extractedStats;
+}
+
 class PokemonGenerator {
   /**
    * Generate a random Pokemon with PTU 1.05 stats
@@ -369,7 +418,10 @@ class PokemonGenerator {
     const ignoreBaseRelation = options.ignorebaserelation ? (options.ignorebaserelation).toUpperCase() : undefined;
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
     
-    const stats = this.calculateStats(species['Base Stats'], level, nature, distribution, ignoreBaseRelation);
+    // Extract base stats, handling variants like Pumpkaboo (Small/Average/Large/Super Size)
+    const extractedStats = extractBaseStats(species['Base Stats']);
+    const baseStatsData = getActualBaseStats(extractedStats);
+    const stats = this.calculateStats(baseStatsData, level, nature, distribution, ignoreBaseRelation);
     
     // Get selected abilities with their definitions
     const abilityNames = this.selectAbilities(species, level);
@@ -407,7 +459,7 @@ class PokemonGenerator {
     }
     
     // Calculate baseWithNature for proper level points calculation on frontend
-    const baseStatsData = species['Base Stats'] || {};
+    // baseStatsData already extracted above with variant handling
     const baseWithNature = {
       HP: Math.max(1, (baseStatsData.HP || 0) + (nature.raise === 'HP' ? 1 : 0) + (nature.lower === 'HP' ? -1 : 0)),
       atk: Math.max(1, (baseStatsData.Attack || 0) + (nature.raise === 'atk' ? 2 : 0) + (nature.lower === 'atk' ? -2 : 0)),
@@ -432,18 +484,20 @@ class PokemonGenerator {
       shiny: options.shiny === true ? true : Math.random() < ((options.shinyodds || 1) / 100), // Use custom odds or default 1%
       nature: nature,
       baseStats: {
-        HP: species['Base Stats']?.HP || 0,
-        Attack: species['Base Stats']?.Attack || 0,
-        Defense: species['Base Stats']?.Defense || 0,
-        'Special Attack': species['Base Stats']?.['Special Attack'] || 0,
-        'Special Defense': species['Base Stats']?.['Special Defense'] || 0,
-        Speed: species['Base Stats']?.Speed || 0
+        HP: baseStatsData?.HP || 0,
+        Attack: baseStatsData?.Attack || 0,
+        Defense: baseStatsData?.Defense || 0,
+        'Special Attack': baseStatsData?.['Special Attack'] || 0,
+        'Special Defense': baseStatsData?.['Special Defense'] || 0,
+        Speed: baseStatsData?.Speed || 0
       },
+      statVariant: extractedStats.isStatVariant ? { selectedVariant: extractedStats.selectedVariant } : undefined,
       baseWithNature: baseWithNature,
       stats: stats,
       hitPoints: this.calculateHitPoints(level, stats.HP, hpFormula),
       moves: this.selectMovesForPokemon(species, level, 6),
       item: this.selectItem(),
+      skills: species.Skills || {},
       otherInfo: {
         sizeCategory: sizeCategory,
         weightClass: weightClass,
@@ -728,39 +782,45 @@ class PokemonGenerator {
     const basicInfo = species['Basic Information'];
     const abilities = [];
 
-    // Level 1: Basic Ability
-    const basicAbilities = [];
-    if (basicInfo['Basic Ability 1']) basicAbilities.push(basicInfo['Basic Ability 1']);
-    if (basicInfo['Basic Ability 2']) basicAbilities.push(basicInfo['Basic Ability 2']);
+    // Helper function to flatten ability arrays and return all possible values
+    const getAllAbilityOptions = (ability) => {
+      if (Array.isArray(ability)) {
+        return ability;
+      }
+      return [ability];
+    };
 
+    // Helper to resolve a slot to ONE ability (or null if empty)
+    const resolveAbilitySlot = (slotValue) => {
+      const options = getAllAbilityOptions(slotValue || []);
+      if (options.length === 0) return null;
+      return options[Math.floor(Math.random() * options.length)];
+    };
+
+    // Resolve each slot to ONE ability
+    const basic1 = resolveAbilitySlot(basicInfo['Basic Ability 1']);
+    const basic2 = resolveAbilitySlot(basicInfo['Basic Ability 2']);
+    const adv1 = resolveAbilitySlot(basicInfo['Adv Ability 1']);
+    const adv2 = resolveAbilitySlot(basicInfo['Adv Ability 2']);
+    const high = resolveAbilitySlot(basicInfo['High Ability']);
+
+    // Level 1: Pick one from basic abilities
+    const basicAbilities = [basic1, basic2].filter(a => a !== null);
     if (basicAbilities.length > 0) {
       abilities.push(basicAbilities[Math.floor(Math.random() * basicAbilities.length)]);
     }
 
-    // Level 20+: Add random from Basic + Advanced
+    // Level 20+: Add one random from basic + advanced (not already selected)
     if (level >= 20) {
-      const basicAdvAbilities = [...basicAbilities];
-      if (basicInfo['Adv Ability 1']) basicAdvAbilities.push(basicInfo['Adv Ability 1']);
-      if (basicInfo['Adv Ability 2']) basicAdvAbilities.push(basicInfo['Adv Ability 2']);
-
-      // Remove already selected ability
-      const available = basicAdvAbilities.filter(a => !abilities.includes(a));
+      const available = [basic1, basic2, adv1, adv2].filter(a => a !== null && !abilities.includes(a));
       if (available.length > 0) {
         abilities.push(available[Math.floor(Math.random() * available.length)]);
       }
     }
 
-    // Level 40+: Add random from all abilities
+    // Level 40+: Add one random from all (not already selected)
     if (level >= 40) {
-      const allAbilities = [];
-      if (basicInfo['Basic Ability 1']) allAbilities.push(basicInfo['Basic Ability 1']);
-      if (basicInfo['Basic Ability 2']) allAbilities.push(basicInfo['Basic Ability 2']);
-      if (basicInfo['Adv Ability 1']) allAbilities.push(basicInfo['Adv Ability 1']);
-      if (basicInfo['Adv Ability 2']) allAbilities.push(basicInfo['Adv Ability 2']);
-      if (basicInfo['High Ability']) allAbilities.push(basicInfo['High Ability']);
-
-      // Remove already selected abilities
-      const available = allAbilities.filter(a => !abilities.includes(a));
+      const available = [basic1, basic2, adv1, adv2, high].filter(a => a !== null && !abilities.includes(a));
       if (available.length > 0) {
         abilities.push(available[Math.floor(Math.random() * available.length)]);
       }
@@ -1184,6 +1244,14 @@ class PokemonGenerator {
         throw new Error(`Pokemon species not found: ${speciesName}`);
       }
 
+      // Helper to flatten ability and return array
+      const flattenAbility = (ability) => {
+        if (Array.isArray(ability)) {
+          return ability;
+        }
+        return [ability];
+      };
+
       const result = {
         basic: [],
         advanced: [],
@@ -1195,55 +1263,67 @@ class PokemonGenerator {
         
         // Basic Abilities
         if (basicInfo['Basic Ability 1']) {
-          const abilityData = abilitiesDatabase[basicInfo['Basic Ability 1']];
-          result.basic.push({
-            name: basicInfo['Basic Ability 1'],
-            frequency: abilityData?.Frequency || 'N/A',
-            effect: abilityData?.Effect || 'N/A'
+          flattenAbility(basicInfo['Basic Ability 1']).forEach(abilityName => {
+            const abilityData = abilitiesDatabase[abilityName];
+            result.basic.push({
+              name: abilityName,
+              frequency: abilityData?.Frequency || 'N/A',
+              effect: abilityData?.Effect || 'N/A'
+            });
           });
         }
         if (basicInfo['Basic Ability 2']) {
-          const abilityData = abilitiesDatabase[basicInfo['Basic Ability 2']];
-          result.basic.push({
-            name: basicInfo['Basic Ability 2'],
-            frequency: abilityData?.Frequency || 'N/A',
-            effect: abilityData?.Effect || 'N/A'
+          flattenAbility(basicInfo['Basic Ability 2']).forEach(abilityName => {
+            const abilityData = abilitiesDatabase[abilityName];
+            result.basic.push({
+              name: abilityName,
+              frequency: abilityData?.Frequency || 'N/A',
+              effect: abilityData?.Effect || 'N/A'
+            });
           });
         }
 
         // Advanced Abilities
         if (basicInfo['Adv Ability 1']) {
-          const abilityData = abilitiesDatabase[basicInfo['Adv Ability 1']];
-          result.advanced.push({
-            name: basicInfo['Adv Ability 1'],
-            frequency: abilityData?.Frequency || 'N/A',
-            effect: abilityData?.Effect || 'N/A'
+          flattenAbility(basicInfo['Adv Ability 1']).forEach(abilityName => {
+            const abilityData = abilitiesDatabase[abilityName];
+            result.advanced.push({
+              name: abilityName,
+              frequency: abilityData?.Frequency || 'N/A',
+              effect: abilityData?.Effect || 'N/A'
+            });
           });
         }
         if (basicInfo['Adv Ability 2']) {
-          const abilityData = abilitiesDatabase[basicInfo['Adv Ability 2']];
-          result.advanced.push({
-            name: basicInfo['Adv Ability 2'],
-            frequency: abilityData?.Frequency || 'N/A',
-            effect: abilityData?.Effect || 'N/A'
+          flattenAbility(basicInfo['Adv Ability 2']).forEach(abilityName => {
+            const abilityData = abilitiesDatabase[abilityName];
+            result.advanced.push({
+              name: abilityName,
+              frequency: abilityData?.Frequency || 'N/A',
+              effect: abilityData?.Effect || 'N/A'
+            });
           });
         }
         if (basicInfo['Adv Ability 3']) {
-          const abilityData = abilitiesDatabase[basicInfo['Adv Ability 3']];
-          result.advanced.push({
-            name: basicInfo['Adv Ability 3'],
-            frequency: abilityData?.Frequency || 'N/A',
-            effect: abilityData?.Effect || 'N/A'
+          flattenAbility(basicInfo['Adv Ability 3']).forEach(abilityName => {
+            const abilityData = abilitiesDatabase[abilityName];
+            result.advanced.push({
+              name: abilityName,
+              frequency: abilityData?.Frequency || 'N/A',
+              effect: abilityData?.Effect || 'N/A'
+            });
           });
         }
 
         // High Ability
         if (basicInfo['High Ability']) {
-          const abilityData = abilitiesDatabase[basicInfo['High Ability']];
-          result.high.push({
-            name: basicInfo['High Ability'],
-            frequency: abilityData?.Frequency || 'N/A',
-            effect: abilityData?.Effect || 'N/A'
+          flattenAbility(basicInfo['High Ability']).forEach(abilityName => {
+            const abilityData = abilitiesDatabase[abilityName];
+            result.high.push({
+              name: abilityName,
+              frequency: abilityData?.Frequency || 'N/A',
+              effect: abilityData?.Effect || 'N/A'
+            });
           });
         }
       }

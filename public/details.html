@@ -232,6 +232,8 @@
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <div class="pokemon-title">#${pokemon.id} ${pokemon.name}</div>
                                 ${pokemon.shiny ? '<div class="shiny-badge">✨ SHINY</div>' : ''}
+                                ${pokemon.types?.isFormeVariant ? `<div style="display: inline-block; background: #f0f0f0; padding: 4px 8px; border-radius: 3px; font-size: 0.85em; color: #666; font-weight: 500;">${pokemon.types.selectedForme}</div>` : ''}
+                                ${pokemon.statVariant ? `<div style="display: inline-block; background: #fff3cd; padding: 4px 8px; border-radius: 3px; font-size: 0.85em; color: #856404; font-weight: 500;">${pokemon.statVariant.selectedVariant}</div>` : ''}
                             </div>
                             <input type="text" id="nicknameInput" placeholder="Nickname" value="${pokemon.nickname || ''}" style="width: 200px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; margin-top: 6px; font-style: italic;" maxlength="20" />
                             <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level}</div>
@@ -312,6 +314,20 @@
                                 <!-- Stats will be generated here -->
                             </div>
                         </div>
+
+                        ${Object.keys(pokemon.skills || {}).length > 0 ? `
+                            <h3 class="section-title">📊 Skills</h3>
+                            <div style="padding: 15px; background: #f9f5f0; border-radius: 5px; border-left: 4px solid #e8a76e;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">
+                                    ${Object.entries(pokemon.skills).map(([skillName, skillFormula]) => `
+                                        <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e8a76e;">
+                                            <div style="font-weight: 600; color: #333; font-size: 0.9em; margin-bottom: 4px;">${skillName}</div>
+                                            <div style="font-family: monospace; font-size: 0.85em; color: #666;">${skillFormula}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
 
                         ${pokemon.capabilities.length > 0 ? `
                             <h3 class="section-title">🔧 Capabilities</h3>
