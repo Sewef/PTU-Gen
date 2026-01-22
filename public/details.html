@@ -27,6 +27,11 @@
                 return;
             }
 
+            // Debug: log the pokemon object structure
+            console.log('Pokemon object:', pokemon);
+            console.log('baseStats:', pokemon.baseStats);
+            console.log('stats:', pokemon.stats);
+
             const typeClass = pokemon.types[0].toLowerCase().replace(' ', '-');
             const statsEntries = Object.entries(pokemon.stats);
             const maxStat = Math.max(...statsEntries.map(([_, v]) => v));
@@ -75,25 +80,46 @@
 
                         <div>
                             <h3 style="margin-bottom: 15px; color: #667eea;">📈 Stats</h3>
-                            <div class="stats-grid">
-                                ${statsEntries.map(([name, value]) => `
-                                    <div class="stat-bar">
-                                        <div class="stat-name">${name.toUpperCase()}</div>
-                                        <div class="stat-value">
-                                            <span class="stat-number">${value}</span>
-                                            <div class="stat-progress">
-                                                <div class="stat-fill" style="width: ${(value / maxStat) * 100}%"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `).join('')}
+                            <div class="stats-breakdown" id="statsBreakdown">
+                                <!-- Stats will be generated here -->
                             </div>
                         </div>
 
                         ${pokemon.capabilities.length > 0 ? `
                             <div style="padding: 15px; background: #f0f7ff; border-radius: 5px; border-left: 4px solid #667eea;">
                                 <h3 style="color: #667eea; margin-bottom: 10px; font-size: 1em;">🔧 Capabilities</h3>
-                                <p style="color: #666; font-size: 0.9em; margin: 0;">${pokemon.capabilities.join(', ')}</p>
+                                <div id="capabilitiesContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                                    ${(() => {
+                                        const withValues = [];
+                                        const withoutValues = [];
+                                        
+                                        pokemon.capabilities.forEach((cap, idx) => {
+                                            const match = cap.match(/^(.+?)\s+([\d/]+)$/);
+                                            if (match) {
+                                                withValues.push({ idx, name: match[1], value: match[2] });
+                                            } else {
+                                                withoutValues.push(cap);
+                                            }
+                                        });
+                                        
+                                        let html = '';
+                                        
+                                        // Capabilities with values
+                                        withValues.forEach(({ idx, name, value }) => {
+                                            html += `<div class="capability-row" data-index="${idx}">
+                                                <label style="flex: 1; color: #666; font-size: 0.9em;">${name}</label>
+                                                <input type="text" class="capability-value-input" data-index="${idx}" value="${value}" style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;" />
+                                            </div>`;
+                                        });
+                                        
+                                        // Capabilities without values on one line
+                                        if (withoutValues.length > 0) {
+                                            html += `<div style="color: #666; font-size: 0.9em;">${withoutValues.join(', ')}</div>`;
+                                        }
+                                        
+                                        return html;
+                                    })()}
+                                </div>
                             </div>
                         ` : ''}
                         
@@ -137,6 +163,112 @@
             `;
 
             document.getElementById('pokemonDisplay').innerHTML = html;
+
+            // Combat Stage multipliers
+            const csMultipliers = {
+                '-6': 0.4, '-5': 0.5, '-4': 0.6, '-3': 0.7, '-2': 0.8, '-1': 0.9,
+                '0': 1, '1': 1.2, '2': 1.4, '3': 1.6, '4': 1.8, '5': 2, '6': 2.2
+            };
+
+            // Generate detailed stats breakdown
+            const statsBreakdownContainer = document.getElementById('statsBreakdown');
+            let statsHTML = '';
+
+            // Map short stat names to display names and back to baseStats keys
+            const statDisplayNames = {
+                'HP': 'HP',
+                'atk': 'Attack',
+                'def': 'Defense',
+                'spA': 'Special Attack',
+                'spD': 'Special Defense',
+                'spe': 'Speed'
+            };
+
+            // Reverse map for looking up baseStats
+            const baseStatsKeyMap = {
+                'HP': 'HP',
+                'atk': 'Attack',
+                'def': 'Defense',
+                'spA': 'Special Attack',
+                'spD': 'Special Defense',
+                'spe': 'Speed'
+            };
+
+            statsEntries.forEach(([statName, finalValue]) => {
+                // Get base stat from pokemon data using the mapped key
+                const baseStatKey = baseStatsKeyMap[statName];
+                let baseStat = pokemon.baseStats?.[baseStatKey] || 0;
+                
+                // Calculate level points: finalValue - baseStat
+                // The final value already includes nature bonus/malus, but we're showing the progression
+                let levelPoints = Math.max(0, finalValue - baseStat);
+                let cs = 0;
+                
+                const isHP = statName === 'HP';
+                
+                statsHTML += `
+                    <div class="stat-breakdown-row" data-stat="${statName}">
+                        <div class="stat-breakdown-label">${statDisplayNames[statName] || statName}</div>
+                        
+                        <div class="stat-breakdown-component">
+                            <label>Base</label>
+                            <input type="number" class="base-stat-input" data-stat="${statName}" value="${baseStat}" />
+                        </div>
+                        
+                        <div class="stat-breakdown-component">
+                            <label>Lvl Pts</label>
+                            <input type="number" class="level-points-input" data-stat="${statName}" value="${levelPoints}" />
+                        </div>
+                        
+                        ${!isHP ? `
+                            <div class="stat-breakdown-component">
+                                <label>CS</label>
+                                <input type="number" class="cs-input" data-stat="${statName}" min="-6" max="6" value="0" />
+                            </div>
+                        ` : ''}
+                        
+                        <div class="stat-breakdown-component total">
+                            <label>Total</label>
+                            <span class="stat-total" data-stat="${statName}">${finalValue}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            statsBreakdownContainer.innerHTML = statsHTML;
+
+            // Add event listeners for stat modifications
+            document.querySelectorAll('.base-stat-input, .level-points-input, .cs-input').forEach(input => {
+                input.addEventListener('change', updateStatTotal);
+            });
+
+            function updateStatTotal(e) {
+                const statName = e.target.dataset.stat;
+                const row = document.querySelector(`[data-stat="${statName}"]`);
+                
+                const baseInput = row.querySelector('.base-stat-input');
+                const levelInput = row.querySelector('.level-points-input');
+                const csInput = row.querySelector('.cs-input');
+                
+                let base = parseInt(baseInput?.value) || 0;
+                let levelPts = parseInt(levelInput?.value) || 0;
+                let cs = parseInt(csInput?.value) || 0;
+                
+                // Calculate total: (base + levelPts) * csMultiplier
+                let subtotal = base + levelPts;
+                let multiplier = csMultipliers[cs] || 1;
+                let total = Math.floor(subtotal * multiplier);
+                
+                row.querySelector('.stat-total').textContent = total;
+            }
+
+            // Handle capability value changes
+            document.querySelectorAll('.capability-value-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    // Just update the value - it's already modifiable
+                    // Values persist in the input element
+                });
+            });
         }
 
         // Load on page load

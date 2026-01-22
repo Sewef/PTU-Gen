@@ -256,6 +256,14 @@ class PokemonGenerator {
       abilities: abilitiesWithDefinitions,
       shiny: options.shiny || Math.random() < 0.0625, // 1/16 chance
       nature: nature,
+      baseStats: {
+        HP: species['Base Stats']?.HP || 0,
+        Attack: species['Base Stats']?.Attack || 0,
+        Defense: species['Base Stats']?.Defense || 0,
+        'Special Attack': species['Base Stats']?.['Special Attack'] || 0,
+        'Special Defense': species['Base Stats']?.['Special Defense'] || 0,
+        Speed: species['Base Stats']?.Speed || 0
+      },
       stats: stats,
       hitPoints: this.calculateHitPoints(level, stats.HP, hpFormula),
       moves: this.selectMovesForPokemon(species, level, 6),
