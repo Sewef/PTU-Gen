@@ -273,19 +273,6 @@
                             ` : ''}
 
                         </div>
-
-                        <div class="info-box">
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                <div class="info-label">Type Effectiveness</div>
-                                <div style="display: flex; gap: 5px;">
-                                    <button id="multiplyBtn15" class="multiplier-btn inactive" title="Multiply by 1.5">×1.5</button>
-                                    <button id="multiplyBtn2" class="multiplier-btn active" title="Multiply by 2">×2</button>
-                                </div>
-                            </div>
-                            <div id="typeEffectiveness" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;">
-                                <!-- Type effectiveness will be generated here -->
-                            </div>
-                        </div>
                             
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -341,11 +328,17 @@
                         ` : ''}
                         
                         <div class="abilities">
-                            <div class="abilities-title">🎯 Abilities</div>
-                            <div class="ability-list">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <div class="abilities-title">🎯 Abilities</div>
+                                <button id="addAbilityBtn" title="Add ability" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">✎ Edit</button>
+                            </div>
+                            <div class="ability-list" id="abilitiesList">
                                 ${pokemon.abilities.map(ability => `
-                                    <div class="ability">
-                                        <div class="ability-name">${ability.name}</div>
+                                    <div class="ability" data-ability-name="${ability.name}">
+                                        <div class="ability-header">
+                                            <div class="ability-name">${ability.name}</div>
+                                            <button class="remove-ability-btn" title="Remove this ability" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
+                                        </div>
                                         ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}</div>` : ''}
                                         ${ability.trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
                                         ${ability.effect ? `<div class="ability-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
@@ -359,12 +352,31 @@
                     </div>
 
                     <div class="details-right">
+                        <div class="info-box">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <div class="info-label">Type Effectiveness</div>
+                                <div style="display: flex; gap: 5px;">
+                                    <button id="multiplyBtn15" class="multiplier-btn inactive" title="Multiply by 1.5">×1.5</button>
+                                    <button id="multiplyBtn2" class="multiplier-btn active" title="Multiply by 2">×2</button>
+                                </div>
+                            </div>
+                            <div id="typeEffectiveness" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;">
+                                <!-- Type effectiveness will be generated here -->
+                            </div>
+                        </div>
+
                         <div class="moves">
-                            <div class="moves-title">⚔️ Moves</div>
-                            <div class="moves-list">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <div class="moves-title">⚔️ Moves</div>
+                                <button id="addMoveBtn" title="Edit" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">✎ Edit</button>
+                            </div>
+                            <div class="moves-list" id="movesList">
                                 ${pokemon.moves.map(move => `
-                                    <div class="move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}">
-                                        <div class="move-name">${move.name}</div>
+                                    <div class="move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
+                                        <div class="move-header">
+                                            <div class="move-name">${move.name}</div>
+                                            <button class="remove-move-btn" title="Remove this move" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
+                                        </div>
                                         <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
                                         <div class="move-field"><strong>Frequency:</strong> ${move.frequency || 'N/A'}</div>
                                         <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
@@ -522,6 +534,12 @@
 
             // Setup type effectiveness multiplier buttons
             setupTypeMultiplierButtons(pokemon);
+
+            // Setup moves editor
+            setupMovesEditor(pokemon);
+
+            // Setup abilities editor
+            setupAbilitiesEditor(pokemon);
         }
 
         // Load available natures and setup dropdown
@@ -1050,6 +1068,897 @@
 
                 row.querySelector('.stat-total').textContent = total;
             });
+        }
+
+        // Setup moves editor
+        function setupMovesEditor(pokemon) {
+            const addMoveBtn = document.getElementById('addMoveBtn');
+            if (!addMoveBtn) return;
+
+            addMoveBtn.addEventListener('click', function () {
+                showAddMoveModal(pokemon);
+            });
+
+            // Setup remove buttons for existing moves
+            document.querySelectorAll('.remove-move-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const moveElement = btn.closest('.move');
+                    const moveName = moveElement.getAttribute('data-move-name');
+                    removeMove(pokemon, moveName);
+                });
+            });
+        }
+
+        // Remove a move from the pokemon
+        function removeMove(pokemon, moveName) {
+            pokemon.moves = pokemon.moves.filter(m => m.name !== moveName);
+            updateMovesDisplay(pokemon);
+        }
+
+        // Add a move to the pokemon
+        function addMove(pokemon, moveData) {
+            // Check if move already exists - if so, remove it instead
+            const exists = pokemon.moves.some(m => m.name === moveData.name);
+            if (exists) {
+                removeMove(pokemon, moveData.name);
+            } else {
+                pokemon.moves.push(moveData);
+                updateMovesDisplay(pokemon);
+            }
+            
+            // Update modal button state if modal is open
+            const btn = document.querySelector(`button[data-move-name="${moveData.name.toLowerCase()}"]`);
+            if (btn) {
+                const newExists = pokemon.moves.some(m => m.name === moveData.name);
+                if (newExists) {
+                    btn.classList.add('exists');
+                    // Add checkmark if not present
+                    if (!btn.querySelector('.move-btn-checkmark')) {
+                        const checkmark = document.createElement('span');
+                        checkmark.className = 'move-btn-checkmark';
+                        checkmark.textContent = ' ✓';
+                        btn.appendChild(checkmark);
+                    }
+                } else {
+                    btn.classList.remove('exists');
+                    // Remove checkmark if present
+                    const checkmark = btn.querySelector('.move-btn-checkmark');
+                    if (checkmark) checkmark.remove();
+                }
+            }
+        }
+
+        // Update moves display
+        function updateMovesDisplay(pokemon) {
+            const movesList = document.getElementById('movesList');
+            movesList.innerHTML = pokemon.moves.map(move => `
+                <div class="move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
+                    <div class="move-header">
+                        <div class="move-name">${move.name}</div>
+                        <button class="remove-move-btn" title="Remove this move" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
+                    </div>
+                    <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
+                    <div class="move-field"><strong>Frequency:</strong> ${move.frequency || 'N/A'}</div>
+                    <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
+                    <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
+                    ${move.damageBase ? `<div class="move-field"><strong>Damage Base:</strong> ${move.damageBase}</div>` : ''}
+                    ${move.effect ? `<div class="move-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
+                </div>
+            `).join('');
+
+            // Re-attach remove listeners
+            document.querySelectorAll('.remove-move-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const moveElement = btn.closest('.move');
+                    const moveName = moveElement.getAttribute('data-move-name');
+                    removeMove(pokemon, moveName);
+                });
+            });
+        }
+
+        // Show modal to add a move
+        async function showAddMoveModal(pokemon) {
+            try {
+                // Get available moves for this pokemon
+                const availableMoves = await getAvailableMovesForPokemon(pokemon);
+                
+                // Create modal with categorized moves
+                const modalHTML = createAddMoveModalHTML(availableMoves);
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+                const modal = document.getElementById('addMoveModal');
+                const closeBtn = document.getElementById('closeAddMoveBtn');
+                const searchInput = document.getElementById('moveSearchInput');
+                const moveGrid = document.getElementById('moveGrid');
+                const toggleBtn = document.getElementById('toggleAllMovesBtn');
+                const moveCountSpan = document.getElementById('moveCountSpan');
+
+                let showingAllMoves = false;
+                let allMovesData = null;
+
+                // Close button
+                closeBtn.addEventListener('click', function () {
+                    modal.remove();
+                });
+
+                // Close on outside click
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+
+                // Toggle button for showing all moves
+                toggleBtn.addEventListener('click', async function () {
+                    showingAllMoves = !showingAllMoves;
+                    
+                    if (showingAllMoves) {
+                        // Load all moves from database
+                        if (!allMovesData) {
+                            allMovesData = await getAllMovesFromDatabase();
+                        }
+                        displayAllMovesInGrid(moveGrid, allMovesData, pokemon);
+                        toggleBtn.textContent = 'Show Available Moves';
+                        moveCountSpan.textContent = allMovesData.all?.length || 0;
+                        searchInput.value = '';
+                    } else {
+                        // Show only available moves
+                        displayMovesInGrid(moveGrid, availableMoves, pokemon);
+                        toggleBtn.textContent = 'Show All Moves';
+                        moveCountSpan.textContent = (availableMoves.levelUp?.length || 0) + (availableMoves.tm?.length || 0) + (availableMoves.tutor?.length || 0);
+                        searchInput.value = '';
+                    }
+                });
+
+                // Search functionality
+                searchInput.addEventListener('input', function () {
+                    if (showingAllMoves) {
+                        filterAllMoves(moveGrid, this.value.toLowerCase(), allMovesData);
+                    } else {
+                        filterMoves(moveGrid, this.value.toLowerCase(), availableMoves);
+                    }
+                });
+
+                // Display all moves initially
+                displayMovesInGrid(moveGrid, availableMoves, pokemon);
+            } catch (error) {
+                console.error('Failed to load available moves:', error);
+                alert('Failed to load available moves');
+            }
+        }
+
+        // Get available moves for a pokemon
+        async function getAvailableMovesForPokemon(pokemon) {
+            try {
+                const response = await fetch(`/api/pokemon/moves/${encodeURIComponent(pokemon.name)}`);
+                if (!response.ok) {
+                    console.error('Failed to fetch moves:', response.statusText);
+                    return { levelUp: [], tm: [], tutor: [] };
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching moves:', error);
+                return { levelUp: [], tm: [], tutor: [] };
+            }
+        }
+
+        // Get all moves from database
+        async function getAllMovesFromDatabase() {
+            try {
+                const response = await fetch('/api/pokemon/all-moves');
+                if (!response.ok) {
+                    console.error('Failed to fetch all moves:', response.statusText);
+                    return { all: [] };
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching all moves:', error);
+                return { all: [] };
+            }
+        }
+
+        // Create modal HTML for adding moves
+        function createAddMoveModalHTML(availableMoves) {
+            return `
+                <div id="addMoveModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 2000;
+                ">
+                    <div style="
+                        background: white;
+                        border-radius: 10px;
+                        padding: 30px;
+                        max-width: 800px;
+                        width: 90%;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                    ">
+                        <h2 style="margin-top: 0; color: #667eea; margin-bottom: 20px;">Add Move</h2>
+                        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                            <input type="text" id="moveSearchInput" placeholder="Search moves..." style="
+                                flex: 1;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 5px;
+                                font-size: 0.95em;
+                            " />
+                            <button id="toggleAllMovesBtn" style="
+                                padding: 10px 15px;
+                                background: #667eea;
+                                color: white;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-weight: 600;
+                                font-size: 0.9em;
+                                white-space: nowrap;
+                            ">Show All Moves</button>
+                        </div>
+                        <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 5px; font-size: 0.9em; color: #666;">
+                            <strong>Total moves available:</strong> <span id="moveCountSpan">${(availableMoves.levelUp?.length || 0) + (availableMoves.tm?.length || 0) + (availableMoves.tutor?.length || 0)}</span>
+                        </div>
+                        <div id="moveGrid" style="
+                            display: grid;
+                            grid-template-columns: 1fr;
+                            gap: 10px;
+                            margin-bottom: 20px;
+                            max-height: 400px;
+                            overflow-y: auto;
+                        "></div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="closeAddMoveBtn" style="
+                                flex: 1;
+                                padding: 10px;
+                                background: #f0f0f0;
+                                color: #333;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            ">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Display moves in grid with categories
+        function displayMovesInGrid(grid, availableMoves, pokemon) {
+            grid.innerHTML = '';
+            let hasAnyMoves = false;
+
+            // Level Up Moves
+            if (availableMoves.levelUp && availableMoves.levelUp.length > 0) {
+                hasAnyMoves = true;
+                const section = document.createElement('div');
+                section.style.marginBottom = '15px';
+                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">📖 Level Up Moves</div>`;
+                
+                const movesList = document.createElement('div');
+                movesList.style.display = 'grid';
+                movesList.style.gap = '8px';
+                
+                availableMoves.levelUp.forEach(move => {
+                    const moveBtn = createMoveButton(move, pokemon, 'levelUp');
+                    movesList.appendChild(moveBtn);
+                });
+                
+                section.appendChild(movesList);
+                grid.appendChild(section);
+            }
+
+            // TM/HM Moves
+            if (availableMoves.tm && availableMoves.tm.length > 0) {
+                hasAnyMoves = true;
+                const section = document.createElement('div');
+                section.style.marginBottom = '15px';
+                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">💿 TM/HM Moves</div>`;
+                
+                const movesList = document.createElement('div');
+                movesList.style.display = 'grid';
+                movesList.style.gap = '8px';
+                
+                availableMoves.tm.forEach(move => {
+                    const moveBtn = createMoveButton(move, pokemon, 'tm');
+                    movesList.appendChild(moveBtn);
+                });
+                
+                section.appendChild(movesList);
+                grid.appendChild(section);
+            }
+
+            // Tutor Moves
+            if (availableMoves.tutor && availableMoves.tutor.length > 0) {
+                hasAnyMoves = true;
+                const section = document.createElement('div');
+                section.style.marginBottom = '15px';
+                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">👨‍🏫 Tutor Moves</div>`;
+                
+                const movesList = document.createElement('div');
+                movesList.style.display = 'grid';
+                movesList.style.gap = '8px';
+                
+                availableMoves.tutor.forEach(move => {
+                    const moveBtn = createMoveButton(move, pokemon, 'tutor');
+                    movesList.appendChild(moveBtn);
+                });
+                
+                section.appendChild(movesList);
+                grid.appendChild(section);
+            }
+
+            if (!hasAnyMoves) {
+                grid.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No moves available for this Pokémon</div>';
+            }
+        }
+
+        // Create a move button
+        function createMoveButton(move, pokemon, category) {
+            const btn = document.createElement('button');
+            const levelInfo = category === 'levelUp' && move.level ? ` (Lv. ${move.level})` : '';
+            
+            // Check if move already exists
+            const moveExists = pokemon.moves.some(m => m.name === move.name);
+            
+            btn.className = `modal-move-btn ${moveExists ? 'exists' : ''}`;
+            
+            // Create text content container
+            const textSpan = document.createElement('span');
+            textSpan.className = 'move-btn-text';
+            textSpan.textContent = `${move.name}${levelInfo} - ${move.type || 'N/A'}`;
+            btn.appendChild(textSpan);
+            
+            if (moveExists) {
+                const checkmark = document.createElement('span');
+                checkmark.className = 'move-btn-checkmark';
+                checkmark.textContent = ' ✓';
+                btn.appendChild(checkmark);
+            }
+
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                addMove(pokemon, move);
+            });
+
+            btn.dataset.moveName = move.name.toLowerCase();
+            btn.dataset.moveType = (move.type || 'N/A').toLowerCase();
+            btn.dataset.category = category;
+
+            return btn;
+        }
+
+        // Filter moves based on search
+        function filterMoves(grid, searchTerm, availableMoves) {
+            const sections = grid.querySelectorAll('div > div:first-child');
+            let visibleCount = 0;
+
+            grid.querySelectorAll('button[data-move-name]').forEach(btn => {
+                const matches = btn.dataset.moveName.includes(searchTerm) || 
+                               btn.dataset.moveType.includes(searchTerm);
+                btn.style.display = matches ? 'flex' : 'none';
+                if (matches) visibleCount++;
+            });
+
+            if (visibleCount === 0) {
+                if (!grid.querySelector('.no-results')) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'no-results';
+                    noResults.style.cssText = 'padding: 20px; text-align: center; color: #999; grid-column: 1 / -1;';
+                    noResults.textContent = 'No moves match your search';
+                    grid.appendChild(noResults);
+                }
+            } else {
+                const noResults = grid.querySelector('.no-results');
+                if (noResults) noResults.remove();
+            }
+        }
+
+        // Display all moves from database in grid
+        function displayAllMovesInGrid(grid, allMoves, pokemon) {
+            grid.innerHTML = '';
+            
+            if (!allMoves.all || allMoves.all.length === 0) {
+                grid.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No moves available in database</div>';
+                return;
+            }
+
+            const section = document.createElement('div');
+            section.style.marginBottom = '15px';
+            section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">📚 All Moves</div>`;
+            
+            const movesList = document.createElement('div');
+            movesList.style.display = 'grid';
+            movesList.style.gap = '8px';
+            
+            allMoves.all.forEach(move => {
+                const moveBtn = createMoveButton(move, pokemon, 'all');
+                movesList.appendChild(moveBtn);
+            });
+            
+            section.appendChild(movesList);
+            grid.appendChild(section);
+        }
+
+        // Filter all moves based on search
+        function filterAllMoves(grid, searchTerm, allMoves) {
+            let visibleCount = 0;
+
+            grid.querySelectorAll('button[data-move-name]').forEach(btn => {
+                const matches = btn.dataset.moveName.includes(searchTerm) || 
+                               btn.dataset.moveType.includes(searchTerm);
+                btn.style.display = matches ? 'flex' : 'none';
+                if (matches) visibleCount++;
+            });
+
+            if (visibleCount === 0) {
+                if (!grid.querySelector('.no-results')) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'no-results';
+                    noResults.style.cssText = 'padding: 20px; text-align: center; color: #999; grid-column: 1 / -1;';
+                    noResults.textContent = 'No moves match your search';
+                    grid.appendChild(noResults);
+                }
+            } else {
+                const noResults = grid.querySelector('.no-results');
+                if (noResults) noResults.remove();
+            }
+        }
+
+        // Setup abilities editor
+        function setupAbilitiesEditor(pokemon) {
+            const addAbilityBtn = document.getElementById('addAbilityBtn');
+            if (!addAbilityBtn) return;
+
+            addAbilityBtn.addEventListener('click', function () {
+                showAddAbilityModal(pokemon);
+            });
+
+            // Setup remove buttons for existing abilities
+            document.querySelectorAll('.remove-ability-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const abilityElement = btn.closest('.ability');
+                    const abilityName = abilityElement.getAttribute('data-ability-name');
+                    removeAbility(pokemon, abilityName);
+                });
+            });
+        }
+
+        // Remove an ability from the pokemon
+        function removeAbility(pokemon, abilityName) {
+            pokemon.abilities = pokemon.abilities.filter(a => a.name !== abilityName);
+            updateAbilitiesDisplay(pokemon);
+        }
+
+        // Add an ability to the pokemon
+        function addAbility(pokemon, abilityData) {
+            // Check if ability already exists - if so, remove it instead
+            const exists = pokemon.abilities.some(a => a.name === abilityData.name);
+            if (exists) {
+                removeAbility(pokemon, abilityData.name);
+            } else {
+                pokemon.abilities.push(abilityData);
+                updateAbilitiesDisplay(pokemon);
+            }
+            
+            // Update modal button state if modal is open
+            const btn = document.querySelector(`button[data-ability-name="${abilityData.name.toLowerCase()}"]`);
+            if (btn) {
+                const newExists = pokemon.abilities.some(a => a.name === abilityData.name);
+                if (newExists) {
+                    btn.classList.add('exists');
+                    // Add checkmark if not present
+                    if (!btn.querySelector('.ability-btn-checkmark')) {
+                        const titleDiv = btn.querySelector('.ability-btn-title');
+                        const checkmark = document.createElement('span');
+                        checkmark.className = 'ability-btn-checkmark';
+                        checkmark.textContent = ' ✓';
+                        titleDiv.appendChild(checkmark);
+                    }
+                } else {
+                    btn.classList.remove('exists');
+                    // Remove checkmark if present
+                    const checkmark = btn.querySelector('.ability-btn-checkmark');
+                    if (checkmark) checkmark.remove();
+                }
+            }
+        }
+
+        // Update abilities display
+        function updateAbilitiesDisplay(pokemon) {
+            const abilitiesList = document.getElementById('abilitiesList');
+            abilitiesList.innerHTML = pokemon.abilities.map(ability => `
+                <div class="ability" data-ability-name="${ability.name}">
+                    <div class="ability-header">
+                        <div class="ability-name">${ability.name}</div>
+                        <button class="remove-ability-btn" title="Remove this ability" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
+                    </div>
+                    ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}</div>` : ''}
+                    ${ability.trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
+                    ${ability.effect ? `<div class="ability-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
+                    ${ability.bonus ? `<div class="ability-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
+                    ${ability.special ? `<div class="ability-field"><strong>Special:</strong> ${ability.special}</div>` : ''}
+                    ${ability.note ? `<div class="ability-field note"><strong>Note:</strong> ${ability.note}</div>` : ''}
+                </div>
+            `).join('');
+
+            // Re-attach remove listeners
+            document.querySelectorAll('.remove-ability-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const abilityElement = btn.closest('.ability');
+                    const abilityName = abilityElement.getAttribute('data-ability-name');
+                    removeAbility(pokemon, abilityName);
+                });
+            });
+        }
+
+        // Show modal to add an ability
+        async function showAddAbilityModal(pokemon) {
+            try {
+                // Get available abilities for this pokemon
+                const availableAbilities = await getAvailableAbilitiesForPokemon(pokemon);
+                
+                // Create modal with categorized abilities
+                const modalHTML = createAddAbilityModalHTML(availableAbilities);
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+                const modal = document.getElementById('addAbilityModal');
+                const closeBtn = document.getElementById('closeAddAbilityBtn');
+                const searchInput = document.getElementById('abilitySearchInput');
+                const abilitiesGrid = document.getElementById('abilitiesGrid');
+                const toggleBtn = document.getElementById('toggleAllAbilitiesBtn');
+                const abilityCountSpan = document.getElementById('abilityCountSpan');
+
+                let showingAllAbilities = false;
+                let allAbilitiesData = null;
+
+                // Close button
+                closeBtn.addEventListener('click', function () {
+                    modal.remove();
+                });
+
+                // Close on outside click
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+
+                // Toggle button for showing all abilities
+                toggleBtn.addEventListener('click', async function () {
+                    showingAllAbilities = !showingAllAbilities;
+                    
+                    if (showingAllAbilities) {
+                        // Load all abilities from database
+                        if (!allAbilitiesData) {
+                            allAbilitiesData = await getAllAbilitiesFromDatabase();
+                        }
+                        displayAllAbilitiesInGrid(abilitiesGrid, allAbilitiesData, pokemon);
+                        toggleBtn.textContent = 'Show Available Abilities';
+                        abilityCountSpan.textContent = allAbilitiesData.all?.length || 0;
+                        searchInput.value = '';
+                    } else {
+                        // Show only available abilities
+                        displayAbilitiesInGrid(abilitiesGrid, availableAbilities, pokemon);
+                        toggleBtn.textContent = 'Show All Abilities';
+                        abilityCountSpan.textContent = (availableAbilities.basic?.length || 0) + (availableAbilities.advanced?.length || 0) + (availableAbilities.high?.length || 0);
+                        searchInput.value = '';
+                    }
+                });
+
+                // Search functionality
+                searchInput.addEventListener('input', function () {
+                    if (showingAllAbilities) {
+                        filterAllAbilities(abilitiesGrid, this.value.toLowerCase(), allAbilitiesData);
+                    } else {
+                        filterAbilities(abilitiesGrid, this.value.toLowerCase(), availableAbilities);
+                    }
+                });
+
+                // Display all abilities initially
+                displayAbilitiesInGrid(abilitiesGrid, availableAbilities, pokemon);
+            } catch (error) {
+                console.error('Failed to load available abilities:', error);
+                alert('Failed to load available abilities');
+            }
+        }
+
+        // Get available abilities for a pokemon
+        async function getAvailableAbilitiesForPokemon(pokemon) {
+            try {
+                const response = await fetch(`/api/pokemon/abilities/${encodeURIComponent(pokemon.name)}`);
+                if (!response.ok) {
+                    console.error('Failed to fetch abilities:', response.statusText);
+                    return { basic: [], advanced: [], high: [] };
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching abilities:', error);
+                return { basic: [], advanced: [], high: [] };
+            }
+        }
+
+        // Get all abilities from database
+        async function getAllAbilitiesFromDatabase() {
+            try {
+                const response = await fetch('/api/pokemon/all-abilities');
+                if (!response.ok) {
+                    console.error('Failed to fetch all abilities:', response.statusText);
+                    return { all: [] };
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching all abilities:', error);
+                return { all: [] };
+            }
+        }
+
+        // Create modal HTML for adding an ability
+        function createAddAbilityModalHTML(availableAbilities) {
+            return `
+                <div id="addAbilityModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 2000;
+                ">
+                    <div style="
+                        background: white;
+                        border-radius: 10px;
+                        padding: 30px;
+                        max-width: 800px;
+                        width: 90%;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                    ">
+                        <h2 style="margin-top: 0; color: #667eea; margin-bottom: 20px;">Edit</h2>
+                        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                            <input type="text" id="abilitySearchInput" placeholder="Search abilities..." style="
+                                flex: 1;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 5px;
+                                font-size: 0.95em;
+                            " />
+                            <button id="toggleAllAbilitiesBtn" style="
+                                padding: 10px 15px;
+                                background: #667eea;
+                                color: white;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-weight: 600;
+                                font-size: 0.9em;
+                                white-space: nowrap;
+                            ">Show All Abilities</button>
+                        </div>
+                        <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 5px; font-size: 0.9em; color: #666;">
+                            <strong>Total abilities available:</strong> <span id="abilityCountSpan">${(availableAbilities.basic?.length || 0) + (availableAbilities.advanced?.length || 0) + (availableAbilities.high?.length || 0)}</span>
+                        </div>
+                        <div id="abilitiesGrid" style="
+                            display: grid;
+                            grid-template-columns: 1fr;
+                            gap: 10px;
+                            margin-bottom: 20px;
+                            max-height: 400px;
+                            overflow-y: auto;
+                        "></div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="closeAddAbilityBtn" style="
+                                flex: 1;
+                                padding: 10px;
+                                background: #f0f0f0;
+                                color: #333;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            ">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Display abilities in grid with categories
+        function displayAbilitiesInGrid(grid, availableAbilities, pokemon) {
+            grid.innerHTML = '';
+            let hasAnyAbilities = false;
+
+            // Basic Abilities
+            if (availableAbilities.basic && availableAbilities.basic.length > 0) {
+                hasAnyAbilities = true;
+                const section = document.createElement('div');
+                section.style.marginBottom = '15px';
+                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">⭐ Basic Abilities</div>`;
+                
+                const abilitiesList = document.createElement('div');
+                abilitiesList.style.display = 'grid';
+                abilitiesList.style.gap = '8px';
+                
+                availableAbilities.basic.forEach(ability => {
+                    const btn = createAbilityButton(ability, pokemon, 'basic');
+                    abilitiesList.appendChild(btn);
+                });
+                
+                section.appendChild(abilitiesList);
+                grid.appendChild(section);
+            }
+
+            // Advanced Abilities
+            if (availableAbilities.advanced && availableAbilities.advanced.length > 0) {
+                hasAnyAbilities = true;
+                const section = document.createElement('div');
+                section.style.marginBottom = '15px';
+                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">🔷 Advanced Abilities</div>`;
+                
+                const abilitiesList = document.createElement('div');
+                abilitiesList.style.display = 'grid';
+                abilitiesList.style.gap = '8px';
+                
+                availableAbilities.advanced.forEach(ability => {
+                    const btn = createAbilityButton(ability, pokemon, 'advanced');
+                    abilitiesList.appendChild(btn);
+                });
+                
+                section.appendChild(abilitiesList);
+                grid.appendChild(section);
+            }
+
+            // High Ability
+            if (availableAbilities.high && availableAbilities.high.length > 0) {
+                hasAnyAbilities = true;
+                const section = document.createElement('div');
+                section.style.marginBottom = '15px';
+                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">👑 High Ability</div>`;
+                
+                const abilitiesList = document.createElement('div');
+                abilitiesList.style.display = 'grid';
+                abilitiesList.style.gap = '8px';
+                
+                availableAbilities.high.forEach(ability => {
+                    const btn = createAbilityButton(ability, pokemon, 'high');
+                    abilitiesList.appendChild(btn);
+                });
+                
+                section.appendChild(abilitiesList);
+                grid.appendChild(section);
+            }
+
+            if (!hasAnyAbilities) {
+                grid.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No abilities available for this Pokémon</div>';
+            }
+        }
+
+        // Create an ability button
+        function createAbilityButton(ability, pokemon, category) {
+            const btn = document.createElement('button');
+            
+            // Check if ability already exists
+            const abilityExists = pokemon.abilities.some(a => a.name === ability.name);
+            
+            btn.className = `modal-ability-btn ${abilityExists ? 'exists' : ''}`;
+
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'ability-btn-title';
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'ability-btn-name';
+            nameSpan.textContent = ability.name;
+            titleDiv.appendChild(nameSpan);
+            
+            if (abilityExists) {
+                const checkmarkSpan = document.createElement('span');
+                checkmarkSpan.className = 'ability-btn-checkmark';
+                checkmarkSpan.textContent = ' ✓';
+                titleDiv.appendChild(checkmarkSpan);
+            }
+
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = 'ability-btn-details';
+            detailsDiv.textContent = ability.frequency || 'N/A';
+
+            btn.appendChild(titleDiv);
+            btn.appendChild(detailsDiv);
+
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                addAbility(pokemon, ability);
+            });
+
+            btn.dataset.abilityName = ability.name.toLowerCase();
+
+            return btn;
+        }
+
+        // Filter abilities based on search
+        function filterAbilities(grid, searchTerm, availableAbilities) {
+            const buttons = grid.querySelectorAll('button[data-ability-name]');
+            let visibleCount = 0;
+
+            buttons.forEach(btn => {
+                const matches = btn.dataset.abilityName.includes(searchTerm);
+                btn.style.display = matches ? 'flex' : 'none';
+                if (matches) visibleCount++;
+            });
+
+            if (visibleCount === 0) {
+                if (!grid.querySelector('.no-results-abilities')) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'no-results-abilities';
+                    noResults.style.cssText = 'padding: 20px; text-align: center; color: #999; grid-column: 1 / -1;';
+                    noResults.textContent = 'No abilities match your search';
+                    grid.appendChild(noResults);
+                }
+            } else {
+                const noResults = grid.querySelector('.no-results-abilities');
+                if (noResults) noResults.remove();
+            }
+        }
+
+        // Display all abilities from database in grid
+        function displayAllAbilitiesInGrid(grid, allAbilities, pokemon) {
+            grid.innerHTML = '';
+            
+            if (!allAbilities.all || allAbilities.all.length === 0) {
+                grid.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No abilities available in database</div>';
+                return;
+            }
+
+            const section = document.createElement('div');
+            section.style.marginBottom = '15px';
+            section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">📚 All Abilities</div>`;
+            
+            const abilitiesList = document.createElement('div');
+            abilitiesList.style.display = 'grid';
+            abilitiesList.style.gap = '8px';
+            
+            allAbilities.all.forEach(ability => {
+                const btn = createAbilityButton(ability, pokemon, 'all');
+                abilitiesList.appendChild(btn);
+            });
+            
+            section.appendChild(abilitiesList);
+            grid.appendChild(section);
+        }
+
+        // Filter all abilities based on search
+        function filterAllAbilities(grid, searchTerm, allAbilities) {
+            let visibleCount = 0;
+
+            grid.querySelectorAll('button[data-ability-name]').forEach(btn => {
+                const matches = btn.dataset.abilityName.includes(searchTerm);
+                btn.style.display = matches ? 'flex' : 'none';
+                if (matches) visibleCount++;
+            });
+
+            if (visibleCount === 0) {
+                if (!grid.querySelector('.no-results-abilities')) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'no-results-abilities';
+                    noResults.style.cssText = 'padding: 20px; text-align: center; color: #999; grid-column: 1 / -1;';
+                    noResults.textContent = 'No abilities match your search';
+                    grid.appendChild(noResults);
+                }
+            } else {
+                const noResults = grid.querySelector('.no-results-abilities');
+                if (noResults) noResults.remove();
+            }
         }
 
         // Load on page load

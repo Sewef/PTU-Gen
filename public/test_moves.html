@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Moves Feature</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .success { background: #d4edda; border-color: #28a745; }
+        .error { background: #f8d7da; border-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>Test Moves Feature</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function runTests() {
+            const results = document.getElementById('results');
+            
+            // Test 1: Generate Pokemon
+            try {
+                const pokemonRes = await fetch('/api/pokemon/generate?species=pikachu&level=50');
+                const pokemon = await pokemonRes.json();
+                results.innerHTML += `<div class="test-result success">✓ Generated Pokemon: ${pokemon.name} (Level ${pokemon.level})</div>`;
+                
+                // Test 2: Fetch moves for the Pokemon
+                const movesRes = await fetch(`/api/pokemon/moves/${pokemon.name}`);
+                const moves = await movesRes.json();
+                
+                const totalMoves = (moves.levelUp?.length || 0) + (moves.tm?.length || 0) + (moves.tutor?.length || 0);
+                results.innerHTML += `<div class="test-result success">✓ Fetched moves: ${moves.levelUp?.length || 0} level-up, ${moves.tm?.length || 0} TM/HM, ${moves.tutor?.length || 0} tutor (Total: ${totalMoves})</div>`;
+                
+                // Test 3: Check move structure
+                if (moves.levelUp && moves.levelUp.length > 0) {
+                    const firstMove = moves.levelUp[0];
+                    if (firstMove.name && firstMove.type && firstMove.level !== undefined) {
+                        results.innerHTML += `<div class="test-result success">✓ Move structure correct: ${firstMove.name} (${firstMove.type}) at Level ${firstMove.level}</div>`;
+                    } else {
+                        results.innerHTML += `<div class="test-result error">✗ Move structure incorrect: ${JSON.stringify(firstMove)}</div>`;
+                    }
+                }
+                
+            } catch (err) {
+                results.innerHTML += `<div class="test-result error">✗ Test failed: ${err.message}</div>`;
+            }
+        }
+        
+        window.onload = runTests;
+    </script>
+</body>
+</html>

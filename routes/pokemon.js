@@ -145,4 +145,68 @@ router.get('/natures', (req, res) => {
   }
 });
 
+/**
+ * GET /api/pokemon/moves/:species
+ * Get available moves for a specific Pokemon species
+ * Returns moves organized by category: levelUp, tm, tutor
+ */
+router.get('/moves/:species', async (req, res) => {
+  try {
+    const species = req.params.species;
+    const moves = await PokemonGenerator.getAvailableMovesForSpecies(species);
+    res.json(moves);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/pokemon/abilities/:species
+ * Get available abilities for a specific Pokemon species
+ * Returns abilities organized by category: basic, advanced, high
+ */
+router.get('/abilities/:species', async (req, res) => {
+  try {
+    const species = req.params.species;
+    const abilities = await PokemonGenerator.getAvailableAbilitiesForSpecies(species);
+    res.json(abilities);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/pokemon/all-moves
+ * Get all moves from the database
+ * Query params:
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ * Returns all moves organized by type
+ */
+router.get('/all-moves', async (req, res) => {
+  try {
+    const dataset = req.query.dataset || 'core';
+    const moves = await PokemonGenerator.getAllMovesFromDatabase(dataset);
+    res.json(moves);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/pokemon/all-abilities
+ * Get all abilities from the database
+ * Query params:
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ * Returns all abilities organized by category
+ */
+router.get('/all-abilities', async (req, res) => {
+  try {
+    const dataset = req.query.dataset || 'core';
+    const abilities = await PokemonGenerator.getAllAbilitiesFromDatabase(dataset);
+    res.json(abilities);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 module.exports = router;

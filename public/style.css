@@ -517,11 +517,42 @@ button {
 .move.type-steel { border-left-color: #B8B8D0; }
 .move.type-fairy { border-left-color: #EE99AC; }
 
+.move-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
+}
+
 .move-name {
     font-weight: bold;
     font-size: 1.1em;
-    margin-bottom: 8px;
     color: #667eea;
+    flex: 1;
+}
+
+.remove-move-btn {
+    flex-shrink: 0;
+}
+
+.ability-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
+}
+
+.ability-name {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #667eea;
+    flex: 1;
+}
+
+.remove-ability-btn {
+    flex-shrink: 0;
 }
 
 .move-field {
@@ -876,3 +907,132 @@ button {
 .type-btn:active {
     transform: translateY(0);
 }
+
+/* Modal button styles */
+.modal-move-btn {
+    padding: 10px 12px !important;
+    border-radius: 5px !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    font-size: 0.9em !important;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-height: 44px !important;
+    border: 1px solid #ddd !important;
+    background: #f0f0f0 !important;
+    color: #333 !important;
+}
+
+.modal-move-btn.exists {
+    background: #e8f5e9 !important;
+    border-color: #4caf50 !important;
+    color: #2e7d32 !important;
+    font-weight: 600 !important;
+    box-shadow: inset 0 0 0 1px #4caf50 !important;
+}
+
+.modal-move-btn:hover {
+    background: #667eea !important;
+    border-color: #667eea !important;
+    box-shadow: inset 0 0 0 1px #667eea !important;
+}
+
+.modal-move-btn:hover .move-btn-text {
+    color: white !important;
+}
+
+.modal-move-btn:hover .move-btn-checkmark {
+    color: white !important;
+}
+
+.modal-move-btn .move-btn-text {
+    color: #333 !important;
+}
+
+.modal-move-btn.exists .move-btn-text {
+    color: #2e7d32 !important;
+}
+
+.modal-move-btn .move-btn-checkmark {
+    color: #4caf50 !important;
+    margin-left: 8px !important;
+    font-weight: bold !important;
+}
+
+/* Modal ability button styles */
+.modal-ability-btn {
+    padding: 10px 12px !important;
+    border-radius: 5px !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    font-size: 0.9em !important;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-height: 50px !important;
+    border: 1px solid #ddd !important;
+    background: #f0f0f0 !important;
+}
+
+.modal-ability-btn.exists {
+    background: #e8f5e9 !important;
+    border-color: #4caf50 !important;
+    box-shadow: inset 0 0 0 1px #4caf50 !important;
+}
+
+.modal-ability-btn:hover {
+    background: #667eea !important;
+    border-color: #667eea !important;
+    box-shadow: inset 0 0 0 1px #667eea !important;
+}
+
+.modal-ability-btn:hover .ability-btn-name {
+    color: white !important;
+}
+
+.modal-ability-btn:hover .ability-btn-details {
+    color: #f0f0f0 !important;
+}
+
+.modal-ability-btn:hover .ability-btn-checkmark {
+    color: white !important;
+}
+
+.ability-btn-title {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.ability-btn-name {
+    font-weight: 600 !important;
+    color: #333 !important;
+}
+
+.modal-ability-btn.exists .ability-btn-name {
+    font-weight: bold !important;
+    color: #2e7d32 !important;
+}
+
+.ability-btn-details {
+    font-size: 0.85em !important;
+    color: #666 !important;
+}
+
+.modal-ability-btn.exists .ability-btn-details {
+    color: #558b2f !important;
+}
+
+.ability-btn-checkmark {
+    color: #4caf50 !important;
+    font-weight: bold !important;
+    margin-left: 8px !important;
+}
+

@@ -869,6 +869,256 @@ class PokemonGenerator {
   static async switchDataset(datasetKey) {
     return switchDataset(datasetKey);
   }
+
+  /**
+   * Get available moves for a Pokemon species
+   * Returns moves organized by category (levelUp, tm, tutor)
+   */
+  static async getAvailableMovesForSpecies(speciesName, dataset = 'core') {
+    try {
+      if (dataset !== currentDataset) {
+        await switchDataset(dataset);
+      }
+
+      const species = pokemonByName[speciesName.toLowerCase()];
+      if (!species) {
+        throw new Error(`Pokemon species not found: ${speciesName}`);
+      }
+
+      const result = {
+        levelUp: [],
+        tm: [],
+        tutor: []
+      };
+
+      // Check if moves data is in the new format (9G) or old format (Core)
+      if (species.Moves) {
+        const movesData = species.Moves;
+
+        // Handle new 9G format (moves as strings in "Level Up Move List" and "TM/Tutor Moves List")
+        if (typeof movesData['Level Up Move List'] === 'string') {
+          // 9G format - moves are stored as space-separated strings
+          // This format doesn't provide detailed move information
+          // We'll need to extract move names from the available moves database
+          const levelUpStr = movesData['Level Up Move List']?.trim() || '';
+          const tmStr = movesData['TM/Tutor Moves List']?.trim() || '';
+
+          // For 9G, we would need to parse these strings, but they appear to be placeholders
+          // Return empty arrays for now since the actual data format needs clarification
+        } else {
+          // Handle old format (Core, with structured arrays)
+          // Level Up Moves
+          if (Array.isArray(movesData['Level Up Move List'])) {
+            result.levelUp = movesData['Level Up Move List'].map(move => ({
+              name: move.Move,
+              type: move.Type,
+              level: move.Level,
+              frequency: movesDatabase[move.Move]?.['Frequency'] || 'N/A',
+              class: movesDatabase[move.Move]?.['Class'] || 'N/A',
+              range: movesDatabase[move.Move]?.['Range'] || 'N/A',
+              damageBase: movesDatabase[move.Move]?.['Damage Base'],
+              effect: movesDatabase[move.Move]?.['Effect']
+            }));
+          }
+
+          // TM/HM Moves
+          if (Array.isArray(movesData['TM/HM Move List'])) {
+            result.tm = movesData['TM/HM Move List'].map(move => ({
+              name: move.Move,
+              type: move.Type,
+              frequency: movesDatabase[move.Move]?.['Frequency'] || 'N/A',
+              class: movesDatabase[move.Move]?.['Class'] || 'N/A',
+              range: movesDatabase[move.Move]?.['Range'] || 'N/A',
+              damageBase: movesDatabase[move.Move]?.['Damage Base'],
+              effect: movesDatabase[move.Move]?.['Effect']
+            }));
+          }
+
+          // Tutor Moves
+          if (Array.isArray(movesData['Tutor Move List'])) {
+            result.tutor = movesData['Tutor Move List'].map(move => ({
+              name: move.Move,
+              type: move.Type,
+              frequency: movesDatabase[move.Move]?.['Frequency'] || 'N/A',
+              class: movesDatabase[move.Move]?.['Class'] || 'N/A',
+              range: movesDatabase[move.Move]?.['Range'] || 'N/A',
+              damageBase: movesDatabase[move.Move]?.['Damage Base'],
+              effect: movesDatabase[move.Move]?.['Effect']
+            }));
+          }
+        }
+      }
+
+      // Sort level up moves by level
+      result.levelUp.sort((a, b) => (a.level || 0) - (b.level || 0));
+
+      return result;
+    } catch (error) {
+      console.error(`Error getting moves for ${speciesName}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get available abilities for a Pokemon species
+   * Returns abilities organized by category (basic, advanced, high)
+   */
+  static async getAvailableAbilitiesForSpecies(speciesName, dataset = 'core') {
+    try {
+      if (dataset !== currentDataset) {
+        await switchDataset(dataset);
+      }
+
+      const species = pokemonByName[speciesName.toLowerCase()];
+      if (!species) {
+        throw new Error(`Pokemon species not found: ${speciesName}`);
+      }
+
+      const result = {
+        basic: [],
+        advanced: [],
+        high: []
+      };
+
+      if (species['Basic Information']) {
+        const basicInfo = species['Basic Information'];
+        
+        // Basic Abilities
+        if (basicInfo['Basic Ability 1']) {
+          const abilityData = abilitiesDatabase[basicInfo['Basic Ability 1']];
+          result.basic.push({
+            name: basicInfo['Basic Ability 1'],
+            frequency: abilityData?.Frequency || 'N/A',
+            effect: abilityData?.Effect || 'N/A'
+          });
+        }
+        if (basicInfo['Basic Ability 2']) {
+          const abilityData = abilitiesDatabase[basicInfo['Basic Ability 2']];
+          result.basic.push({
+            name: basicInfo['Basic Ability 2'],
+            frequency: abilityData?.Frequency || 'N/A',
+            effect: abilityData?.Effect || 'N/A'
+          });
+        }
+
+        // Advanced Abilities
+        if (basicInfo['Adv Ability 1']) {
+          const abilityData = abilitiesDatabase[basicInfo['Adv Ability 1']];
+          result.advanced.push({
+            name: basicInfo['Adv Ability 1'],
+            frequency: abilityData?.Frequency || 'N/A',
+            effect: abilityData?.Effect || 'N/A'
+          });
+        }
+        if (basicInfo['Adv Ability 2']) {
+          const abilityData = abilitiesDatabase[basicInfo['Adv Ability 2']];
+          result.advanced.push({
+            name: basicInfo['Adv Ability 2'],
+            frequency: abilityData?.Frequency || 'N/A',
+            effect: abilityData?.Effect || 'N/A'
+          });
+        }
+        if (basicInfo['Adv Ability 3']) {
+          const abilityData = abilitiesDatabase[basicInfo['Adv Ability 3']];
+          result.advanced.push({
+            name: basicInfo['Adv Ability 3'],
+            frequency: abilityData?.Frequency || 'N/A',
+            effect: abilityData?.Effect || 'N/A'
+          });
+        }
+
+        // High Ability
+        if (basicInfo['High Ability']) {
+          const abilityData = abilitiesDatabase[basicInfo['High Ability']];
+          result.high.push({
+            name: basicInfo['High Ability'],
+            frequency: abilityData?.Frequency || 'N/A',
+            effect: abilityData?.Effect || 'N/A'
+          });
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error(`Error getting abilities for ${speciesName}:`, error);
+      throw error;
+    }
+  }
+
+  static async getAllMovesFromDatabase(dataset = 'core') {
+    try {
+      // Load moves database
+      const movesUrl = DATASETS_BASE_URL + DATASETS[dataset].moves;
+      const movesDatabase = await fetchDataFromURL(movesUrl);
+
+      // Organize all moves by type
+      const result = {
+        all: []
+      };
+
+      for (const [moveName, moveData] of Object.entries(movesDatabase)) {
+        result.all.push({
+          name: moveName,
+          type: moveData['Type'] || 'N/A',
+          frequency: moveData['Frequency'] || 'N/A',
+          class: moveData['Class'] || 'N/A',
+          range: moveData['Range'] || 'N/A',
+          damageBase: moveData['Damage Base'] || null,
+          effect: moveData['Effect'] || 'N/A'
+        });
+      }
+
+      // Sort alphabetically
+      result.all.sort((a, b) => a.name.localeCompare(b.name));
+
+      return result;
+    } catch (error) {
+      console.error(`Error getting all moves from database:`, error);
+      throw error;
+    }
+  }
+
+  static async getAllAbilitiesFromDatabase(dataset = 'core') {
+    try {
+      // Load abilities database
+      const abilitiesUrl = DATASETS_BASE_URL + DATASETS[dataset].abilities;
+      const abilitiesData = await fetchDataFromURL(abilitiesUrl);
+
+      // Handle two different formats: array or object
+      let abilitiesList = [];
+      
+      if (Array.isArray(abilitiesData)) {
+        // Format: Array of {Name, Frequency, Effect}
+        abilitiesList = abilitiesData;
+      } else {
+        // Format: Object with ability names as keys
+        abilitiesList = Object.entries(abilitiesData)
+          .filter(([key]) => isNaN(parseInt(key))) // Skip numeric keys
+          .map(([name, data]) => ({
+            Name: name,
+            Frequency: data['Frequency'] || 'N/A',
+            Effect: data['Effect'] || 'N/A'
+          }));
+      }
+
+      // Organize all abilities
+      const result = {
+        all: abilitiesList.map(ability => ({
+          name: ability.Name || ability.name,
+          frequency: ability.Frequency || ability.frequency || 'N/A',
+          effect: ability.Effect || ability.effect || 'N/A'
+        }))
+      };
+
+      // Sort alphabetically
+      result.all.sort((a, b) => a.name.localeCompare(b.name));
+
+      return result;
+    } catch (error) {
+      console.error(`Error getting all abilities from database:`, error);
+      throw error;
+    }
+  }
 }
 
 module.exports = PokemonGenerator;
