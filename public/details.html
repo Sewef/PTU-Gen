@@ -31,7 +31,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎮 Pokémon Details</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>🎮 Pokémon Details</h1>
+                <button id="exportBtn" style="padding: 10px 15px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;" title="Export this Pokémon as JSON">💾 Export</button>
+            </div>
             <a href="index.html">← Back to Generator</a>
         </div>
 
@@ -541,6 +544,12 @@
 
             // Setup abilities editor
             setupAbilitiesEditor(pokemon);
+
+            // Setup export button
+            const exportBtn = document.getElementById('exportBtn');
+            if (exportBtn) {
+                exportBtn.onclick = () => exportPokemon(pokemon);
+            }
         }
 
         // Load available natures and setup dropdown
@@ -1961,6 +1970,20 @@
                 const noResults = grid.querySelector('.no-results-abilities');
                 if (noResults) noResults.remove();
             }
+        }
+
+        // Export function
+        function exportPokemon(pokemon) {
+            const dataStr = JSON.stringify(pokemon, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${pokemon.name}_Lvl${pokemon.level}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
 
         // Load on page load

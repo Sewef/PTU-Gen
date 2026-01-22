@@ -361,7 +361,7 @@ class PokemonGenerator {
       level: level,
       types: species['Basic Information'].Type,
       abilities: abilitiesWithDefinitions,
-      shiny: options.shiny === true ? true : Math.random() < 0.01, // 1% chance if not forced
+      shiny: options.shiny === true ? true : Math.random() < ((options.shinyodds || 1) / 100), // Use custom odds or default 1%
       nature: nature,
       baseStats: {
         HP: species['Base Stats']?.HP || 0,

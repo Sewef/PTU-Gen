@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PTU Pokemon Generator</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -40,7 +42,8 @@
                         <div class="form-row">
                             <div>
                                 <label style="font-size: 0.85em; margin-bottom: 3px;">Specific Level</label>
-                                <input type="number" id="level" min="1" max="100" value="50" placeholder="or leave empty" autocomplete="off">
+                                <input type="number" id="level" min="1" max="100" value="50"
+                                    placeholder="or leave empty" autocomplete="off">
                             </div>
                             <div>
                                 <label style="font-size: 0.85em; margin-bottom: 3px;">Random Range</label>
@@ -64,24 +67,36 @@
                     <!-- Species -->
                     <div class="form-group form-group-autocomplete">
                         <label>Species (Pokémon)</label>
-                        <input type="text" id="species" placeholder="ex: Pikachu, Charizard, Dragonite..." value="" autocomplete="off">
+                        <input type="text" id="species" placeholder="ex: Pikachu, Charizard, Dragonite..." value=""
+                            autocomplete="off">
                         <div class="autocomplete-suggestions" id="speciesSuggestions"></div>
                     </div>
 
                     <!-- Habitat -->
                     <div class="form-group form-group-autocomplete">
                         <label>Habitat (Optional)</label>
-                        <input type="text" id="habitat" placeholder="ex: Forest, Desert, Mountain..." value="" autocomplete="off">
+                        <input type="text" id="habitat" placeholder="ex: Forest, Desert, Mountain..." value=""
+                            autocomplete="off">
                         <div class="autocomplete-suggestions" id="habitatSuggestions"></div>
-                        <small style="display: block; margin-top: 5px; color: #666;">Leave empty for any habitat. Overridden if species is specified.</small>
+                        <small style="display: block; margin-top: 5px; color: #666;">Leave empty for any habitat.
+                            Overridden if species is specified.</small>
                     </div>
 
                     <!-- Shiny -->
                     <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="shiny" style="width: auto;">
-                            <span>Shiny</span>
-                        </label>
+                        <div style="display: flex; gap: 20px; align-items: center;">
+                            <label style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                <input type="checkbox" id="shiny" style="width: auto;">
+                                <span>Force Shiny</span>
+                            </label>
+                            <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
+                                <label style="min-width: 100px;">Shiny Odds (%):</label>
+                                <input type="number" id="shinyOdds" min="0" max="100" value="1" step="0.1"
+                                    autocomplete="off" style="flex: 1; max-width: 100px;">
+                            </div>
+                        </div>
+                        <small style="display: block; margin-top: 8px; color: #666;">Check to always generate shiny.
+                            Uncheck to use Shiny Odds percentage (1% = 1 in 100).</small>
                     </div>
 
                     <!-- Distribution -->
@@ -113,14 +128,17 @@
                             <!-- Ignore Base Relation -->
                             <div class="form-group">
                                 <label>Ignore Base Relation</label>
-                                <input type="text" id="ignoreBaseRelation" placeholder="ex: IGNORE or HP,ATK,DEF" autocomplete="off">
+                                <input type="text" id="ignoreBaseRelation" placeholder="ex: IGNORE or HP,ATK,DEF"
+                                    autocomplete="off">
                             </div>
 
                             <!-- HP Formula -->
                             <div class="form-group">
                                 <label>Hit Points Formula</label>
-                                <input type="text" id="hpFormula" placeholder="ex: LEVEL + (HP * 3) + 10" value="LEVEL + (HP * 3) + 10" autocomplete="off">
-                                <small style="display: block; margin-top: 5px; color: #666;">Use LEVEL and HP as placeholders</small>
+                                <input type="text" id="hpFormula" placeholder="ex: LEVEL + (HP * 3) + 10"
+                                    value="LEVEL + (HP * 3) + 10" autocomplete="off">
+                                <small style="display: block; margin-top: 5px; color: #666;">Use LEVEL and HP as
+                                    placeholders</small>
                             </div>
                         </div>
                     </div>
@@ -135,6 +153,73 @@
 
             <!-- Pokémon Display -->
             <div class="panel">
+
+                <!-- Import Section with Drag and Drop -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; color: #333;">📥 Import Pokémon</h3>
+                    <div id="dropZone" style="
+                        border: 2px dashed #667eea;
+                        border-radius: 8px;
+                        padding: 20px;
+                        text-align: center;
+                        background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 10px;
+                    " onmouseenter="this.style.borderColor='#28a745'; this.style.background='linear-gradient(135deg, #d4edda 0%, #ffffff 100%)'"
+                        onmouseleave="this.style.borderColor='#667eea'; this.style.background='linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%)'">
+                        <div style="font-size: 1.5em;">📁</div>
+                        <div>
+                            <div style="font-size: 0.95em; font-weight: 600; color: #667eea; margin-bottom: 3px;">Drag JSON files or</div>
+                        </div>
+                        <button type="button" id="importBrowseBtn" style="
+                            padding: 6px 12px;
+                            background: #667eea;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.85em;
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">Browse Files</button>
+                        <input type="file" id="importFile" accept=".json" multiple style="display: none;" />
+                    </div>
+                    <div id="importFileList" style="margin-top: 12px; padding: 12px; background: #f9f9f9; border-radius: 6px; display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div style="font-size: 0.85em; font-weight: 600; color: #333;">Selected: <span id="fileCount">0</span></div>
+                            <button type="button" id="importClearBtn" style="
+                                padding: 3px 8px;
+                                background: #dc3545;
+                                color: white;
+                                border: none;
+                                border-radius: 3px;
+                                cursor: pointer;
+                                font-weight: 600;
+                                font-size: 0.75em;
+                                transition: all 0.2s ease;
+                            " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">✕ Clear</button>
+                        </div>
+                        <div id="fileListContent" style="font-size: 0.8em; color: #666; margin-bottom: 8px; max-height: 120px; overflow-y: auto;"></div>
+                        <button type="button" id="importStartBtn" style="
+                            padding: 6px 12px;
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.85em;
+                            transition: all 0.2s ease;
+                            width: 100%;
+                        " onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">✓ Import</button>
+                    </div>
+                </div>
+
                 <h2>📊 Generated Pokémon</h2>
                 <div id="pokemonDisplay" class="no-pokemon">
                     Click "Generate Pokémon" to start
@@ -202,7 +287,7 @@
         }
 
         // Autocomplete logic
-        speciesInput.addEventListener('input', function() {
+        speciesInput.addEventListener('input', function () {
             const value = this.value.trim().toLowerCase();
             selectedSuggestionIndex = -1;
 
@@ -217,7 +302,7 @@
                 return;
             }
 
-            const filtered = allPokemon.filter(p => 
+            const filtered = allPokemon.filter(p =>
                 p.searchName.includes(value)
             ).slice(0, 10);
 
@@ -237,12 +322,12 @@
 
             // Add click handlers
             document.querySelectorAll('.autocomplete-item').forEach((item, index) => {
-                item.addEventListener('click', function() {
+                item.addEventListener('click', function () {
                     speciesInput.value = this.dataset.name;
                     suggestionsList.classList.remove('open');
                     speciesInput.focus();
                 });
-                item.addEventListener('mouseenter', function() {
+                item.addEventListener('mouseenter', function () {
                     selectedSuggestionIndex = index;
                     updateSuggestionSelection(document.querySelectorAll('.autocomplete-item'));
                 });
@@ -250,9 +335,9 @@
         });
 
         // Keyboard navigation for suggestions
-        speciesInput.addEventListener('keydown', function(e) {
+        speciesInput.addEventListener('keydown', function (e) {
             const items = document.querySelectorAll('.autocomplete-item');
-            
+
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, items.length - 1);
@@ -284,14 +369,14 @@
         }
 
         // Close suggestions when clicking outside
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (e.target !== speciesInput && !e.target.closest('.autocomplete-suggestions')) {
                 suggestionsList.classList.remove('open');
             }
         });
 
         // Habitat autocomplete logic
-        habitatInput.addEventListener('input', function() {
+        habitatInput.addEventListener('input', function () {
             const value = this.value.trim().toLowerCase();
             selectedSuggestionIndex = -1;
 
@@ -306,7 +391,7 @@
                 return;
             }
 
-            const filtered = allHabitats.filter(h => 
+            const filtered = allHabitats.filter(h =>
                 h.searchName.includes(value)
             ).slice(0, 10);
 
@@ -326,7 +411,7 @@
 
             // Add click handlers
             document.querySelectorAll('#habitatSuggestions .autocomplete-item').forEach((item, index) => {
-                item.addEventListener('click', function() {
+                item.addEventListener('click', function () {
                     habitatInput.value = this.dataset.name;
                     habitatSuggestionsList.classList.remove('open');
                     habitatInput.focus();
@@ -335,9 +420,9 @@
         });
 
         // Keyboard navigation for habitat suggestions
-        habitatInput.addEventListener('keydown', function(e) {
+        habitatInput.addEventListener('keydown', function (e) {
             const items = document.querySelectorAll('#habitatSuggestions .autocomplete-item');
-            
+
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, items.length - 1);
@@ -369,14 +454,14 @@
         }
 
         // Close habitat suggestions when clicking outside
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (e.target !== speciesInput && !e.target.closest('.autocomplete-suggestions')) {
                 suggestionsList.classList.remove('open');
             }
         });
 
         // Reload species list when dataset changes
-        datasetSelect.addEventListener('change', function() {
+        datasetSelect.addEventListener('change', function () {
             loadPokemonList(this.value);
             loadHabitatList(this.value);
         });
@@ -386,14 +471,14 @@
         allInputs.forEach(input => {
             input.setAttribute('autocomplete', 'off');
             // Prevent Firefox from auto-filling
-            input.addEventListener('change', function() {
+            input.addEventListener('change', function () {
                 this.blur();
                 this.focus();
             });
         });
 
         // Toggle level range
-        useRangeCheckbox.addEventListener('change', function() {
+        useRangeCheckbox.addEventListener('change', function () {
             if (this.checked) {
                 rangeInputs.style.display = 'grid';
                 levelInput.disabled = true;
@@ -406,7 +491,7 @@
         });
 
         // Submit form
-        form.addEventListener('submit', async function(e) {
+        form.addEventListener('submit', async function (e) {
             e.preventDefault();
             const count = parseInt(document.getElementById('pokemonCount').value) || 1;
             await generateMultiplePokemon(count);
@@ -444,7 +529,14 @@
                         }
 
                         if (document.getElementById('shiny').checked) {
+                            // Force shiny if checkbox is checked
                             params.append('shiny', 'true');
+                        } else {
+                            // Otherwise, use the shiny odds percentage
+                            const shinyOdds = parseFloat(document.getElementById('shinyOdds').value) || 1;
+                            if (shinyOdds > 0) {
+                                params.append('shinyOdds', shinyOdds.toString());
+                            }
                         }
 
                         params.append('distribution', document.getElementById('distribution').value);
@@ -482,15 +574,15 @@
 
         function displayMultiplePokemon(pokemons) {
             let html = '<div class="pokemon-cards-grid">';
-            
+
             pokemons.forEach((pokemon, index) => {
-                const typesHtml = pokemon.types.map(type => 
+                const typesHtml = pokemon.types.map(type =>
                     `<span class="pokemon-card-type type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`
                 ).join('');
 
                 const imageNumber = pokemon.Icon || pokemon.id;
                 const imageUrl = `https://sewef.github.io/ptu/img/pokemon/icons/${imageNumber}.png`;
-                
+
                 html += `
                     <div class="pokemon-card" onclick="openPokemonDetail(${index})">
                         <div class="pokemon-card-header">
@@ -552,8 +644,166 @@
             }
         }
 
+        // Import functionality with Drag and Drop
+        const dropZone = document.getElementById('dropZone');
+        const importFile = document.getElementById('importFile');
+        const importBrowseBtn = document.getElementById('importBrowseBtn');
+        const importFileList = document.getElementById('importFileList');
+        const fileListContent = document.getElementById('fileListContent');
+        const fileCount = document.getElementById('fileCount');
+        const importStartBtn = document.getElementById('importStartBtn');
+        const importClearBtn = document.getElementById('importClearBtn');
+        let selectedFiles = [];
+
+        // Open file browser when clicking browse button
+        importBrowseBtn.addEventListener('click', function () {
+            importFile.click();
+        });
+
+        // Handle file selection from browser
+        importFile.addEventListener('change', function () {
+            addFilesToList(Array.from(this.files));
+            this.value = '';
+        });
+
+        // Add files to the selected list (accumulate)
+        function addFilesToList(newFiles) {
+            const jsonFiles = newFiles.filter(file => file.name.endsWith('.json'));
+            
+            if (jsonFiles.length === 0) {
+                alert('No JSON files found in selection');
+                return;
+            }
+
+            // Check for duplicates
+            const duplicates = [];
+            jsonFiles.forEach(newFile => {
+                if (selectedFiles.some(f => f.name === newFile.name && f.size === newFile.size)) {
+                    duplicates.push(newFile.name);
+                }
+            });
+
+            // Add only non-duplicate files
+            jsonFiles.forEach(newFile => {
+                if (!selectedFiles.some(f => f.name === newFile.name && f.size === newFile.size)) {
+                    selectedFiles.push(newFile);
+                }
+            });
+
+            if (duplicates.length > 0) {
+                console.warn(`Skipped ${duplicates.length} duplicate file(s): ${duplicates.join(', ')}`);
+            }
+
+            updateFileList();
+        }
+
+        // Update file list display
+        function updateFileList() {
+            if (selectedFiles.length === 0) {
+                importFileList.style.display = 'none';
+                return;
+            }
+
+            fileCount.textContent = selectedFiles.length;
+            fileListContent.innerHTML = selectedFiles.map((file, index) => 
+                `<div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>📄 ${file.name} <span style="color: #999;">(${(file.size / 1024).toFixed(1)} KB)</span></span>
+                    <button type="button" onclick="removeFile(${index})" style="
+                        padding: 2px 6px;
+                        background: #f0f0f0;
+                        color: #dc3545;
+                        border: 1px solid #ddd;
+                        border-radius: 2px;
+                        cursor: pointer;
+                        font-size: 0.7em;
+                        transition: all 0.2s ease;
+                    " onmouseover="this.style.background='#dc3545'; this.style.color='white'" onmouseout="this.style.background='#f0f0f0'; this.style.color='#dc3545'">✕</button>
+                </div>`
+            ).join('');
+            importFileList.style.display = 'block';
+        }
+
+        // Remove a file from the list
+        window.removeFile = function(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        };
+
+        // Clear all files
+        importClearBtn.addEventListener('click', function () {
+            selectedFiles = [];
+            updateFileList();
+        });
+
+        // Drag over
+        dropZone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = '#28a745';
+            dropZone.style.background = 'linear-gradient(135deg, #d4edda 0%, #ffffff 100%)';
+        });
+
+        // Drag leave
+        dropZone.addEventListener('dragleave', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = '#667eea';
+            dropZone.style.background = 'linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%)';
+        });
+
+        // Drop
+        dropZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = '#667eea';
+            dropZone.style.background = 'linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%)';
+
+            const droppedFiles = e.dataTransfer.files;
+            addFilesToList(Array.from(droppedFiles));
+        });
+
+        // Import selected files
+        importStartBtn.addEventListener('click', async function () {
+            if (selectedFiles.length === 0) {
+                alert('Please select files to import');
+                return;
+            }
+
+            const importedPokemons = [];
+            let fileCount = 0;
+            let errorCount = 0;
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                try {
+                    const text = await file.text();
+                    const pokemon = JSON.parse(text);
+                    importedPokemons.push(pokemon);
+                    fileCount++;
+                } catch (error) {
+                    console.error(`Failed to parse ${file.name}:`, error);
+                    errorCount++;
+                }
+            }
+
+            if (importedPokemons.length > 0) {
+                displayMultiplePokemon(importedPokemons);
+                pokemonDisplay.scrollIntoView({ behavior: 'smooth' });
+                selectedFiles = [];
+                importFileList.style.display = 'none';
+                importFile.value = '';
+                
+                if (errorCount > 0) {
+                    let message = `(${errorCount} file(s) failed to parse)`;
+                    alert(message);
+                }
+            } else {
+                alert('❌ Failed to import any Pokémon from the selected files');
+            }
+        });
+
         // Generate Pokémon on page load
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             loadPokemonList();
             loadHabitatList();
             loadNatures();
@@ -562,4 +812,5 @@
         });
     </script>
 </body>
+
 </html>

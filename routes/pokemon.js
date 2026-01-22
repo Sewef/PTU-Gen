@@ -44,6 +44,7 @@ router.get('/generate', async (req, res) => {
       species: req.query.species,
       habitat: req.query.habitat,
       shiny: req.query.shiny === 'true',
+      shinyodds: req.query.shinyodds ? parseFloat(req.query.shinyodds) : undefined,
       distribution: (req.query.distribution || 'RANDOM').toUpperCase(),
       ignorebaserelation: req.query.ignorebaserelation?.toUpperCase(),
       hpformula: req.query.hpformula,
