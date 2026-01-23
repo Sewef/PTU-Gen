@@ -17,7 +17,10 @@
                 PTU Pokémon Generator
             </h1>
             <p>Generate Pokémon with customized stats</p>
-            <p style="margin-top: 15px;"><a href="api-documentation.html" style="color: white; text-decoration: none; font-weight: 500; border: 1px solid rgba(255,255,255,0.5); padding: 8px 16px; border-radius: 4px; display: inline-block; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">📚 API Documentation</a></p>
+            <p style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <a href="api-documentation.html" style="color: white; text-decoration: none; font-weight: 500; border: 1px solid rgba(255,255,255,0.5); padding: 8px 16px; border-radius: 4px; display: inline-block; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">📚 API Documentation</a>
+                <a href="https://sewef.github.io/ptu" target="_blank" style="color: white; text-decoration: none; font-weight: 500; border: 1px solid rgba(255,255,255,0.5); padding: 8px 16px; border-radius: 4px; display: inline-block; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">📖 Full Data</a>
+            </p>
         </div>
 
         <div class="content">
@@ -27,7 +30,10 @@
                 <form id="generatorForm" autocomplete="off">
                     <!-- Dataset -->
                     <div class="form-group">
-                        <label>Dataset</label>
+                        <label style="display: flex; align-items: center; gap: 6px;">
+                            Dataset
+                            <span title="Core: Base manual + official Pokédex&#10;Community: Same + Gen 9 community Pokédex + modifications&#10;Homebrew: Auto-updated Pokédex + unchanged Gen 9 community Pokédex" style="cursor: help; color: #667eea; font-weight: bold; font-size: 1.1em;">ℹ️</span>
+                        </label>
                         <select id="dataset">
                             <option value="core">Core</option>
                             <option value="community">Community</option>
