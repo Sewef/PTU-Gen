@@ -109,6 +109,15 @@
                             Uncheck to use Shiny Odds percentage (1% = 1 in 100).</small>
                     </div>
 
+                    <!-- Exclude Legendary -->
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="includeLegendaries" style="width: auto;">
+                            <span>Include Legendary Pokémon</span>
+                        </label>
+                        <small style="display: block; margin-top: 5px; color: #666;">Allow legendary species in generation (disabled by default).</small>
+                    </div>
+
                     <!-- Distribution -->
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 6px;">
@@ -560,6 +569,10 @@
 
                         params.append('distribution', document.getElementById('distribution').value);
                         params.append('dataset', document.getElementById('dataset').value);
+
+                        if (document.getElementById('includeLegendaries').checked) {
+                            params.append('includeLegendaries', 'true');
+                        }
 
                         if (document.getElementById('nature').value) {
                             params.append('nature', document.getElementById('nature').value);

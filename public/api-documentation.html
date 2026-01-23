@@ -386,6 +386,12 @@
                             <td>Specific nature (e.g., 'Adamant', 'Timid'). If omitted, random nature is chosen</td>
                             <td><code>nature=Adamant</code></td>
                         </tr>
+                        <tr>
+                            <td class="param-name">includeLegendaries</td>
+                            <td><span class="param-type">boolean</span></td>
+                            <td>Include legendary Pokémon in generation (default: false - legendaries are excluded)</td>
+                            <td><code>includeLegendaries=true</code></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -1274,6 +1280,28 @@ LEVEL + (HP * 2)        // Halved HP gain<br>
 LEVEL + (HP * 4)        // Increased HP gain<br>
 (HP * 2) + 50           // No level scaling
                 </div>
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <h3>Legendary Pokémon</h3>
+            <p class="description">
+                Control whether legendary Pokémon can be generated using the <code>includeLegendaries</code> parameter.
+            </p>
+
+            <div class="note">
+                <strong>Default behavior:</strong> Legendary Pokémon are <strong>excluded</strong> by default (includeLegendaries=false).
+                This ensures generated teams consist of non-legendary species.
+            </div>
+
+            <div class="note">
+                <strong>To include legendaries:</strong> Set <code>includeLegendaries=true</code> in your request.
+                This allows legendary Pokémon like Dragonite, Ho-Oh, Dialga, etc. to be generated.
+            </div>
+
+            <div class="stats-info">
+                <strong>Note:</strong> The <code>includeLegendaries</code> parameter only applies when generating random species.
+                If you specify a legendary species directly with the <code>species</code> parameter, it will always be generated regardless of this setting.
             </div>
         </div>
 

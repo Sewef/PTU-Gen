@@ -401,11 +401,13 @@ class PokemonGenerator {
     
     level = Math.min(Math.max(level, 1), 100);
     
+    const includeLegendaries = options.includelegendaries === 'true' || options.includelegendaries === true;
+    
     const species = options.species 
       ? this.getSpeciesByName(options.species)
       : options.habitat 
-        ? this.getRandomSpeciesByHabitat(options.habitat)
-        : this.getRandomSpecies();
+        ? this.getRandomSpeciesByHabitat(options.habitat, includeLegendaries)
+        : this.getRandomSpecies(includeLegendaries);
 
     if (!species) {
       throw new Error(`Species not found: ${options.species}`);
@@ -506,7 +508,8 @@ class PokemonGenerator {
         habitat: otherInfo.Habitat || 'Unknown'
       },
       capabilities: species.Capabilities || [],
-      dataset: dataset
+      dataset: dataset,
+      includedLegendary: includeLegendaries
     };
 
     return pokemon;
@@ -1038,8 +1041,15 @@ class PokemonGenerator {
   /**
    * Get random species from database
    */
-  static getRandomSpecies() {
-    return pokemonDatabase[Math.floor(Math.random() * pokemonDatabase.length)];
+  static getRandomSpecies(includeLegendaries = false) {
+    let availablePokemon = pokemonDatabase;
+    if (!includeLegendaries) {
+      availablePokemon = pokemonDatabase.filter(pokemon => !pokemon.Legendary);
+    }
+    if (availablePokemon.length === 0) {
+      throw new Error('No Pokemon available with current filters');
+    }
+    return availablePokemon[Math.floor(Math.random() * availablePokemon.length)];
   }
 
   /**
@@ -1074,8 +1084,11 @@ class PokemonGenerator {
   /**
    * Get random Pokemon from a specific habitat
    */
-  static getRandomSpeciesByHabitat(habitat) {
-    const pokemonInHabitat = this.getPokemonByHabitat(habitat);
+  static getRandomSpeciesByHabitat(habitat, includeLegendaries = false) {
+    let pokemonInHabitat = this.getPokemonByHabitat(habitat);
+    if (!includeLegendaries) {
+      pokemonInHabitat = pokemonInHabitat.filter(pokemon => !pokemon.Legendary);
+    }
     if (pokemonInHabitat.length === 0) {
       throw new Error(`No Pokemon found in habitat: ${habitat}`);
     }
