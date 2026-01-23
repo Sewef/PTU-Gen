@@ -505,7 +505,8 @@ class PokemonGenerator {
         diet: otherInfo.Diet || 'Unknown',
         habitat: otherInfo.Habitat || 'Unknown'
       },
-      capabilities: species.Capabilities || []
+      capabilities: species.Capabilities || [],
+      dataset: dataset
     };
 
     return pokemon;

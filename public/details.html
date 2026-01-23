@@ -236,7 +236,7 @@
                                 ${pokemon.statVariant ? `<div style="display: inline-block; background: #fff3cd; padding: 4px 8px; border-radius: 3px; font-size: 0.85em; color: #856404; font-weight: 500;">${pokemon.statVariant.selectedVariant}</div>` : ''}
                             </div>
                             <input type="text" id="nicknameInput" placeholder="Nickname" value="${pokemon.nickname || ''}" style="width: 200px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; margin-top: 6px; font-style: italic;" maxlength="20" />
-                            <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level}</div>
+                            <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level} • ${pokemon.dataset ? pokemon.dataset.charAt(0).toUpperCase() + pokemon.dataset.slice(1) : 'Core'} Dataset</div>
                         </div>
                     </div>
                 </div>
@@ -1353,7 +1353,8 @@
         // Get available moves for a pokemon
         async function getAvailableMovesForPokemon(pokemon) {
             try {
-                const response = await fetch(`/api/pokemon/moves/${encodeURIComponent(pokemon.name)}`);
+                const dataset = pokemon.dataset || 'core';
+                const response = await fetch(`/api/pokemon/moves/${encodeURIComponent(pokemon.name)}?dataset=${dataset}`);
                 if (!response.ok) {
                     console.error('Failed to fetch moves:', response.statusText);
                     return { levelUp: [], tm: [], tutor: [] };
@@ -1797,7 +1798,8 @@
         // Get available abilities for a pokemon
         async function getAvailableAbilitiesForPokemon(pokemon) {
             try {
-                const response = await fetch(`/api/pokemon/abilities/${encodeURIComponent(pokemon.name)}`);
+                const dataset = pokemon.dataset || 'core';
+                const response = await fetch(`/api/pokemon/abilities/${encodeURIComponent(pokemon.name)}?dataset=${dataset}`);
                 if (!response.ok) {
                     console.error('Failed to fetch abilities:', response.statusText);
                     return { basic: [], advanced: [], high: [] };
