@@ -31,16 +31,26 @@ app.get('/health', (req, res) => {
 app.get('/api/info', (req, res) => {
   res.json({
     name: 'PTU 1.05 Pokemon Generator API',
-    version: '1.0.0',
+    version: '1.1.0',
     endpoints: {
       health: '/health',
       generate: '/api/pokemon/generate',
       generateWild: '/api/pokemon/generateWild/:level',
       team: '/api/pokemon/team',
       list: '/api/pokemon/list',
-      datasets: '/api/pokemon/datasets'
+      datasets: '/api/pokemon/datasets',
+      natures: '/api/pokemon/natures',
+      moves: '/api/pokemon/moves/:species',
+      abilities: '/api/pokemon/abilities/:species',
+      allMoves: '/api/pokemon/all-moves',
+      allAbilities: '/api/pokemon/all-abilities',
+      customPokemon: 'POST /api/pokemon/custom/pokemon',
+      customAbilities: 'POST /api/pokemon/custom/abilities',
+      customMoves: 'POST /api/pokemon/custom/moves',
+      customStatus: 'GET /api/pokemon/custom',
+      customClear: 'DELETE /api/pokemon/custom'
     },
-    documentation: 'See README.md for full documentation'
+    documentation: 'See README.md and CUSTOMIZATION.md for full documentation'
   });
 });
 

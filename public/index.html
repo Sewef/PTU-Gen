@@ -174,6 +174,101 @@
                         </div>
                     </div>
 
+                    <!-- Customizations Section -->
+                    <div class="advanced-toggle" onclick="toggleCustomization()">
+                        <span>🎨 Customizations</span>
+                        <span class="toggle-icon" id="customizationToggleIcon">▼</span>
+                    </div>
+
+                    <div class="advanced-section" id="customizationSection">
+                        <div class="advanced-content">
+                            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">Load custom Pokémon, Abilities, or Moves from JSON files or URLs. Custom data will override the selected dataset.</p>
+                            
+                            <!-- Custom Pokémon -->
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 6px;">
+                                    Custom Pokémon
+                                    <span title="Load custom Pokémon definitions. Duplicates will be overwritten." style="cursor: help; color: #667eea; font-weight: bold; font-size: 1.1em;">ℹ️</span>
+                                </label>
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                    <input type="text" id="customPokemonInput" placeholder="Paste JSON or URL" autocomplete="off" style="flex: 1;">
+                                    <button type="button" onclick="loadCustomData('pokemon')" style="
+                                        padding: 8px 16px;
+                                        background: #667eea;
+                                        color: white;
+                                        border: none;
+                                        border-radius: 4px;
+                                        cursor: pointer;
+                                        font-weight: 600;
+                                        transition: all 0.2s ease;
+                                    " onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">Load</button>
+                                </div>
+                                <div id="customPokemonStatus" style="font-size: 0.85em; color: #666;"></div>
+                            </div>
+
+                            <!-- Custom Abilities -->
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 6px;">
+                                    Custom Abilities
+                                    <span title="Load custom Ability definitions. Duplicates will be overwritten." style="cursor: help; color: #667eea; font-weight: bold; font-size: 1.1em;">ℹ️</span>
+                                </label>
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                    <input type="text" id="customAbilitiesInput" placeholder="Paste JSON or URL" autocomplete="off" style="flex: 1;">
+                                    <button type="button" onclick="loadCustomData('abilities')" style="
+                                        padding: 8px 16px;
+                                        background: #667eea;
+                                        color: white;
+                                        border: none;
+                                        border-radius: 4px;
+                                        cursor: pointer;
+                                        font-weight: 600;
+                                        transition: all 0.2s ease;
+                                    " onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">Load</button>
+                                </div>
+                                <div id="customAbilitiesStatus" style="font-size: 0.85em; color: #666;"></div>
+                            </div>
+
+                            <!-- Custom Moves -->
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 6px;">
+                                    Custom Moves
+                                    <span title="Load custom Move definitions. Duplicates will be overwritten." style="cursor: help; color: #667eea; font-weight: bold; font-size: 1.1em;">ℹ️</span>
+                                </label>
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                    <input type="text" id="customMovesInput" placeholder="Paste JSON or URL" autocomplete="off" style="flex: 1;">
+                                    <button type="button" onclick="loadCustomData('moves')" style="
+                                        padding: 8px 16px;
+                                        background: #667eea;
+                                        color: white;
+                                        border: none;
+                                        border-radius: 4px;
+                                        cursor: pointer;
+                                        font-weight: 600;
+                                        transition: all 0.2s ease;
+                                    " onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">Load</button>
+                                </div>
+                                <div id="customMovesStatus" style="font-size: 0.85em; color: #666;"></div>
+                            </div>
+
+                            <!-- Custom Data Status -->
+                            <div style="padding: 12px; background: #f9f9f9; border-radius: 6px; margin-top: 12px;">
+                                <button type="button" onclick="checkCustomStatus()" style="
+                                    width: 100%;
+                                    padding: 8px 12px;
+                                    background: #28a745;
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-weight: 600;
+                                    margin-bottom: 8px;
+                                    transition: all 0.2s ease;
+                                " onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">Check Status</button>
+                                <div id="customStatusDisplay" style="font-size: 0.85em; color: #333; white-space: pre-wrap; word-wrap: break-word; margin-top: 10px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Buttons -->
                     <div class="button-group">
                         <button type="submit" class="btn-generate">🎲 Generate Pokémon</button>
@@ -676,6 +771,103 @@
             icon.classList.toggle('open');
         }
 
+        function toggleCustomization() {
+            const section = document.getElementById('customizationSection');
+            const icon = document.getElementById('customizationToggleIcon');
+            section.classList.toggle('open');
+            icon.classList.toggle('open');
+        }
+
+        // Load custom data (Pokémon, Abilities, or Moves)
+        async function loadCustomData(type) {
+            const inputId = `custom${type.charAt(0).toUpperCase() + type.slice(1)}Input`;
+            const statusId = `custom${type.charAt(0).toUpperCase() + type.slice(1)}Status`;
+            const input = document.getElementById(inputId);
+            const statusDiv = document.getElementById(statusId);
+            const inputValue = input.value.trim();
+
+            if (!inputValue) {
+                statusDiv.textContent = '⚠️ Please enter JSON or a URL';
+                statusDiv.style.color = '#ff9800';
+                return;
+            }
+
+            statusDiv.textContent = '⏳ Loading...';
+            statusDiv.style.color = '#666';
+
+            try {
+                let data;
+
+                // Try to parse as JSON first
+                if (inputValue.startsWith('{') || inputValue.startsWith('[')) {
+                    data = JSON.parse(inputValue);
+                } else {
+                    // Treat as URL
+                    data = inputValue;
+                }
+
+                const endpoint = `/api/pokemon/custom/${type}`;
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        data: typeof data === 'string' ? undefined : data,
+                        url: typeof data === 'string' ? data : undefined
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to load data');
+                }
+
+                const result = await response.json();
+                statusDiv.textContent = `✅ Loaded ${result.count} ${type} (${result.totalCustom} total custom)`;
+                statusDiv.style.color = '#28a745';
+                input.value = '';
+                
+                // Reload species list if custom Pokemon were added
+                if (type === 'pokemon') {
+                    loadPokemonList();
+                }
+            } catch (error) {
+                statusDiv.textContent = `❌ ${error.message}`;
+                statusDiv.style.color = '#dc3545';
+            }
+        }
+
+        // Check custom data status
+        async function checkCustomStatus() {
+            const statusDiv = document.getElementById('customStatusDisplay');
+            statusDiv.textContent = '⏳ Checking...';
+
+            try {
+                const response = await fetch('/api/pokemon/custom');
+                if (!response.ok) {
+                    throw new Error('Failed to get custom status');
+                }
+
+                const result = await response.json();
+                const custom = result.custom;
+
+                let statusText = '📊 Custom Data Status:\n';
+                statusText += `• Pokémon: ${custom.pokemon}\n`;
+                statusText += `• Abilities: ${custom.abilities}\n`;
+                statusText += `• Moves: ${custom.moves}`;
+
+                console.log('Custom data received:', custom);
+                console.log('Status text:', statusText);
+                
+                statusDiv.textContent = statusText;
+                statusDiv.style.color = '#333';
+                statusDiv.style.whiteSpace = 'pre-wrap';
+            } catch (error) {
+                console.error('Error checking status:', error);
+                statusDiv.textContent = `❌ ${error.message}`;
+                statusDiv.style.color = '#dc3545';
+            }
+        }
+
         // Load available natures
         async function loadNatures() {
             try {
@@ -854,7 +1046,19 @@
         });
 
         // Generate Pokémon on page load
-        window.addEventListener('load', function () {
+        window.addEventListener('load', async function () {
+            console.log('🔄 Page load event fired - clearing custom data');
+            
+            // Clear custom data on page load to reset session
+            try {
+                const deleteResponse = await fetch('/api/pokemon/custom', { method: 'DELETE' });
+                const deleteResult = await deleteResponse.json();
+                console.log('✓ Custom data cleared:', deleteResult);
+            } catch (error) {
+                console.error('Error clearing custom data:', error);
+            }
+            
+            console.log('📋 Loading Pokemon list...');
             loadPokemonList();
             loadHabitatList();
             loadNatures();

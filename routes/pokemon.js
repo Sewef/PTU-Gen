@@ -36,9 +36,37 @@ router.use((req, res, next) => {
  *   - nature: string - Specific nature name (e.g., 'Adamant', 'Timid'). If not specified, a random nature is chosen
  *   - includeLegendaries: boolean - Include legendary Pokemon in generation (default: false)
  *   - forceEvolution: boolean - Automatically evolve Pokemon based on level and evolution conditions (default: false)
+ *   - customPokemonUrl: string - URL to JSON file with custom Pokemon (will be loaded before generation)
+ *   - customAbilitiesUrl: string - URL to JSON file with custom Abilities (will be loaded before generation)
+ *   - customMovesUrl: string - URL to JSON file with custom Moves (will be loaded before generation)
  */
 router.get('/generate', async (req, res) => {
   try {
+    // Load custom data if provided
+    if (req.query.custompokemonurl) {
+      try {
+        await PokemonGenerator.loadCustomPokemon(req.query.custompokemonurl);
+      } catch (error) {
+        console.warn('Failed to load custom Pokemon from URL:', error.message);
+      }
+    }
+    
+    if (req.query.customabilitiesurl) {
+      try {
+        await PokemonGenerator.loadCustomAbilities(req.query.customabilitiesurl);
+      } catch (error) {
+        console.warn('Failed to load custom Abilities from URL:', error.message);
+      }
+    }
+    
+    if (req.query.custommovesurl) {
+      try {
+        await PokemonGenerator.loadCustomMoves(req.query.custommovesurl);
+      } catch (error) {
+        console.warn('Failed to load custom Moves from URL:', error.message);
+      }
+    }
+
     const options = {
       level: req.query.level ? parseInt(req.query.level) : undefined,
       minlevel: req.query.minlevel ? parseInt(req.query.minlevel) : undefined,
@@ -66,9 +94,39 @@ router.get('/generate', async (req, res) => {
 /**
  * GET /api/pokemon/generateWild/:level
  * Generate a wild Pokemon at specific level
+ * Query params:
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ *   - customPokemonUrl: string - URL to JSON file with custom Pokemon
+ *   - customAbilitiesUrl: string - URL to JSON file with custom Abilities
+ *   - customMovesUrl: string - URL to JSON file with custom Moves
  */
 router.get('/generateWild/:level', async (req, res) => {
   try {
+    // Load custom data if provided
+    if (req.query.custompokemonurl) {
+      try {
+        await PokemonGenerator.loadCustomPokemon(req.query.custompokemonurl);
+      } catch (error) {
+        console.warn('Failed to load custom Pokemon from URL:', error.message);
+      }
+    }
+    
+    if (req.query.customabilitiesurl) {
+      try {
+        await PokemonGenerator.loadCustomAbilities(req.query.customabilitiesurl);
+      } catch (error) {
+        console.warn('Failed to load custom Abilities from URL:', error.message);
+      }
+    }
+    
+    if (req.query.custommovesurl) {
+      try {
+        await PokemonGenerator.loadCustomMoves(req.query.custommovesurl);
+      } catch (error) {
+        console.warn('Failed to load custom Moves from URL:', error.message);
+      }
+    }
+
     const level = parseInt(req.params.level);
     const dataset = (req.query.dataset || 'core').toLowerCase();
     if (isNaN(level) || level < 1 || level > 100) {
@@ -89,9 +147,37 @@ router.get('/generateWild/:level', async (req, res) => {
  *   - level: number (1-100)
  *   - size: number (1-6)
  *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ *   - customPokemonUrl: string - URL to JSON file with custom Pokemon
+ *   - customAbilitiesUrl: string - URL to JSON file with custom Abilities
+ *   - customMovesUrl: string - URL to JSON file with custom Moves
  */
 router.get('/team', async (req, res) => {
   try {
+    // Load custom data if provided
+    if (req.query.custompokemonurl) {
+      try {
+        await PokemonGenerator.loadCustomPokemon(req.query.custompokemonurl);
+      } catch (error) {
+        console.warn('Failed to load custom Pokemon from URL:', error.message);
+      }
+    }
+    
+    if (req.query.customabilitiesurl) {
+      try {
+        await PokemonGenerator.loadCustomAbilities(req.query.customabilitiesurl);
+      } catch (error) {
+        console.warn('Failed to load custom Abilities from URL:', error.message);
+      }
+    }
+    
+    if (req.query.custommovesurl) {
+      try {
+        await PokemonGenerator.loadCustomMoves(req.query.custommovesurl);
+      } catch (error) {
+        console.warn('Failed to load custom Moves from URL:', error.message);
+      }
+    }
+
     const options = {
       level: req.query.level ? parseInt(req.query.level) : 50,
       size: req.query.size ? Math.min(parseInt(req.query.size), 6) : 6,
@@ -273,16 +359,101 @@ router.get('/all-moves', async (req, res) => {
 
 /**
  * GET /api/pokemon/all-abilities
- * Get all abilities from the database
- * Query params:
- *   - dataset: string - 'core' (default), 'community', or 'homebrew'
- * Returns all abilities organized by category
+ * Get all abilities from the database, organized by category
  */
 router.get('/all-abilities', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
     const abilities = await PokemonGenerator.getAllAbilitiesFromDatabase(dataset);
     res.json(abilities);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/pokemon/custom/pokemon
+ * Load custom Pokemon from JSON data or URL
+ * Body: { data: {...} } or { url: "https://..." }
+ */
+router.post('/custom/pokemon', async (req, res) => {
+  try {
+    const { data, url } = req.body;
+    
+    if (!data && !url) {
+      return res.status(400).json({ error: 'Must provide either data (JSON) or url (string)' });
+    }
+    
+    const result = await PokemonGenerator.loadCustomPokemon(data || url);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/pokemon/custom/abilities
+ * Load custom Abilities from JSON data or URL
+ * Body: { data: {...} } or { url: "https://..." }
+ */
+router.post('/custom/abilities', async (req, res) => {
+  try {
+    const { data, url } = req.body;
+    
+    if (!data && !url) {
+      return res.status(400).json({ error: 'Must provide either data (JSON) or url (string)' });
+    }
+    
+    const result = await PokemonGenerator.loadCustomAbilities(data || url);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/pokemon/custom/moves
+ * Load custom Moves from JSON data or URL
+ * Body: { data: {...} } or { url: "https://..." }
+ */
+router.post('/custom/moves', async (req, res) => {
+  try {
+    const { data, url } = req.body;
+    
+    if (!data && !url) {
+      return res.status(400).json({ error: 'Must provide either data (JSON) or url (string)' });
+    }
+    
+    const result = await PokemonGenerator.loadCustomMoves(data || url);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/pokemon/custom
+ * Get status of loaded custom data
+ */
+router.get('/custom', (req, res) => {
+  try {
+    const customData = PokemonGenerator.getCustomData();
+    res.json({
+      custom: customData
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/pokemon/custom
+ * Clear all custom data
+ */
+router.delete('/custom', (req, res) => {
+  try {
+    const result = PokemonGenerator.clearCustomData();
+    res.json(result);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

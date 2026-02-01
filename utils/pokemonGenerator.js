@@ -88,6 +88,11 @@ let movesDatabase = {};
 let pokemonByName = {};
 let movesMap = {};
 
+// Custom data storage (will override database data when set)
+let customPokemon = [];
+let customAbilities = {};
+let customMoves = {};
+
 /**
  * Fetch data from URL
  */
@@ -905,16 +910,28 @@ class PokemonGenerator {
   }
 
   /**
-   * Get move definition from moves database
+   * Get move definition from moves database (checks custom first)
    */
   static getMoveDefinition(moveName) {
-    // Try exact match first
+    // Check custom moves first
+    if (customMoves[moveName]) {
+      return customMoves[moveName];
+    }
+    
+    // Try exact match in database
     if (movesDatabase[moveName]) {
       return movesDatabase[moveName];
     }
     
-    // Try case-insensitive match
+    // Try case-insensitive match in custom moves
     const lowerName = moveName.toLowerCase();
+    for (const key in customMoves) {
+      if (key.toLowerCase() === lowerName) {
+        return customMoves[key];
+      }
+    }
+    
+    // Try case-insensitive match in database
     for (const key in movesDatabase) {
       if (key.toLowerCase() === lowerName) {
         return movesDatabase[key];
@@ -925,16 +942,28 @@ class PokemonGenerator {
   }
 
   /**
-   * Get ability definition from abilities database
+   * Get ability definition from abilities database (checks custom first)
    */
   static getAbilityDefinition(abilityName) {
-    // Try exact match first
+    // Check custom abilities first
+    if (customAbilities[abilityName]) {
+      return customAbilities[abilityName];
+    }
+    
+    // Try exact match in database
     if (abilitiesDatabase[abilityName]) {
       return abilitiesDatabase[abilityName];
     }
     
-    // Try case-insensitive match
+    // Try case-insensitive match in custom abilities
     const lowerName = abilityName.toLowerCase();
+    for (const key in customAbilities) {
+      if (key.toLowerCase() === lowerName) {
+        return customAbilities[key];
+      }
+    }
+    
+    // Try case-insensitive match in database
     for (const key in abilitiesDatabase) {
       if (key.toLowerCase() === lowerName) {
         return abilitiesDatabase[key];
@@ -1041,19 +1070,30 @@ class PokemonGenerator {
   }
 
   /**
-   * Get species by name from database
+   * Get species by name from database (checks custom first, then database)
    */
   static getSpeciesByName(name) {
-    return pokemonByName[name.toLowerCase()];
+    // Check custom data first
+    const customLower = name.toLowerCase();
+    const customSpecies = customPokemon.find(p => p.Species.toLowerCase() === customLower);
+    if (customSpecies) {
+      return customSpecies;
+    }
+    
+    // Fall back to database
+    return pokemonByName[customLower];
   }
 
   /**
-   * Get random species from database
+   * Get random species from database (includes custom Pokemon)
    */
   static getRandomSpecies(includeLegendaries = false) {
-    let availablePokemon = pokemonDatabase;
+    // Combine custom and database Pokemon
+    const allPokemon = [...customPokemon, ...pokemonDatabase];
+    
+    let availablePokemon = allPokemon;
     if (!includeLegendaries) {
-      availablePokemon = pokemonDatabase.filter(pokemon => !pokemon.Legendary);
+      availablePokemon = allPokemon.filter(pokemon => !pokemon.Legendary);
     }
     if (availablePokemon.length === 0) {
       throw new Error('No Pokemon available with current filters');
@@ -1079,12 +1119,13 @@ class PokemonGenerator {
   }
 
   /**
-   * Get Pokemon by habitat
+   * Get Pokemon by habitat (includes custom Pokemon)
    */
   static getPokemonByHabitat(habitat) {
     if (!habitat) return [];
     const habitatLower = habitat.toLowerCase();
-    return pokemonDatabase.filter(pokemon => {
+    const allPokemon = [...customPokemon, ...pokemonDatabase];
+    return allPokemon.filter(pokemon => {
       const habitatStr = pokemon['Other Information']?.Habitat || '';
       return habitatStr.toLowerCase().includes(habitatLower);
     });
@@ -1189,22 +1230,23 @@ class PokemonGenerator {
   }
 
   /**
-   * List available Pokemon
+   * List available Pokemon (includes custom Pokemon)
    */
   static async listAvailablePokemon(dataset = 'core') {
     if (dataset !== currentDataset) {
       await switchDataset(dataset);
     }
-    return pokemonDatabase.map(species => ({
+    const allPokemon = [...customPokemon, ...pokemonDatabase];
+    return allPokemon.map(species => ({
       id: species.Number,
       name: species.Species,
-      types: species['Basic Information'].Type,
+      types: species['Basic Information']?.Type,
       abilities: {
-        basic1: species['Basic Information']['Basic Ability 1'],
-        basic2: species['Basic Information']['Basic Ability 2'],
-        adv1: species['Basic Information']['Adv Ability 1'],
-        adv2: species['Basic Information']['Adv Ability 2'],
-        high: species['Basic Information']['High Ability']
+        basic1: species['Basic Information']?.['Basic Ability 1'],
+        basic2: species['Basic Information']?.['Basic Ability 2'],
+        adv1: species['Basic Information']?.['Adv Ability 1'],
+        adv2: species['Basic Information']?.['Adv Ability 2'],
+        high: species['Basic Information']?.['High Ability']
       }
     }));
   }
@@ -1516,6 +1558,163 @@ class PokemonGenerator {
       console.error(`Error getting all abilities from database:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Load custom Pokemon from JSON data or URL
+   * @param {Object|string} data - Either parsed JSON object or URL string
+   * @returns {Promise<Object>} Result with count and status
+   */
+  static async loadCustomPokemon(data) {
+    try {
+      let pokemonData;
+      
+      if (typeof data === 'string') {
+        // It's a URL - fetch it
+        pokemonData = await fetchDataFromURL(data);
+      } else {
+        // It's already parsed JSON
+        pokemonData = data;
+      }
+
+      // Ensure it's an array
+      if (!Array.isArray(pokemonData)) {
+        throw new Error('Custom Pokemon data must be an array');
+      }
+
+      // Merge with existing custom Pokemon, overwriting duplicates by Species name
+      const customMap = new Map(customPokemon.map(p => [p.Species.toLowerCase(), p]));
+      pokemonData.forEach(pokemon => {
+        customMap.set(pokemon.Species.toLowerCase(), pokemon);
+      });
+      customPokemon = Array.from(customMap.values());
+
+      // Update pokemonByName lookup to include custom Pokemon
+      customPokemon.forEach(pokemon => {
+        pokemonByName[pokemon.Species.toLowerCase()] = pokemon;
+      });
+
+      console.log(`✓ Loaded ${pokemonData.length} custom Pokemon`);
+      return {
+        success: true,
+        count: pokemonData.length,
+        totalCustom: customPokemon.length
+      };
+    } catch (error) {
+      console.error('Error loading custom Pokemon:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Load custom Abilities from JSON data or URL
+   * @param {Object|string} data - Either parsed JSON object or URL string
+   * @returns {Promise<Object>} Result with count and status
+   */
+  static async loadCustomAbilities(data) {
+    try {
+      let abilitiesData;
+      
+      if (typeof data === 'string') {
+        // It's a URL - fetch it
+        abilitiesData = await fetchDataFromURL(data);
+      } else {
+        // It's already parsed JSON
+        abilitiesData = data;
+      }
+
+      // Merge with existing custom abilities, overwriting duplicates by name
+      if (Array.isArray(abilitiesData)) {
+        // Convert array to object format
+        abilitiesData.forEach(ability => {
+          if (ability.Name) {
+            customAbilities[ability.Name] = ability;
+          }
+        });
+      } else {
+        // Already in object format
+        Object.assign(customAbilities, abilitiesData);
+      }
+
+      console.log(`✓ Loaded ${Array.isArray(abilitiesData) ? abilitiesData.length : Object.keys(abilitiesData).length} custom Abilities`);
+      return {
+        success: true,
+        count: Array.isArray(abilitiesData) ? abilitiesData.length : Object.keys(abilitiesData).length,
+        totalCustom: Object.keys(customAbilities).length
+      };
+    } catch (error) {
+      console.error('Error loading custom Abilities:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Load custom Moves from JSON data or URL
+   * @param {Object|string} data - Either parsed JSON object or URL string
+   * @returns {Promise<Object>} Result with count and status
+   */
+  static async loadCustomMoves(data) {
+    try {
+      let movesData;
+      
+      if (typeof data === 'string') {
+        // It's a URL - fetch it
+        movesData = await fetchDataFromURL(data);
+      } else {
+        // It's already parsed JSON
+        movesData = data;
+      }
+
+      // Merge with existing custom moves, overwriting duplicates by name
+      if (Array.isArray(movesData)) {
+        // Convert array to object format
+        movesData.forEach(move => {
+          if (move.Name) {
+            customMoves[move.Name] = move;
+          }
+        });
+      } else {
+        // Already in object format
+        Object.assign(customMoves, movesData);
+      }
+
+      console.log(`✓ Loaded ${Array.isArray(movesData) ? movesData.length : Object.keys(movesData).length} custom Moves`);
+      return {
+        success: true,
+        count: Array.isArray(movesData) ? movesData.length : Object.keys(movesData).length,
+        totalCustom: Object.keys(customMoves).length
+      };
+    } catch (error) {
+      console.error('Error loading custom Moves:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get custom data that has been loaded
+   */
+  static getCustomData() {
+    return {
+      pokemon: customPokemon.length,
+      abilities: Object.keys(customAbilities).length,
+      moves: Object.keys(customMoves).length
+    };
+  }
+
+  /**
+   * Clear all custom data
+   */
+  static clearCustomData() {
+    // Remove custom Pokemon from lookup
+    customPokemon.forEach(pokemon => {
+      delete pokemonByName[pokemon.Species.toLowerCase()];
+    });
+    
+    customPokemon = [];
+    customAbilities = {};
+    customMoves = {};
+    console.log('✓ Cleared all custom data');
+    return { success: true };
   }
 }
 

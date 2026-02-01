@@ -260,6 +260,7 @@
             <ul>
                 <li><a href="#overview">Overview</a></li>
                 <li><a href="#generation">Generation Endpoints</a></li>
+                <li><a href="#customization">Customization Endpoints</a></li>
                 <li><a href="#lists">List Endpoints</a></li>
                 <li><a href="#species">Species Information</a></li>
                 <li><a href="#parameters">Query Parameters Guide</a></li>
@@ -587,6 +588,245 @@ GET /api/pokemon/team?level=60&size=4
   },
   "...2 more Pokémon..."
 ]</code></pre>
+            </div>
+        </div>
+
+        <!-- Customization Section -->
+        <h2 class="section-title" id="customization">🎨 Customization Endpoints</h2>
+
+        <div class="endpoint">
+            <p class="description">
+                Customize your Pokémon generation by loading custom Pokémon species, abilities, and moves. 
+                Custom data will override the selected dataset when duplicates are found.
+            </p>
+        </div>
+
+        <!-- Load Custom Pokémon -->
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method method-get" style="background-color: #49cc90;">POST</span>
+                <span class="endpoint-path">/custom/pokemon</span>
+            </div>
+            <h3>Load Custom Pokémon</h3>
+            <p class="description">
+                Load custom Pokémon species from JSON data or a URL. Custom Pokémon will be merged with the database, 
+                overwriting any duplicates by species name.
+            </p>
+
+            <div class="note">
+                <strong>📄 Example JSON:</strong> <a href="example-custom-pokemon.json" target="_blank" style="color: #667eea; font-weight: bold;">example-custom-pokemon.json</a>
+            </div>
+
+            <table class="params-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="param-name">data</span></td>
+                        <td><span class="param-type">array|object</span></td>
+                        <td>Parsed JSON array or object containing custom Pokémon definitions</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">url</span></td>
+                        <td><span class="param-type">string</span></td>
+                        <td>URL to a JSON file containing custom Pokémon definitions</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="note">
+                <strong>Note:</strong> Provide either <code>data</code> or <code>url</code>, not both.
+            </div>
+
+            <div class="example">
+                <div class="example-title">Example Request (JSON POST):</div>
+                <div class="example-code">
+curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": [{
+      "Number": 9001,
+      "Species": "Customizard",
+      "Icon": 4,
+      "Legendary": false,
+      "Basic Information": {...},
+      "Base Stats": {...},
+      "Other Information": {...},
+      "Moves": {...}
+    }]
+  }'
+                </div>
+            </div>
+
+            <div class="example">
+                <div class="example-title">Example Request (URL):</div>
+                <div class="example-code">
+curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/custom-pokemon.json"
+  }'
+                </div>
+            </div>
+
+            <div class="response-example">
+                <div class="response-title">Success Response:</div>
+                <pre><code>{
+  "success": true,
+  "count": 1,
+  "totalCustom": 1
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Load Custom Abilities -->
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method method-get" style="background-color: #49cc90;">POST</span>
+                <span class="endpoint-path">/custom/abilities</span>
+            </div>
+            <h3>Load Custom Abilities</h3>
+            <p class="description">
+                Load custom Pokémon abilities from JSON data or a URL. Custom abilities will override existing ones by name.
+            </p>
+
+            <div class="note">
+                <strong>📄 Example JSON:</strong> <a href="example-custom-abilities.json" target="_blank" style="color: #667eea; font-weight: bold;">example-custom-abilities.json</a>
+            </div>
+
+            <table class="params-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="param-name">data</span></td>
+                        <td><span class="param-type">array|object</span></td>
+                        <td>Parsed JSON containing custom ability definitions</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">url</span></td>
+                        <td><span class="param-type">string</span></td>
+                        <td>URL to a JSON file containing custom ability definitions</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="response-example">
+                <div class="response-title">Success Response:</div>
+                <pre><code>{
+  "success": true,
+  "count": 3,
+  "totalCustom": 3
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Load Custom Moves -->
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method method-get" style="background-color: #49cc90;">POST</span>
+                <span class="endpoint-path">/custom/moves</span>
+            </div>
+            <h3>Load Custom Moves</h3>
+            <p class="description">
+                Load custom moves from JSON data or a URL. Custom moves will override existing ones by name.
+            </p>
+
+            <div class="note">
+                <strong>📄 Example JSON:</strong> <a href="example-custom-moves.json" target="_blank" style="color: #667eea; font-weight: bold;">example-custom-moves.json</a>
+            </div>
+
+            <table class="params-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="param-name">data</span></td>
+                        <td><span class="param-type">array|object</span></td>
+                        <td>Parsed JSON containing custom move definitions</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">url</span></td>
+                        <td><span class="param-type">string</span></td>
+                        <td>URL to a JSON file containing custom move definitions</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="response-example">
+                <div class="response-title">Success Response:</div>
+                <pre><code>{
+  "success": true,
+  "count": 5,
+  "totalCustom": 5
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Get Custom Status -->
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method method-get">GET</span>
+                <span class="endpoint-path">/custom</span>
+            </div>
+            <h3>Check Custom Data Status</h3>
+            <p class="description">
+                Check how much custom data has been loaded in the current session.
+            </p>
+
+            <div class="example">
+                <div class="example-title">Example Request:</div>
+                <div class="example-code">GET https://ptu-gen.onrender.com/api/pokemon/custom</div>
+            </div>
+
+            <div class="response-example">
+                <div class="response-title">Success Response:</div>
+                <pre><code>{
+  "custom": {
+    "pokemon": 2,
+    "abilities": 3,
+    "moves": 5
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Clear Custom Data -->
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method method-get" style="background-color: #f93e3e;">DELETE</span>
+                <span class="endpoint-path">/custom</span>
+            </div>
+            <h3>Clear All Custom Data</h3>
+            <p class="description">
+                Clear all loaded custom Pokémon, abilities, and moves from the session.
+            </p>
+
+            <div class="example">
+                <div class="example-title">Example Request:</div>
+                <div class="example-code">DELETE https://ptu-gen.onrender.com/api/pokemon/custom</div>
+            </div>
+
+            <div class="response-example">
+                <div class="response-title">Success Response:</div>
+                <pre><code>{
+  "success": true
+}</code></pre>
             </div>
         </div>
 
@@ -1302,6 +1542,85 @@ LEVEL + (HP * 4)        // Increased HP gain<br>
             <div class="stats-info">
                 <strong>Note:</strong> The <code>includeLegendaries</code> parameter only applies when generating random species.
                 If you specify a legendary species directly with the <code>species</code> parameter, it will always be generated regardless of this setting.
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <h3>Customization Parameters (URL-Based)</h3>
+            <p class="description">
+                Load custom Pokémon, abilities, or moves directly in your generation requests using URL parameters. 
+                This is a convenient way to apply customizations without separate API calls.
+            </p>
+
+            <table class="params-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Available On</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="param-name">customPokemonUrl</span></td>
+                        <td><span class="param-type">string</span></td>
+                        <td><code>/generate</code>, <code>/generateWild/:level</code>, <code>/team</code></td>
+                        <td>URL to JSON file with custom Pokémon. Will be loaded before generation.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">customAbilitiesUrl</span></td>
+                        <td><span class="param-type">string</span></td>
+                        <td><code>/generate</code>, <code>/generateWild/:level</code>, <code>/team</code></td>
+                        <td>URL to JSON file with custom abilities. Will be loaded before generation.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">customMovesUrl</span></td>
+                        <td><span class="param-type">string</span></td>
+                        <td><code>/generate</code>, <code>/generateWild/:level</code>, <code>/team</code></td>
+                        <td>URL to JSON file with custom moves. Will be loaded before generation.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="note">
+                <strong>URL Encoding:</strong> When using these parameters in URLs with special characters, make sure to URL-encode them properly.
+                <br><code>customPokemonUrl=http%3A%2F%2Fexample.com%2Fpokemon.json</code>
+            </div>
+
+            <div class="example">
+                <div class="example-title">Example: Generate Pokémon with custom data via URL:</div>
+                <div class="example-code">
+GET https://ptu-gen.onrender.com/api/pokemon/generate?
+  level=50&
+  customPokemonUrl=https://ptu-gen.onrender.com/example-custom-pokemon.json
+                </div>
+            </div>
+
+            <div class="example">
+                <div class="example-title">Example: Generate specific custom species:</div>
+                <div class="example-code">
+GET https://ptu-gen.onrender.com/api/pokemon/generate?
+  species=Customizard&
+  customPokemonUrl=https://ptu-gen.onrender.com/example-custom-pokemon.json
+                </div>
+            </div>
+
+            <div class="example">
+                <div class="example-title">Example: Generate team with multiple customizations:</div>
+                <div class="example-code">
+GET https://ptu-gen.onrender.com/api/pokemon/team?
+  level=50&
+  size=6&
+  customPokemonUrl=https://example.com/pokemon.json&
+  customAbilitiesUrl=https://example.com/abilities.json&
+  customMovesUrl=https://example.com/moves.json
+                </div>
+            </div>
+
+            <div class="stats-info">
+                <strong>Important:</strong> Custom data loaded via URL parameters is merged with any previously loaded custom data. 
+                It persists for the duration of the session.
             </div>
         </div>
 

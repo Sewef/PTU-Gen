@@ -1,0 +1,16 @@
+{
+  "Custom Shield": {
+    "Frequency": "Static",
+    "Effect": "Increases Defense by 1 stage at the end of each turn when entering battle."
+  },
+  "Mystic Flame": {
+    "Frequency": "At-Will",
+    "Trigger": "Pokémon uses a move",
+    "Effect": "All Fire-type moves used by this Pokémon gain +2 Damage Base."
+  },
+  "Hydro Surge": {
+    "Frequency": "At-Will",
+    "Trigger": "When the sun is shining",
+    "Effect": "This Pokémon regains 1/8 of its maximum HP at the end of each turn when raining."
+  }
+}
