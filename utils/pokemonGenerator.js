@@ -403,7 +403,7 @@ class PokemonGenerator {
     
     const includeLegendaries = options.includelegendaries === 'true' || options.includelegendaries === true;
     
-    const species = options.species 
+    let species = options.species 
       ? this.getSpeciesByName(options.species)
       : options.habitat 
         ? this.getRandomSpeciesByHabitat(options.habitat, includeLegendaries)
@@ -411,6 +411,15 @@ class PokemonGenerator {
 
     if (!species) {
       throw new Error(`Species not found: ${options.species}`);
+    }
+
+    // Apply forceEvolution if specified
+    if (options.forceevolution === 'true' || options.forceevolution === true) {
+      // Get the base form of the evolution chain if a random species was selected
+      if (!options.species) {
+        species = this.getBaseFormOfEvolutionChain(species);
+      }
+      species = this.selectEvolvedSpecies(species, level);
     }
 
     const nature = options.nature 
@@ -1093,6 +1102,90 @@ class PokemonGenerator {
       throw new Error(`No Pokemon found in habitat: ${habitat}`);
     }
     return pokemonInHabitat[Math.floor(Math.random() * pokemonInHabitat.length)];
+  }
+
+  /**
+   * Get the base form (stage 1) of a Pokemon's evolution chain
+   * @param {Object} pokemon - The Pokemon species (can be any stage)
+   * @returns {Object} The base form of the evolution chain
+   */
+  static getBaseFormOfEvolutionChain(pokemon) {
+    const evolutionChain = pokemon.Evolution || [];
+    
+    if (evolutionChain.length === 0) {
+      return pokemon;
+    }
+    
+    // Find stage 1 (base form)
+    for (let i = 0; i < evolutionChain.length; i++) {
+      const evolution = evolutionChain[i];
+      const stage = evolution.Stade || (i + 1);
+      
+      if (stage === 1) {
+        const baseName = evolution.Species;
+        if (baseName !== pokemon.Species) {
+          return this.getSpeciesByName(baseName);
+        }
+        return pokemon;
+      }
+    }
+    
+    return pokemon;
+  }
+
+  /**
+   * Select evolved species based on level and evolution conditions
+   * @param {Object} baseSpecies - The Pokemon species (can be any stage in evolution chain)
+   * @param {number} level - The level of the Pokemon
+   * @returns {Object} The evolved species if applicable, otherwise the input species
+   */
+  static selectEvolvedSpecies(baseSpecies, level) {
+    // Get the evolution chain from the species
+    const evolutionChain = baseSpecies.Evolution || [];
+    
+    if (evolutionChain.length === 0) {
+      return baseSpecies;
+    }
+
+    // Find the current stage of this Pokemon in the evolution chain
+    const currentSpeciesName = baseSpecies.Species;
+    let currentStage = 1; // Default to stage 1 if not found
+    
+    for (let i = 0; i < evolutionChain.length; i++) {
+      if (evolutionChain[i].Species === currentSpeciesName) {
+        currentStage = evolutionChain[i].Stade || (i + 1);
+        break;
+      }
+    }
+
+    // Find the highest stage the Pokemon can reach at this level, starting from current stage
+    let selectedSpeciesName = currentSpeciesName;
+    
+    for (let i = evolutionChain.length - 1; i >= 0; i--) {
+      const evolution = evolutionChain[i];
+      const evolutionStage = evolution.Stade || (i + 1);
+      
+      // Only consider evolution stages that are >= current stage
+      if (evolutionStage < currentStage) {
+        continue;
+      }
+      
+      // Check if this evolution stage can be reached at the current level
+      const minLevel = evolution['Minimum Level'];
+      
+      // If no minimum level requirement or level meets the requirement, this stage is available
+      if (!minLevel || level >= minLevel) {
+        selectedSpeciesName = evolution.Species;
+        break;
+      }
+    }
+    
+    // Return the selected species, or the input species if not changed
+    if (selectedSpeciesName === currentSpeciesName) {
+      return baseSpecies;
+    }
+    
+    return this.getSpeciesByName(selectedSpeciesName);
   }
 
   /**

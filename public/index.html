@@ -118,6 +118,15 @@
                         <small style="display: block; margin-top: 5px; color: #666;">Allow legendary species in generation (disabled by default).</small>
                     </div>
 
+                    <!-- Force Evolution -->
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="forceEvolution" style="width: auto;">
+                            <span>Force Evolution</span>
+                        </label>
+                        <small style="display: block; margin-top: 5px; color: #666;">Automatically evolve Pokémon based on level and evolution conditions.</small>
+                    </div>
+
                     <!-- Distribution -->
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 6px;">
@@ -572,6 +581,10 @@
 
                         if (document.getElementById('includeLegendaries').checked) {
                             params.append('includeLegendaries', 'true');
+                        }
+
+                        if (document.getElementById('forceEvolution').checked) {
+                            params.append('forceEvolution', 'true');
                         }
 
                         if (document.getElementById('nature').value) {

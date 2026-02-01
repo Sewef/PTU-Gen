@@ -35,6 +35,7 @@ router.use((req, res, next) => {
  *   - dataset: string - 'core' (default), 'community', or 'homebrew'
  *   - nature: string - Specific nature name (e.g., 'Adamant', 'Timid'). If not specified, a random nature is chosen
  *   - includeLegendaries: boolean - Include legendary Pokemon in generation (default: false)
+ *   - forceEvolution: boolean - Automatically evolve Pokemon based on level and evolution conditions (default: false)
  */
 router.get('/generate', async (req, res) => {
   try {
@@ -51,7 +52,8 @@ router.get('/generate', async (req, res) => {
       hpformula: req.query.hpformula,
       dataset: (req.query.dataset || 'core').toLowerCase(),
       nature: req.query.nature,
-      includelegendaries: req.query.includelegendaries
+      includelegendaries: req.query.includelegendaries,
+      forceevolution: req.query.forceevolution
     };
 
     const pokemon = await PokemonGenerator.generatePokemon(options);
