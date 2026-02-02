@@ -517,7 +517,7 @@ GET /api/pokemon/generateWild/42?dataset=core
             </div>
             <h3>Generate a Full Pokémon Team</h3>
             <p class="description">
-                Generate a team of up to 6 Pokémon at the same level. Perfect for creating trainer teams.
+                Generate a team of Pokémon at the same level. Perfect for creating trainer teams. Supports fixed sizes or random ranges.
             </p>
 
             <div>
@@ -535,14 +535,38 @@ GET /api/pokemon/generateWild/42?dataset=core
                         <tr>
                             <td class="param-name">level</td>
                             <td><span class="param-type">number</span></td>
-                            <td>Level for all team members (1-100)</td>
+                            <td>Specific level for all team members (1-100). Use this OR minLevel/maxLevel</td>
                             <td>50</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">minLevel</td>
+                            <td><span class="param-type">number</span></td>
+                            <td>Minimum level for random range</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">maxLevel</td>
+                            <td><span class="param-type">number</span></td>
+                            <td>Maximum level for random range</td>
+                            <td>-</td>
                         </tr>
                         <tr>
                             <td class="param-name">size</td>
                             <td><span class="param-type">number</span></td>
-                            <td>Number of Pokémon in the team (1-6)</td>
+                            <td>Specific number of Pokémon in the team (1-50). Use this OR minSize/maxSize</td>
                             <td>6</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">minSize</td>
+                            <td><span class="param-type">number</span></td>
+                            <td>Minimum team size for random range</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">maxSize</td>
+                            <td><span class="param-type">number</span></td>
+                            <td>Maximum team size for random range</td>
+                            <td>-</td>
                         </tr>
                         <tr>
                             <td class="param-name">dataset</td>
@@ -550,14 +574,27 @@ GET /api/pokemon/generateWild/42?dataset=core
                             <td>Data source: core, community, or homebrew</td>
                             <td>core</td>
                         </tr>
+                        <tr>
+                            <td class="param-name">includeLegendaries</td>
+                            <td><span class="param-type">boolean</span></td>
+                            <td>Include legendary Pokémon in generation (default: false)</td>
+                            <td>false</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
             <div class="example">
-                <div class="example-title">✨ Example Request:</div>
+                <div class="example-title">✨ Example Request (fixed size):</div>
                 <div class="example-code">
 GET /api/pokemon/team?level=60&size=4
+                </div>
+            </div>
+
+            <div class="example">
+                <div class="example-title">✨ Example Request (random level and size):</div>
+                <div class="example-code">
+GET /api/pokemon/team?minLevel=20&maxLevel=80&minSize=3&maxSize=12&includeLegendaries=true
                 </div>
             </div>
 

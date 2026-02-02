@@ -44,7 +44,28 @@
                     <!-- Number of Pokémons -->
                     <div class="form-group">
                         <label>Generate Multiple Pokémons</label>
-                        <input type="number" id="pokemonCount" min="1" max="50" value="1" autocomplete="off">
+                        <div class="form-row">
+                            <div>
+                                <label style="font-size: 0.85em; margin-bottom: 3px;">Specific Count</label>
+                                <input type="number" id="pokemonCount" min="1" max="50" value="1" autocomplete="off">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85em; margin-bottom: 3px;">Random Range</label>
+                                <input type="checkbox" id="useCountRange" style="width: auto; margin-top: 10px;">
+                                <span style="font-size: 0.85em; margin-left: 5px;">Range?</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="countRangeInputs" style="display: none;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Min Count</label>
+                            <input type="number" id="minPokemonCount" min="1" max="50" value="1" autocomplete="off">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Max Count</label>
+                            <input type="number" id="maxPokemonCount" min="1" max="50" value="6" autocomplete="off">
+                        </div>
                     </div>
 
                     <!-- Level -->
@@ -622,10 +643,34 @@
             }
         });
 
+        // Toggle count range
+        const useCountRangeCheckbox = document.getElementById('useCountRange');
+        const countRangeInputs = document.getElementById('countRangeInputs');
+        const pokemonCountInput = document.getElementById('pokemonCount');
+
+        useCountRangeCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                countRangeInputs.style.display = 'grid';
+                pokemonCountInput.disabled = true;
+                pokemonCountInput.style.opacity = '0.5';
+            } else {
+                countRangeInputs.style.display = 'none';
+                pokemonCountInput.disabled = false;
+                pokemonCountInput.style.opacity = '1';
+            }
+        });
+
         // Submit form
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
-            const count = parseInt(document.getElementById('pokemonCount').value) || 1;
+            let count;
+            if (useCountRangeCheckbox.checked) {
+                const min = Math.max(1, parseInt(document.getElementById('minPokemonCount').value) || 1);
+                const max = Math.min(50, parseInt(document.getElementById('maxPokemonCount').value) || 6);
+                count = Math.floor(Math.random() * (max - min + 1)) + min;
+            } else {
+                count = parseInt(pokemonCountInput.value) || 1;
+            }
             await generateMultiplePokemon(count);
         });
 

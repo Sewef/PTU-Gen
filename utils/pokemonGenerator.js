@@ -574,9 +574,10 @@ class PokemonGenerator {
     const count = options.size || 6;
     const level = options.level || 50;
     const dataset = options.dataset || 'core';
+    const includeLegendaries = options.includelegendaries === 'true' || options.includelegendaries === true;
 
     for (let i = 0; i < count; i++) {
-      team.push(await this.generatePokemon({ level, dataset }));
+      team.push(await this.generatePokemon({ level, dataset, includelegendaries: includeLegendaries }));
     }
 
     return {
@@ -584,6 +585,7 @@ class PokemonGenerator {
       count: team.length,
       averageLevel: level,
       dataset: dataset,
+      includedLegendaries: includeLegendaries,
       generatedAt: new Date().toISOString()
     };
   }

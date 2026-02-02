@@ -142,11 +142,16 @@ router.get('/generateWild/:level', async (req, res) => {
 
 /**
  * GET /api/pokemon/team
- * Generate a full team of 6 Pokemon
+ * Generate a full team of Pokemon
  * Query params:
  *   - level: number (1-100)
- *   - size: number (1-6)
+ *   - minLevel: number (1-100) - minimum level for random range
+ *   - maxLevel: number (1-100) - maximum level for random range
+ *   - size: number (1-50) - specific team size
+ *   - minSize: number (1-50) - minimum team size for random range
+ *   - maxSize: number (1-50) - maximum team size for random range
  *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ *   - includeLegendaries: boolean - Include legendary Pokemon (default: false)
  *   - customPokemonUrl: string - URL to JSON file with custom Pokemon
  *   - customAbilitiesUrl: string - URL to JSON file with custom Abilities
  *   - customMovesUrl: string - URL to JSON file with custom Moves
@@ -178,10 +183,35 @@ router.get('/team', async (req, res) => {
       }
     }
 
+    // Determine level
+    let level;
+    if (req.query.minlevel !== undefined && req.query.maxlevel !== undefined) {
+      const min = Math.max(1, parseInt(req.query.minlevel));
+      const max = Math.min(100, parseInt(req.query.maxlevel));
+      level = Math.floor(Math.random() * (max - min + 1)) + min;
+    } else if (req.query.level) {
+      level = parseInt(req.query.level);
+    } else {
+      level = 50;
+    }
+
+    // Determine team size
+    let size;
+    if (req.query.minsize !== undefined && req.query.maxsize !== undefined) {
+      const min = Math.max(1, parseInt(req.query.minsize));
+      const max = Math.min(50, parseInt(req.query.maxsize));
+      size = Math.floor(Math.random() * (max - min + 1)) + min;
+    } else if (req.query.size) {
+      size = Math.min(parseInt(req.query.size), 50);
+    } else {
+      size = 6;
+    }
+
     const options = {
-      level: req.query.level ? parseInt(req.query.level) : 50,
-      size: req.query.size ? Math.min(parseInt(req.query.size), 6) : 6,
-      dataset: (req.query.dataset || 'core').toLowerCase()
+      level: level,
+      size: size,
+      dataset: (req.query.dataset || 'core').toLowerCase(),
+      includelegendaries: req.query.includelegendaries
     };
 
     if (options.level < 1 || options.level > 100) {
