@@ -82,7 +82,7 @@ async function testCustomizations() {
         Frequency: '1/Turn',
         Class: 'Physical',
         Range: '1 Target, 5 meters',
-        'Damage Base': 'Damage Base 5: 1d8+8',
+        'Damage Base': '4',
         Accuracy: '100',
         Effect: 'This is a test move'
       }

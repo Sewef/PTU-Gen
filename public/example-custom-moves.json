@@ -4,7 +4,7 @@
     "Frequency": "At-Will",
     "Class": "Special",
     "Range": "6 Targets in a 5 meter radius",
-    "Damage Base": "Damage Base 7: 2d6+10",
+    "Damage Base": "7",
     "Accuracy": "2",
     "Effect": "This attack hits the target and all adjacent targets. Does not ignore any cover."
   },
@@ -13,7 +13,7 @@
     "Frequency": "At-Will",
     "Class": "Special",
     "Range": "4 Targets in a line",
-    "Damage Base": "Damage Base 8: 2d8+10",
+    "Damage Base": "8",
     "Accuracy": "2",
     "Effect": "A torrent of water strikes targets in a straight line forward."
   },
@@ -22,7 +22,7 @@
     "Frequency": "At-Will",
     "Class": "Physical",
     "Range": "1 Target, 5 meters",
-    "Damage Base": "Damage Base 9: 2d10+10",
+    "Damage Base": "9",
     "Accuracy": "2",
     "Effect": "An attack using vine-like plants. May cause the target to become Trapped."
   }

@@ -110,21 +110,20 @@ async function fetchDataFromURL(url) {
 }
 
 /**
- * Convert Damage Base string to short format with stats
- * Input: "Damage Base 9: 2d10+10" or similar
+ * Convert Damage Base number to short format with stats
+ * Input: 9 (or string "9")
  * Output: { short: "DB9", dmg: "2d10+10", min: 12, avg: 21, max: 30, stab: false }
- * @param {string} damageBaseString - The damage base string
+ * @param {number|string} damageBaseNumber - The damage base number
  * @param {boolean} hasStab - Whether the move gets STAB bonus (+2 DB)
  */
-function convertDamageBase(damageBaseString, hasStab = false) {
-  if (!damageBaseString) return null;
+function convertDamageBase(damageBaseNumber, hasStab = false) {
+  if (damageBaseNumber === null || damageBaseNumber === undefined) return null;
 
-  // Extract DB number from string like "Damage Base 9: 2d10+10"
-  const match = damageBaseString.match(/Damage Base (\d+)/i);
-  if (!match) return null;
-
-  let dbNumber = parseInt(match[1]);
+  // Parse as number if it's a string
+  let dbNumber = typeof damageBaseNumber === 'string' ? parseInt(damageBaseNumber) : damageBaseNumber;
   
+  if (isNaN(dbNumber)) return null;
+
   // Apply STAB bonus (+2 to DB)
   if (hasStab) {
     dbNumber = Math.min(dbNumber + 2, 28); // Cap at DB28
