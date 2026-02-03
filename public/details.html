@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" id="dynamicFavicon" type="image/png" href="" sizes="192x192">
     <script src="export.js"></script>
+    <script src="export-roll20.js"></script>
     <style>
         .multiplier-btn {
             padding: 4px 8px;
@@ -239,7 +240,13 @@
                             <input type="text" id="nicknameInput" placeholder="Nickname" value="${pokemon.nickname || ''}" style="width: 200px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; margin-top: 6px; font-style: italic;" maxlength="20" />
                             <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level} • ${pokemon.dataset ? pokemon.dataset.charAt(0).toUpperCase() + pokemon.dataset.slice(1) : 'Core'} Dataset</div>
                         </div>
-                        <button id="exportBtn" title="Export as JSON" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; transition: all 0.2s ease; margin-left: auto; align-self: flex-start;">📥 Export</button>
+                        <div style="position: relative; margin-left: auto; align-self: flex-start;">
+                            <button id="exportBtn" title="Export options" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;">📥 Export <span style="font-size: 0.7em;">▼</span></button>
+                            <div id="exportDropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 180px;">
+                                <button id="exportJsonBtn" style="width: 100%; padding: 10px 16px; background: white; color: #333; border: none; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 0.85em; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">📄 Export JSON</button>
+                                <button id="exportRoll20Btn" style="width: 100%; padding: 10px 16px; background: white; color: #333; border: none; cursor: pointer; text-align: left; font-size: 0.85em; transition: background 0.2s; border-radius: 0 0 4px 4px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">🎲 Export Roll20</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -593,10 +600,41 @@
                 });
             }
 
-            // Setup export button
+            // Setup export buttons
             const exportBtn = document.getElementById('exportBtn');
-            if (exportBtn) {
-                exportBtn.onclick = () => exportPokemon(pokemon);
+            const exportDropdown = document.getElementById('exportDropdown');
+            const exportJsonBtn = document.getElementById('exportJsonBtn');
+            const exportRoll20Btn = document.getElementById('exportRoll20Btn');
+            
+            if (exportBtn && exportDropdown) {
+                // Toggle dropdown
+                exportBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    exportDropdown.style.display = exportDropdown.style.display === 'none' ? 'block' : 'none';
+                };
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', () => {
+                    exportDropdown.style.display = 'none';
+                });
+                
+                // Export JSON
+                if (exportJsonBtn) {
+                    exportJsonBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        exportPokemon(pokemon);
+                        exportDropdown.style.display = 'none';
+                    };
+                }
+                
+                // Export Roll20
+                if (exportRoll20Btn) {
+                    exportRoll20Btn.onclick = (e) => {
+                        e.stopPropagation();
+                        exportPokemonRoll20(pokemon);
+                        exportDropdown.style.display = 'none';
+                    };
+                }
             }
         }
 
