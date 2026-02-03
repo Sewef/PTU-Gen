@@ -1560,30 +1560,57 @@
             return btn;
         }
 
-        // Filter moves based on search
-        function filterMoves(grid, searchTerm, availableMoves) {
-            const sections = grid.querySelectorAll('div > div:first-child');
+        // Generic filter function for items in grid
+        function filterGridItems(grid, searchTerm, itemSelector, matchFn, noResultsClass, noResultsText) {
             let visibleCount = 0;
 
-            grid.querySelectorAll('button[data-move-name]').forEach(btn => {
-                const matches = btn.dataset.moveName.includes(searchTerm) || 
-                               btn.dataset.moveType.includes(searchTerm);
-                btn.style.display = matches ? 'flex' : 'none';
-                if (matches) visibleCount++;
+            // Filter buttons and track visibility
+            grid.querySelectorAll(itemSelector).forEach(btn => {
+                btn.classList.remove('btn-hidden');
+                if (!matchFn(btn)) {
+                    btn.classList.add('btn-hidden');
+                } else {
+                    visibleCount++;
+                }
             });
 
+            // Show/hide sections based on visible buttons
+            const sections = Array.from(grid.children).filter(child => 
+                child.style.marginBottom === '15px' && 
+                child.querySelectorAll(itemSelector).length > 0
+            );
+            
+            sections.forEach(section => {
+                const hasVisibleButtons = Array.from(section.querySelectorAll(itemSelector))
+                    .some(btn => !btn.classList.contains('btn-hidden'));
+                
+                section.style.display = hasVisibleButtons ? 'block' : 'none';
+                const listDiv = section.children[1];
+                if (listDiv && listDiv.tagName === 'DIV') {
+                    listDiv.style.display = hasVisibleButtons ? 'grid' : 'none';
+                }
+            });
+
+            // Show/hide no results message
             if (visibleCount === 0) {
-                if (!grid.querySelector('.no-results')) {
+                if (!grid.querySelector('.' + noResultsClass)) {
                     const noResults = document.createElement('div');
-                    noResults.className = 'no-results';
+                    noResults.className = noResultsClass;
                     noResults.style.cssText = 'padding: 20px; text-align: center; color: #999; grid-column: 1 / -1;';
-                    noResults.textContent = 'No moves match your search';
+                    noResults.textContent = noResultsText;
                     grid.appendChild(noResults);
                 }
             } else {
-                const noResults = grid.querySelector('.no-results');
+                const noResults = grid.querySelector('.' + noResultsClass);
                 if (noResults) noResults.remove();
             }
+        }
+
+        // Filter moves based on search
+        function filterMoves(grid, searchTerm, availableMoves) {
+            filterGridItems(grid, searchTerm, 'button[data-move-name]',
+                btn => btn.dataset.moveName.includes(searchTerm) || btn.dataset.moveType.includes(searchTerm),
+                'no-results', 'No moves match your search');
         }
 
         // Display all moves from database in grid
@@ -1614,27 +1641,9 @@
 
         // Filter all moves based on search
         function filterAllMoves(grid, searchTerm, allMoves) {
-            let visibleCount = 0;
-
-            grid.querySelectorAll('button[data-move-name]').forEach(btn => {
-                const matches = btn.dataset.moveName.includes(searchTerm) || 
-                               btn.dataset.moveType.includes(searchTerm);
-                btn.style.display = matches ? 'flex' : 'none';
-                if (matches) visibleCount++;
-            });
-
-            if (visibleCount === 0) {
-                if (!grid.querySelector('.no-results')) {
-                    const noResults = document.createElement('div');
-                    noResults.className = 'no-results';
-                    noResults.style.cssText = 'padding: 20px; text-align: center; color: #999; grid-column: 1 / -1;';
-                    noResults.textContent = 'No moves match your search';
-                    grid.appendChild(noResults);
-                }
-            } else {
-                const noResults = grid.querySelector('.no-results');
-                if (noResults) noResults.remove();
-            }
+            filterGridItems(grid, searchTerm, 'button[data-move-name]',
+                btn => btn.dataset.moveName.includes(searchTerm) || btn.dataset.moveType.includes(searchTerm),
+                'no-results', 'No moves match your search');
         }
 
         // Setup abilities editor
@@ -2013,27 +2022,9 @@
 
         // Filter abilities based on search
         function filterAbilities(grid, searchTerm, availableAbilities) {
-            const buttons = grid.querySelectorAll('button[data-ability-name]');
-            let visibleCount = 0;
-
-            buttons.forEach(btn => {
-                const matches = btn.dataset.abilityName.includes(searchTerm);
-                btn.style.display = matches ? 'flex' : 'none';
-                if (matches) visibleCount++;
-            });
-
-            if (visibleCount === 0) {
-                if (!grid.querySelector('.no-results-abilities')) {
-                    const noResults = document.createElement('div');
-                    noResults.className = 'no-results-abilities';
-                    noResults.style.cssText = 'padding: 20px; text-align: center; color: #999; grid-column: 1 / -1;';
-                    noResults.textContent = 'No abilities match your search';
-                    grid.appendChild(noResults);
-                }
-            } else {
-                const noResults = grid.querySelector('.no-results-abilities');
-                if (noResults) noResults.remove();
-            }
+            filterGridItems(grid, searchTerm, 'button[data-ability-name]',
+                btn => btn.dataset.abilityName.includes(searchTerm),
+                'no-results-abilities', 'No abilities match your search');
         }
 
         // Display all abilities from database in grid
@@ -2064,26 +2055,9 @@
 
         // Filter all abilities based on search
         function filterAllAbilities(grid, searchTerm, allAbilities) {
-            let visibleCount = 0;
-
-            grid.querySelectorAll('button[data-ability-name]').forEach(btn => {
-                const matches = btn.dataset.abilityName.includes(searchTerm);
-                btn.style.display = matches ? 'flex' : 'none';
-                if (matches) visibleCount++;
-            });
-
-            if (visibleCount === 0) {
-                if (!grid.querySelector('.no-results-abilities')) {
-                    const noResults = document.createElement('div');
-                    noResults.className = 'no-results-abilities';
-                    noResults.style.cssText = 'padding: 20px; text-align: center; color: #999; grid-column: 1 / -1;';
-                    noResults.textContent = 'No abilities match your search';
-                    grid.appendChild(noResults);
-                }
-            } else {
-                const noResults = grid.querySelector('.no-results-abilities');
-                if (noResults) noResults.remove();
-            }
+            filterGridItems(grid, searchTerm, 'button[data-ability-name]',
+                btn => btn.dataset.abilityName.includes(searchTerm),
+                'no-results-abilities', 'No abilities match your search');
         }
 
         // Export function
