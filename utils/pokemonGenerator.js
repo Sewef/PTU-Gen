@@ -521,6 +521,23 @@ class PokemonGenerator {
         habitat: otherInfo.Habitat || 'Unknown'
       },
       capabilities: species.Capabilities || [],
+      legendary: species.Legendary || false,
+      learnsets: {
+        moveLearns: species.Moves || {},
+        abilityLearns: {
+          basicAbilities: [
+            (species['Basic Information'] && species['Basic Information']['Basic Ability 1']) || null, 
+            (species['Basic Information'] && species['Basic Information']['Basic Ability 2']) || null
+          ].filter(a => a != null && a !== '').map(a => this.getAbilityLearnsetEntry(a)),
+          advancedAbilities: [
+            (species['Basic Information'] && species['Basic Information']['Adv Ability 1']) || null, 
+            (species['Basic Information'] && species['Basic Information']['Adv Ability 2']) || null
+          ].filter(a => a != null && a !== '').map(a => this.getAbilityLearnsetEntry(a)),
+          highAbilities: [
+            (species['Basic Information'] && species['Basic Information']['High Ability']) || null
+          ].filter(a => a != null && a !== '').map(a => this.getAbilityLearnsetEntry(a))
+        }
+      },
       dataset: dataset,
       includedLegendary: includeLegendaries
     };
@@ -972,6 +989,42 @@ class PokemonGenerator {
     }
     
     return null;
+  }
+
+  /**
+   * Get ability learnset entry with full details
+   * Handles arrays of ability choices
+   */
+  static getAbilityLearnsetEntry(abilityOrArray) {
+    // If it's an array of choices, get details for each
+    if (Array.isArray(abilityOrArray)) {
+      return abilityOrArray.map(abilityName => {
+        const definition = this.getAbilityDefinition(abilityName);
+        if (!definition) {
+          return {
+            name: abilityName,
+            effect: '',
+            trigger: '',
+            target: '',
+            frequency: 'Static'
+          };
+        }
+        return this.normalizeAbilityFields(abilityName, definition);
+      });
+    }
+    
+    // Single ability
+    const definition = this.getAbilityDefinition(abilityOrArray);
+    if (!definition) {
+      return {
+        name: abilityOrArray,
+        effect: '',
+        trigger: '',
+        target: '',
+        frequency: 'Static'
+      };
+    }
+    return this.normalizeAbilityFields(abilityOrArray, definition);
   }
 
   /**

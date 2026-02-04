@@ -9,6 +9,7 @@
     <link rel="icon" id="dynamicFavicon" type="image/png" href="" crossOrigin="anonymous">
     <script src="export.js"></script>
     <script src="export-roll20.js"></script>
+    <script src="export-pokesheets.js"></script>
     <style>
         .multiplier-btn {
             padding: 4px 8px;
@@ -304,7 +305,8 @@
                             <button id="exportBtn" title="Export options" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;">📥 Export <span style="font-size: 0.7em;">▼</span></button>
                             <div id="exportDropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 180px;">
                                 <button id="exportJsonBtn" style="width: 100%; padding: 10px 16px; background: white; color: #333; border: none; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 0.85em; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">📄 Export JSON</button>
-                                <button id="exportRoll20Btn" style="width: 100%; padding: 10px 16px; background: white; color: #333; border: none; cursor: pointer; text-align: left; font-size: 0.85em; transition: background 0.2s; border-radius: 0 0 4px 4px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">🎲 Export Roll20</button>
+                                <button id="exportRoll20Btn" style="width: 100%; padding: 10px 16px; background: white; color: #333; border: none; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 0.85em; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">🎲 Export Roll20</button>
+                                <button id="exportPokesheetsBtn" style="width: 100%; padding: 10px 16px; background: white; color: #333; border: none; cursor: pointer; text-align: left; font-size: 0.85em; transition: background 0.2s; border-radius: 0 0 4px 4px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">📊 Export Pokésheets</button>
                             </div>
                         </div>
                     </div>
@@ -665,6 +667,7 @@
             const exportDropdown = document.getElementById('exportDropdown');
             const exportJsonBtn = document.getElementById('exportJsonBtn');
             const exportRoll20Btn = document.getElementById('exportRoll20Btn');
+            const exportPokesheetsBtn = document.getElementById('exportPokesheetsBtn');
             
             if (exportBtn && exportDropdown) {
                 // Toggle dropdown
@@ -692,6 +695,15 @@
                     exportRoll20Btn.onclick = (e) => {
                         e.stopPropagation();
                         exportPokemonRoll20(pokemon);
+                        exportDropdown.style.display = 'none';
+                    };
+                }
+                
+                // Export Pokésheets
+                if (exportPokesheetsBtn) {
+                    exportPokesheetsBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        exportPokemonPokesheets(pokemon);
                         exportDropdown.style.display = 'none';
                     };
                 }
