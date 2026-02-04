@@ -302,8 +302,8 @@ function convertPokesheetsCapabilities(capabilities) {
             if (allowedCapabilities.includes(capName)) {
                 pokesheetsCapabilities[capName] = capValue;
             } else {
-                // Everything else: add to capabilities with -1, and to otherCapabilities with value
-                pokesheetsCapabilities[capName] = -1;
+                // Non-allowed capabilities: store with value in key as -1, and in otherCapabilities
+                pokesheetsCapabilities[`${capName} ${capValue}`] = -1;
                 otherCapabilities.push(`${capName} ${capValue}`);
             }
             return;
@@ -316,7 +316,7 @@ function convertPokesheetsCapabilities(capabilities) {
             if (allowedCapabilities.includes(capName)) {
                 pokesheetsCapabilities[capName] = 0;
             } else {
-                // All other capabilities: add to capabilities with -1, and to otherCapabilities
+                // Non-allowed simple capabilities: store as -1 in capabilities and in otherCapabilities
                 pokesheetsCapabilities[capName] = -1;
                 otherCapabilities.push(capName);
             }
