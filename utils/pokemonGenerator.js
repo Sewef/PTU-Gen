@@ -60,8 +60,8 @@ const DATASETS = {
       'pokedex/community/pokedex_8g_hisui.min.json',
       'pokedex/community/pokedex_9g.min.json'
     ],
-    abilities: 'abilities/abilities_9g.min.json',
-    moves: 'moves/moves_9g.min.json',
+    abilities: 'abilities/abilities_community.min.json',
+    moves: 'moves/moves_community.min.json',
   },
   homebrew: {
     name: 'Homebrew',
