@@ -393,7 +393,7 @@
                                     ${Object.entries(pokemon.skills).map(([skillName, skillFormula]) => `
                                         <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e8a76e;">
                                             <div style="font-weight: 600; color: #333; font-size: 0.9em; margin-bottom: 4px;">${skillName}</div>
-                                            <div style="font-family: monospace; font-size: 0.85em; color: #666;">${skillFormula}</div>
+                                            <input type="text" class="skill-input" data-skill-name="${skillName}" value="${skillFormula}" style="font-family: monospace; font-size: 0.85em; color: #666; width: 100%; border: 1px solid #ddd; border-radius: 3px; padding: 4px; box-sizing: border-box; transition: border-color 0.2s ease;" />
                                         </div>
                                     `).join('')}
                                 </div>
@@ -655,6 +655,9 @@
 
             // Setup moves editor
             setupMovesEditor(pokemon);
+
+            // Setup skills editor
+            setupSkillsEditor(pokemon);
 
             // Setup abilities editor
             setupAbilitiesEditor(pokemon);
@@ -1905,6 +1908,20 @@
             filterGridItems(grid, searchTerm, 'button[data-move-name]',
                 btn => btn.dataset.moveName.includes(searchTerm) || btn.dataset.moveType.includes(searchTerm),
                 'no-results', 'No moves match your search');
+        }
+
+        // Setup skills editor
+        function setupSkillsEditor(pokemon) {
+            document.querySelectorAll('.skill-input').forEach(input => {
+                input.addEventListener('change', function () {
+                    const skillName = this.getAttribute('data-skill-name');
+                    const newValue = this.value.trim();
+                    
+                    if (skillName && pokemon.skills) {
+                        pokemon.skills[skillName] = newValue;
+                    }
+                });
+            });
         }
 
         // Setup abilities editor
