@@ -7,42 +7,26 @@
     <title id="pageTitle">Pokémon Details</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" id="dynamicFavicon" type="image/png" href="" crossOrigin="anonymous">
+    <script src="theme.js" defer></script>
     <script src="export.js"></script>
     <script src="export-roll20.js"></script>
     <script src="export-pokesheets.js"></script>
-    <style>
-        .multiplier-btn {
-            padding: 4px 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.75em;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-        .multiplier-btn.inactive {
-            background: #f0f0f0;
-            color: #666;
-        }
-        .multiplier-btn.active {
-            background: #667eea;
-            color: white;
-        }
-    </style>
 </head>
 
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-                <img src="logo.png" alt="PTU Logo" style="height: 40px; width: 40px; object-fit: contain;">
+            <div class="header-top">
+                <a href="index.html" class="header-back">← Back to Generator</a>
+            </div>
+            <h1 class="header-title">
+                <img src="logo.png" alt="PTU Logo" class="header-logo">
                 Pokémon Details
             </h1>
-            <a href="index.html">← Back to Generator</a>
         </div>
 
         <div id="pokemonDisplay" class="pokemon-display">
-            <div style="text-align: center; color: #999;">Loading...</div>
+            <div class="details-loading">Loading...</div>
         </div>
     </div>
 
@@ -115,23 +99,23 @@
             // Create function to render a table half
             const renderHalf = (types) => {
                 let html = `
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.8em; margin-bottom: 8px;">
+                    <table class="details-table">
                         <tbody>
-                            <tr style="border-bottom: 1px solid #ddd; height: 36px;">
+                            <tr class="details-table-header-row">
                 `;
 
                 // First row: Type badges
                 types.forEach(type => {
                     html += `
-                        <td style="padding: 4px; text-align: center; border-right: 1px solid #ddd; vertical-align: middle;">
-                            <span class="type-badge type-${type.toLowerCase().replace(' ', '-')}" style="display: inline-block; padding: 4px 8px; font-size: 0.7em; font-weight: 600; min-width: 50px; white-space: nowrap;">${type}</span>
+                        <td class="details-table-type-cell">
+                            <span class="type-badge type-badge-table type-${type.toLowerCase().replace(' ', '-')}">${type}</span>
                         </td>
                     `;
                 });
 
                 html += `
                             </tr>
-                            <tr style="background: #fafafa; height: 30px;">
+                            <tr class="details-table-body-row">
                 `;
 
                 // Second row: Effectiveness values
@@ -143,7 +127,7 @@
                         eff = 2 * (currentTypeMultiplier / 2);
                     }
                     
-                    let effColor = '#333'; // Normal
+                    let effClass = 'eff-neutral'; // Default
                     let effText = '1x';
                     
                     // Format effectiveness with minimal decimals
@@ -156,27 +140,27 @@
                     };
 
                     if (eff === 0) {
-                        effColor = '#27ae60'; // Immune
+                        effClass = 'eff-immune';
                         effText = '0x';
                     } else if (eff <= 0.25) {
-                        effColor = '#3498db'; // Strong resist
+                        effClass = 'eff-strong-resist';
                         effText = formatEff(eff);
                     } else if (eff <= 0.5) {
-                        effColor = '#5dade2'; // Resist
+                        effClass = 'eff-resist';
                         effText = formatEff(eff);
                     } else if (eff === 1) {
-                        effColor = '#333';
+                        effClass = 'eff-neutral';
                         effText = '1x';
                     } else if (eff <= 2) {
-                        effColor = '#e67e22'; // Weak
+                        effClass = 'eff-weak';
                         effText = formatEff(eff);
                     } else {
-                        effColor = '#e74c3c'; // Strong weak
+                        effClass = 'eff-strong-weak';
                         effText = formatEff(eff);
                     }
 
                     html += `
-                        <td style="padding: 4px; text-align: center; border-right: 1px solid #ddd; font-weight: 600; color: ${effColor}; font-size: 0.95em; vertical-align: middle;">
+                        <td class="type-eff-value-cell ${effClass}">
                             ${effText}
                         </td>
                     `;
@@ -299,21 +283,21 @@
                     <div class="pokemon-header-content">
                         <img src="${imageUrl}" alt="${pokemon.name}" class="pokemon-header-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23eee%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E'" />
                         <div class="pokemon-header-text">
-                            <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="flex-header">
                                 <div class="pokemon-title">#${pokemon.id} ${pokemon.name}</div>
                                 ${pokemon.shiny ? '<div class="shiny-badge">✨ SHINY</div>' : ''}
-                                ${pokemon.types?.isFormeVariant ? `<div style="display: inline-block; background: #f0f0f0; padding: 4px 8px; border-radius: 3px; font-size: 0.85em; color: #666; font-weight: 500;">${pokemon.types.selectedForme}</div>` : ''}
-                                ${pokemon.statVariant ? `<div style="display: inline-block; background: #fff3cd; padding: 4px 8px; border-radius: 3px; font-size: 0.85em; color: #856404; font-weight: 500;">${pokemon.statVariant.selectedVariant}</div>` : ''}
+                                ${pokemon.types?.isFormeVariant ? `<div class="forme-badge-inline">${pokemon.types.selectedForme}</div>` : ''}
+                                ${pokemon.statVariant ? `<div class="variant-badge-inline">${pokemon.statVariant.selectedVariant}</div>` : ''}
                             </div>
-                            <input type="text" id="nicknameInput" placeholder="Nickname" value="${pokemon.nickname || ''}" style="width: 200px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; margin-top: 6px; font-style: italic;" maxlength="20" />
+                            <input type="text" id="nicknameInput" placeholder="Nickname" value="${pokemon.nickname || ''}" class="nickname-field" maxlength="20" />
                             <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level} • ${pokemon.dataset ? pokemon.dataset.charAt(0).toUpperCase() + pokemon.dataset.slice(1) : 'Core'} Dataset</div>
                         </div>
-                        <div style="position: relative; margin-left: auto; align-self: flex-start;">
-                            <button id="exportBtn" title="Export options" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;">📥 Export <span style="font-size: 0.7em;">▼</span></button>
-                            <div id="exportDropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 180px;">
-                                <button id="exportJsonBtn" style="width: 100%; padding: 10px 16px; background: white; color: #333; border: none; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 0.85em; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">📄 Export JSON</button>
-                                <button id="exportRoll20Btn" style="width: 100%; padding: 10px 16px; background: white; color: #333; border: none; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 0.85em; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">🎲 Export Roll20</button>
-                                <button id="exportPokesheetsBtn" style="width: 100%; padding: 10px 16px; background: white; color: #333; border: none; cursor: pointer; text-align: left; font-size: 0.85em; transition: background 0.2s; border-radius: 0 0 4px 4px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">📊 Export Pokésheets</button>
+                        <div class="export-button-wrapper">
+                            <button id="exportBtn" title="Export options" class="export-btn-main">📥 Export <span class="dropdown-arrow">▼</span></button>
+                            <div id="exportDropdown" class="export-dropdown">
+                                <button id="exportJsonBtn" class="export-dropdown-item">📄 Export JSON</button>
+                                <button id="exportRoll20Btn" class="export-dropdown-item">🎲 Export Roll20</button>
+                                <button id="exportPokesheetsBtn" class="export-dropdown-item">📊 Export Pokésheets</button>
                             </div>
                         </div>
                     </div>
@@ -323,7 +307,7 @@
                     <div class="details-left">
                         <div class="pokemon-info">
                             <div class="info-box">
-                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                                <div class="flex-between-center">
                                     <div class="info-label">Type(s)</div>
                                     <button id="editTypesBtn" title="Edit types" class="edit-action-btn">✎ Edit</button>
                                 </div>
@@ -341,27 +325,27 @@
 
                             <div class="info-box">
                                 <div class="info-label">Level & HP</div>
-                                <div style="display: flex; gap: 20px; align-items: center; justify-content: center; margin-top: 8px;">
-                                    <div style="display: flex; gap: 6px; align-items: center;">
-                                        <span style="font-size: 0.9em; color: #666; min-width: 30px;">Lvl:</span>
-                                        <input type="number" id="levelInput" min="1" max="100" value="${pokemon.level}" style="width: 50px; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-weight: 600; text-align: center;" />
+                                <div class="level-hp-wrapper">
+                                    <div class="level-input-group">
+                                        <span class="text-secondary">Lvl:</span>
+                                        <input type="number" id="levelInput" min="1" max="100" value="${pokemon.level}" class="level-number-input" />
                                     </div>
-                                    <div style="display: flex; gap: 6px; align-items: center;">
-                                        <span style="font-size: 0.9em; color: #666; min-width: 30px;">HP:</span>
-                                        <div id="hpDisplay" class="info-value" style="margin: 0; min-width: 40px; text-align: center;">${pokemon.hitPoints}</div>
+                                    <div class="level-input-group">
+                                        <span class="text-secondary">HP:</span>
+                                        <div id="hpDisplay" class="hp-display">${pokemon.hitPoints}</div>
                                     </div>
                                 </div>
-                                <div style="margin-top:8px; text-align:center">
+                                <div class="margin-top-8">
                                     <input type="text" id="hpFormulaInput" value="${pokemon.hpFormula || 'LEVEL + (HP * 3) + 10'}" class="skill-input" placeholder="e.g., LEVEL + (HP * 3) + 10" />
                                 </div>
                             </div>
 
                             <div class="info-box">
                                 <div class="info-label">Nature</div>
-                                <select id="natureSelect" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 8px;">
+                                <select id="natureSelect" class="nature-select">
                                     <option value="">Loading natures...</option>
                                 </select>
-                                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 8px;">
+                                <div class="flex-center-gap-15 margin-top-8">
                                     <span class="nature-raise" id="natureRaise">+${pokemon.nature.raise}</span>
                                     <span class="nature-lower" id="natureLower">-${pokemon.nature.lower}</span>
                                 </div>
@@ -370,12 +354,12 @@
                             ${pokemon.otherInfo ? `
                                 <div class="info-box">
                                     <div class="info-label">Other Information</div>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.9em;">
+                                    <div class="other-info-grid">
                                         <div><strong>Size:</strong> ${pokemon.otherInfo.sizeCategory || 'Unknown'}</div>
                                         <div><strong>Weight Class:</strong> ${pokemon.otherInfo.weightClass || 'Unknown'}</div>
                                         <div><strong>Gender:</strong> ${pokemon.otherInfo.gender || 'Unknown'}</div>
                                         <div><strong>Diet:</strong> ${pokemon.otherInfo.diet || 'Unknown'}</div>
-                                        <div style="grid-column: 1 / -1;"><strong>Habitat:</strong> ${pokemon.otherInfo.habitat || 'Unknown'}</div>
+                                        <div><strong>Habitat:</strong> ${pokemon.otherInfo.habitat || 'Unknown'}</div>
                                     </div>
                                 </div>
                             ` : ''}
@@ -383,13 +367,13 @@
                         </div>
                             
                         <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div class="stats-section-header">
                                 <h3 class="section-title">📈 Stats</h3>
-                                <div style="display: flex; gap: 5px; align-items: center;">
-                                    <button id="distributionRandomBtn" title="Random distribution" style="padding: 4px 10px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">RANDOM</button>
-                                    <button id="distributionBalancedBtn" title="Balanced distribution" style="padding: 4px 10px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">BALANCED</button>
-                                    <button id="distributionMinmaxedBtn" title="MinMaxed distribution" style="padding: 4px 10px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600;">MINMAXED</button>
-                                    <div id="remainingPointsDisplay" style="padding: 6px 10px; background: #f0f7ff; border: 1px solid #667eea; border-radius: 4px; font-size: 0.75em; font-weight: 600; color: #667eea; white-space: nowrap;">Remaining: 0</div>
+                                <div class="stats-buttons-group">
+                                    <button id="distributionRandomBtn" title="Random distribution" class="distribution-button">RANDOM</button>
+                                    <button id="distributionBalancedBtn" title="Balanced distribution" class="distribution-button">BALANCED</button>
+                                    <button id="distributionMinmaxedBtn" title="MinMaxed distribution" class="distribution-button">MINMAXED</button>
+                                    <div id="remainingPointsDisplay" class="remaining-points-display">Remaining: 0</div>
                                 </div>
                             </div>
                             <div class="stats-breakdown" id="statsBreakdown">
@@ -460,7 +444,7 @@
                         ` : `
                             <h3 class="section-title">🔧 Capabilities</h3>
                             <div class="capabilities-section">
-                                <div id="capabilitiesContainer" style="color: #999; font-size: 0.9em; margin-bottom: 12px;">
+                                <div id="capabilitiesContainer" class="capabilities-container">
                                     No capabilities yet.
                                 </div>
                                 <div class="capabilities-buttons">
@@ -474,16 +458,16 @@
                         `}
                         
                         <div class="abilities">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div class="abilities-header">
                                 <h3 class="section-title">🎯 Abilities</h3>
-                                <button id="addAbilityBtn" title="Add ability" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">✎ Edit</button>
+                                <button id="addAbilityBtn" title="Add ability" class="add-ability-btn">✎ Edit</button>
                             </div>
                             <div class="ability-list" id="abilitiesList">
                                 ${pokemon.abilities.map(ability => `
                                     <div class="ability" data-ability-name="${ability.name}">
                                         <div class="ability-header">
                                             <div class="ability-name">${ability.name}</div>
-                                            <button class="remove-ability-btn" title="Remove this ability" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
+                                            <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
                                         </div>
                                         ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}
                                             <span class="usage-tracker" data-ability-name="${ability.name}">
@@ -510,20 +494,20 @@
 
                     <div class="details-right">
                         <div class="info-box">
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <div class="flex-between-center-10">
                                 <div class="info-label">Type Effectiveness</div>
-                                <div style="display: flex; gap: 5px;">
+                                <div class="flex-gap-5">
                                     <button id="multiplyBtn15" class="multiplier-btn inactive" title="Multiply by 1.5">×1.5</button>
                                     <button id="multiplyBtn2" class="multiplier-btn active" title="Multiply by 2">×2</button>
                                 </div>
                             </div>
-                            <div id="typeEffectiveness" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;">
+                            <div id="typeEffectiveness" class="type-effectiveness-display">
                                 <!-- Type effectiveness will be generated here -->
                             </div>
                         </div>
 
                         <div class="moves">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div class="flex-between-center-15">
                                 <h3 class="section-title">⚔️ Moves</h3>
                                 <button id="addMoveBtn" title="Edit" class="edit-action-btn">✎ Edit</button>
                             </div>
@@ -532,7 +516,7 @@
                                     <div class="move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
                                         <div class="move-header">
                                             <div class="move-name">${move.name}${move.class ? `<span class="move-class-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
-                                            <button class="remove-move-btn" title="Remove this move" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
+                                            <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
                                         </div>
                                         <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
                                         <div class="move-field">
@@ -543,8 +527,8 @@
                                         <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
                                         ${move.ac ? `<div class="move-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
                                         ${move.damageBase ? `<div class="move-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
-                                            <button class="db-adjust-btn db-decrease" title="Decrease DB" style="padding: 2px 6px; margin-left: 8px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">−</button>
-                                            <button class="db-adjust-btn db-increase" title="Increase DB" style="padding: 2px 6px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">+</button>
+                                            <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
+                                            <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
                                         </div>` : ''}
                                         ${move.effect ? `<div class="move-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                                     </div>
@@ -612,7 +596,7 @@
                     <div class="stat-breakdown-row" data-stat="${statName}">
                         <div class="stat-breakdown-label">
                             <div>${statDisplayNames[statName] || statName}</div>
-                            <span class="stat-ignore-btn ${isIgnored ? 'ignored' : ''}" data-stat="${statName}" title="Toggle ignore base relation" style="display:inline-block;cursor:pointer;margin-top:4px;font-size:0.9em;vertical-align:middle;color:${isIgnored ? '#dc3545' : '#667eea'};border-radius:3px;padding:4px 8px;transition:color 0.2s;border:1px solid ${isIgnored ? '#dc3545' : '#ddd'};background:${isIgnored ? 'rgba(220,53,69,0.1)' : '#f9f9f9'};white-space:nowrap;">
+                            <span class="stat-ignore-btn ${isIgnored ? 'ignored' : ''}" data-stat="${statName}" title="Toggle ignore base relation">
                                 ${isIgnored ? 'Ignored' : 'In Relation'}
                             </span>
                         </div>
@@ -1038,65 +1022,22 @@
 
             // Create modal HTML
             const modalHTML = `
-                <div id="typeModal" style="
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 2000;
-                ">
-                    <div style="
-                        background: white;
-                        border-radius: 10px;
-                        padding: 30px;
-                        max-width: 500px;
-                        width: 90%;
-                        max-height: 80vh;
-                        overflow-y: auto;
-                        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-                    ">
-                        <h2 style="margin-top: 0; color: #667eea; margin-bottom: 20px;">Select Types</h2>
-                        <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 5px;">
-                            <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #666;">Selected types: <span id="selectedTypesDisplay">${(() => {
+                <div id="typeModal" class="modal-overlay">
+                    <div class="modal-content">
+                        <h2 class="modal-title">Select Types</h2>
+                        <div class="modal-info-box">
+                            <p>Selected types: <span id="selectedTypesDisplay">${(() => {
                                 let typesToShow = pokemon.actualTypes || pokemon.types || [];
                                 if (typesToShow.isFormeVariant) {
                                     typesToShow = typesToShow.formes[typesToShow.selectedForme] || [];
                                 }
-                                return typesToShow.length > 0 ? typesToShow.map(t => `<span class="type-badge type-${t.toLowerCase().replace(' ', '-')}">${t}</span>`).join('') : '<span style="color: #999;">None</span>';
+                                return typesToShow.length > 0 ? typesToShow.map(t => `<span class="type-badge type-${t.toLowerCase().replace(' ', '-')}">${t}</span>`).join('') : '<span class="text-tertiary">None</span>';
                             })()}</span></p>
                         </div>
-                        <div style="
-                            display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-                            gap: 8px;
-                            margin-bottom: 20px;
-                        " id="typeGrid"></div>
-                        <div style="display: flex; gap: 10px;">
-                            <button id="saveTypesBtn" style="
-                                flex: 1;
-                                padding: 10px;
-                                background: #667eea;
-                                color: white;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                font-weight: 600;
-                            ">Save</button>
-                            <button id="closeTypesBtn" style="
-                                flex: 1;
-                                padding: 10px;
-                                background: #f0f0f0;
-                                color: #333;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                font-weight: 600;
-                            ">Cancel</button>
+                        <div class="modal-grid" id="typeGrid"></div>
+                        <div class="modal-buttons">
+                            <button id="saveTypesBtn" class="modal-btn modal-btn-primary">Save</button>
+                            <button id="closeTypesBtn" class="modal-btn modal-btn-secondary">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -1139,7 +1080,7 @@
 
                     // Update selected types display
                     const selectedDisplay = document.getElementById('selectedTypesDisplay');
-                    selectedDisplay.innerHTML = selectedTypes.length > 0 ? selectedTypes.map(t => `<span class="type-badge type-${t.toLowerCase().replace(' ', '-')}">${t}</span>`).join('') : '<span style="color: #999;">None</span>';
+                    selectedDisplay.innerHTML = selectedTypes.length > 0 ? selectedTypes.map(t => `<span class="type-badge type-${t.toLowerCase().replace(' ', '-')}">${t}</span>`).join('') : '<span class="text-tertiary">None</span>';
                 });
 
                 typeGrid.appendChild(btn);
@@ -1730,7 +1671,7 @@
                 <div class="move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
                     <div class="move-header">
                         <div class="move-name">${move.name}${move.class ? `<span class="move-class-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
-                        <button class="remove-move-btn" title="Remove this move" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
+                        <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
                     </div>
                     <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
                     <div class="move-field">
@@ -1741,8 +1682,8 @@
                     <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
                     ${move.ac ? `<div class="move-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
                     ${move.damageBase ? `<div class="move-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
-                        <button class="db-adjust-btn db-decrease" title="Decrease DB" style="padding: 2px 6px; margin-left: 8px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">−</button>
-                        <button class="db-adjust-btn db-increase" title="Increase DB" style="padding: 2px 6px; background: #f0f0f0; color: #666; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">+</button>
+                        <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
+                        <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
                     </div>` : ''}
                     ${move.effect ? `<div class="move-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                 </div>
@@ -1884,71 +1825,19 @@
         // Create modal HTML for adding moves
         function createAddMoveModalHTML(availableMoves) {
             return `
-                <div id="addMoveModal" style="
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 2000;
-                ">
-                    <div style="
-                        background: white;
-                        border-radius: 10px;
-                        padding: 30px;
-                        max-width: 800px;
-                        width: 90%;
-                        max-height: 80vh;
-                        overflow-y: auto;
-                        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-                    ">
-                        <h2 style="margin-top: 0; color: #667eea; margin-bottom: 20px;">Add Move</h2>
-                        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
-                            <input type="text" id="moveSearchInput" placeholder="Search moves..." style="
-                                flex: 1;
-                                padding: 10px;
-                                border: 1px solid #ddd;
-                                border-radius: 5px;
-                                font-size: 0.95em;
-                            " />
-                            <button id="toggleAllMovesBtn" style="
-                                padding: 10px 15px;
-                                background: #667eea;
-                                color: white;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                font-weight: 600;
-                                font-size: 0.9em;
-                                white-space: nowrap;
-                            ">Show All Moves</button>
+                <div id="addMoveModal" class="modal-overlay">
+                    <div class="modal-content" style="max-width: 800px;">
+                        <h2 class="modal-title">Add Move</h2>
+                        <div class="modal-search-bar">
+                            <input type="text" id="moveSearchInput" placeholder="Search moves..." class="modal-search-input" />
+                            <button id="toggleAllMovesBtn" class="modal-action-btn">Show All Moves</button>
                         </div>
-                        <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 5px; font-size: 0.9em; color: #666;">
-                            <strong>Total moves available:</strong> <span id="moveCountSpan">${(availableMoves.levelUp?.length || 0) + (availableMoves.tm?.length || 0) + (availableMoves.tutor?.length || 0)}</span>
+                        <div class="modal-info-box" style="margin-bottom: 20px;">
+                            <p class="modal-info-text"><strong>Total moves available:</strong> <span id="moveCountSpan">${(availableMoves.levelUp?.length || 0) + (availableMoves.tm?.length || 0) + (availableMoves.tutor?.length || 0)}</span></p>
                         </div>
-                        <div id="moveGrid" style="
-                            display: grid;
-                            grid-template-columns: 1fr;
-                            gap: 10px;
-                            margin-bottom: 20px;
-                            max-height: 400px;
-                            overflow-y: auto;
-                        "></div>
-                        <div style="display: flex; gap: 10px;">
-                            <button id="closeAddMoveBtn" style="
-                                flex: 1;
-                                padding: 10px;
-                                background: #f0f0f0;
-                                color: #333;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                font-weight: 600;
-                            ">Close</button>
+                        <div id="moveGrid" class="move-grid"></div>
+                        <div class="modal-buttons">
+                            <button id="closeAddMoveBtn" class="modal-btn modal-btn-secondary">Close</button>
                         </div>
                     </div>
                 </div>
@@ -1964,12 +1853,11 @@
             if (availableMoves.levelUp && availableMoves.levelUp.length > 0) {
                 hasAnyMoves = true;
                 const section = document.createElement('div');
-                section.style.marginBottom = '15px';
-                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">📖 Level Up Moves</div>`;
+                section.className = 'move-section';
+                section.innerHTML = `<div class="move-section-header">📖 Level Up Moves</div>`;
                 
                 const movesList = document.createElement('div');
-                movesList.style.display = 'grid';
-                movesList.style.gap = '8px';
+                movesList.className = 'move-section-list';
                 
                 availableMoves.levelUp.forEach(move => {
                     const moveBtn = createMoveButton(move, pokemon, 'levelUp');
@@ -1984,12 +1872,11 @@
             if (availableMoves.tm && availableMoves.tm.length > 0) {
                 hasAnyMoves = true;
                 const section = document.createElement('div');
-                section.style.marginBottom = '15px';
-                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">💿 TM/HM Moves</div>`;
+                section.className = 'move-section';
+                section.innerHTML = `<div class="move-section-header">💿 TM/HM Moves</div>`;
                 
                 const movesList = document.createElement('div');
-                movesList.style.display = 'grid';
-                movesList.style.gap = '8px';
+                movesList.className = 'move-section-list';
                 
                 availableMoves.tm.forEach(move => {
                     const moveBtn = createMoveButton(move, pokemon, 'tm');
@@ -2004,12 +1891,11 @@
             if (availableMoves.tutor && availableMoves.tutor.length > 0) {
                 hasAnyMoves = true;
                 const section = document.createElement('div');
-                section.style.marginBottom = '15px';
-                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">👨‍🏫 Tutor Moves</div>`;
+                section.className = 'move-section';
+                section.innerHTML = `<div class="move-section-header">👨‍🏫 Tutor Moves</div>`;
                 
                 const movesList = document.createElement('div');
-                movesList.style.display = 'grid';
-                movesList.style.gap = '8px';
+                movesList.className = 'move-section-list';
                 
                 availableMoves.tutor.forEach(move => {
                     const moveBtn = createMoveButton(move, pokemon, 'tutor');
@@ -2021,7 +1907,7 @@
             }
 
             if (!hasAnyMoves) {
-                grid.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No moves available for this Pokémon</div>';
+                grid.innerHTML = '<div class="empty-grid-message">No moves available for this Pokémon</div>';
             }
         }
 
@@ -2118,13 +2004,13 @@
             grid.innerHTML = '';
             
             if (!allMoves.all || allMoves.all.length === 0) {
-                grid.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No moves available in database</div>';
+                grid.innerHTML = '<div class="empty-grid-message">No moves available in database</div>';
                 return;
             }
 
             const section = document.createElement('div');
             section.style.marginBottom = '15px';
-            section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">📚 All Moves</div>`;
+            section.innerHTML = `<div class="move-section-header">📚 All Moves</div>`;
             
             const movesList = document.createElement('div');
             movesList.style.display = 'grid';
@@ -2268,7 +2154,7 @@
                 <div class="ability" data-ability-name="${ability.name}">
                     <div class="ability-header">
                         <div class="ability-name">${ability.name}</div>
-                        <button class="remove-ability-btn" title="Remove this ability" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
+                        <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
                     </div>
                     ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}
                         <span class="usage-tracker" data-ability-name="${ability.name}">
@@ -2416,71 +2302,19 @@
         // Create modal HTML for adding an ability
         function createAddAbilityModalHTML(availableAbilities) {
             return `
-                <div id="addAbilityModal" style="
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 2000;
-                ">
-                    <div style="
-                        background: white;
-                        border-radius: 10px;
-                        padding: 30px;
-                        max-width: 800px;
-                        width: 90%;
-                        max-height: 80vh;
-                        overflow-y: auto;
-                        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-                    ">
-                        <h2 style="margin-top: 0; color: #667eea; margin-bottom: 20px;">Edit</h2>
-                        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
-                            <input type="text" id="abilitySearchInput" placeholder="Search abilities..." style="
-                                flex: 1;
-                                padding: 10px;
-                                border: 1px solid #ddd;
-                                border-radius: 5px;
-                                font-size: 0.95em;
-                            " />
-                            <button id="toggleAllAbilitiesBtn" style="
-                                padding: 10px 15px;
-                                background: #667eea;
-                                color: white;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                font-weight: 600;
-                                font-size: 0.9em;
-                                white-space: nowrap;
-                            ">Show All Abilities</button>
+                <div id="addAbilityModal" class="modal-overlay">
+                    <div class="modal-content" style="max-width: 800px;">
+                        <h2 class="modal-title">Edit</h2>
+                        <div class="modal-search-bar">
+                            <input type="text" id="abilitySearchInput" placeholder="Search abilities..." class="modal-search-input" />
+                            <button id="toggleAllAbilitiesBtn" class="modal-action-btn">Show All Abilities</button>
                         </div>
-                        <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 5px; font-size: 0.9em; color: #666;">
-                            <strong>Total abilities available:</strong> <span id="abilityCountSpan">${(availableAbilities.basic?.length || 0) + (availableAbilities.advanced?.length || 0) + (availableAbilities.high?.length || 0)}</span>
+                        <div class="modal-info-box" style="margin-bottom: 20px;">
+                            <p class="modal-info-text"><strong>Total abilities available:</strong> <span id="abilityCountSpan">${(availableAbilities.basic?.length || 0) + (availableAbilities.advanced?.length || 0) + (availableAbilities.high?.length || 0)}</span></p>
                         </div>
-                        <div id="abilitiesGrid" style="
-                            display: grid;
-                            grid-template-columns: 1fr;
-                            gap: 10px;
-                            margin-bottom: 20px;
-                            max-height: 400px;
-                            overflow-y: auto;
-                        "></div>
-                        <div style="display: flex; gap: 10px;">
-                            <button id="closeAddAbilityBtn" style="
-                                flex: 1;
-                                padding: 10px;
-                                background: #f0f0f0;
-                                color: #333;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                font-weight: 600;
-                            ">Close</button>
+                        <div id="abilitiesGrid" class="move-grid"></div>
+                        <div class="modal-buttons">
+                            <button id="closeAddAbilityBtn" class="modal-btn modal-btn-secondary">Close</button>
                         </div>
                     </div>
                 </div>
@@ -2496,12 +2330,11 @@
             if (availableAbilities.basic && availableAbilities.basic.length > 0) {
                 hasAnyAbilities = true;
                 const section = document.createElement('div');
-                section.style.marginBottom = '15px';
-                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">⭐ Basic Abilities</div>`;
+                section.className = 'move-section';
+                section.innerHTML = `<div class="move-section-header">⭐ Basic Abilities</div>`;
                 
                 const abilitiesList = document.createElement('div');
-                abilitiesList.style.display = 'grid';
-                abilitiesList.style.gap = '8px';
+                abilitiesList.className = 'move-section-list';
                 
                 availableAbilities.basic.forEach(ability => {
                     const btn = createAbilityButton(ability, pokemon, 'basic');
@@ -2516,12 +2349,11 @@
             if (availableAbilities.advanced && availableAbilities.advanced.length > 0) {
                 hasAnyAbilities = true;
                 const section = document.createElement('div');
-                section.style.marginBottom = '15px';
-                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">🔷 Advanced Abilities</div>`;
+                section.className = 'move-section';
+                section.innerHTML = `<div class="move-section-header">🔷 Advanced Abilities</div>`;
                 
                 const abilitiesList = document.createElement('div');
-                abilitiesList.style.display = 'grid';
-                abilitiesList.style.gap = '8px';
+                abilitiesList.className = 'move-section-list';
                 
                 availableAbilities.advanced.forEach(ability => {
                     const btn = createAbilityButton(ability, pokemon, 'advanced');
@@ -2536,12 +2368,11 @@
             if (availableAbilities.high && availableAbilities.high.length > 0) {
                 hasAnyAbilities = true;
                 const section = document.createElement('div');
-                section.style.marginBottom = '15px';
-                section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">👑 High Ability</div>`;
+                section.className = 'move-section';
+                section.innerHTML = `<div class="move-section-header">👑 High Ability</div>`;
                 
                 const abilitiesList = document.createElement('div');
-                abilitiesList.style.display = 'grid';
-                abilitiesList.style.gap = '8px';
+                abilitiesList.className = 'move-section-list';
                 
                 availableAbilities.high.forEach(ability => {
                     const btn = createAbilityButton(ability, pokemon, 'high');
@@ -2553,7 +2384,7 @@
             }
 
             if (!hasAnyAbilities) {
-                grid.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No abilities available for this Pokémon</div>';
+                grid.innerHTML = '<div class="empty-grid-message">No abilities available for this Pokémon</div>';
             }
         }
 
@@ -2610,13 +2441,13 @@
             grid.innerHTML = '';
             
             if (!allAbilities.all || allAbilities.all.length === 0) {
-                grid.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No abilities available in database</div>';
+                grid.innerHTML = '<div class="empty-grid-message">No abilities available in database</div>';
                 return;
             }
 
             const section = document.createElement('div');
             section.style.marginBottom = '15px';
-            section.innerHTML = `<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #667eea;">📚 All Abilities</div>`;
+            section.innerHTML = `<div class="move-section-header">📚 All Abilities</div>`;
             
             const abilitiesList = document.createElement('div');
             abilitiesList.style.display = 'grid';

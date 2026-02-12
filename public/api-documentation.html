@@ -6,253 +6,16 @@
     <title>PTU Pokémon Generator - API Documentation</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="style.css">
-    <style>
-        .api-doc {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .api-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .api-header h1 {
-            margin: 0 0 10px 0;
-            font-size: 2.5em;
-        }
-
-        .api-header p {
-            margin: 0;
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
-        .toc {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            border-left: 4px solid #667eea;
-        }
-
-        .toc h2 {
-            margin-top: 0;
-            color: #333;
-        }
-
-        .toc ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .toc li {
-            margin: 8px 0;
-        }
-
-        .toc a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .toc a:hover {
-            text-decoration: underline;
-        }
-
-        .endpoint {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .endpoint-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-
-        .method {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 4px;
-            font-weight: bold;
-            color: white;
-            font-size: 0.9em;
-        }
-
-        .method-get {
-            background-color: #61affe;
-        }
-
-        .endpoint-path {
-            font-family: 'Courier New', monospace;
-            background: #f5f5f5;
-            padding: 8px 12px;
-            border-radius: 4px;
-            color: #d63384;
-            font-weight: 500;
-            flex: 1;
-            min-width: 300px;
-        }
-
-        .endpoint h3 {
-            margin-top: 0;
-            color: #333;
-        }
-
-        .section-title {
-            font-size: 1.8em;
-            color: #333;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 10px;
-            margin-top: 40px;
-            margin-bottom: 20px;
-        }
-
-        .description {
-            color: #555;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-
-        .params-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-            font-size: 0.95em;
-        }
-
-        .params-table th {
-            background-color: #f0f0f0;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #ddd;
-            color: #333;
-        }
-
-        .params-table td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .param-name {
-            font-family: 'Courier New', monospace;
-            color: #d63384;
-            font-weight: 500;
-        }
-
-        .param-type {
-            background: #e7f3ff;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            color: #0066cc;
-        }
-
-        .example {
-            background: #f8f8f8;
-            border-left: 3px solid #667eea;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-            overflow-x: auto;
-        }
-
-        .example-title {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 0.95em;
-        }
-
-        .example-code {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            color: #333;
-            background: white;
-            padding: 10px;
-            border-radius: 3px;
-        }
-
-        .note {
-            background: #fff3cd;
-            border-left: 3px solid #ffc107;
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 4px;
-            color: #856404;
-            font-size: 0.95em;
-        }
-
-        .response-example {
-            background: #e8f5e9;
-            border-left: 3px solid #4caf50;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-            overflow-x: auto;
-        }
-
-        .response-title {
-            font-weight: 600;
-            color: #2e7d32;
-            margin-bottom: 10px;
-            font-size: 0.95em;
-        }
-
-        pre {
-            margin: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-size: 0.85em;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        .back-link:hover {
-            background: #764ba2;
-        }
-
-        .stats-info {
-            background: #e3f2fd;
-            border-left: 3px solid #2196f3;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-            font-size: 0.95em;
-            color: #1565c0;
-        }
-    </style>
+    <script src="theme.js" defer></script>
 </head>
 <body>
-    <div class="api-doc">
-        <a href="index.html" class="back-link">← Back to Generator</a>
-
-        <div class="api-header">
-            <h1>📚 PTU Pokémon Generator API</h1>
-            <p>Complete API Documentation</p>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <a href="index.html" class="header-back">← Back to Generator</a>
+            </div>
+            <h1 class="header-title">📚 PTU Pokémon Generator API</h1>
+            <p class="header-subtitle">Complete API Documentation</p>
         </div>
 
         <div class="toc">
@@ -641,7 +404,7 @@ GET /api/pokemon/team?minLevel=20&maxLevel=80&minSize=3&maxSize=12&includeLegend
         <!-- Load Custom Pokémon -->
         <div class="endpoint">
             <div class="endpoint-header">
-                <span class="method method-get" style="background-color: #49cc90;">POST</span>
+                <span class="method method-post">POST</span>
                 <span class="endpoint-path">/custom/pokemon</span>
             </div>
             <h3>Load Custom Pokémon</h3>
@@ -651,7 +414,7 @@ GET /api/pokemon/team?minLevel=20&maxLevel=80&minSize=3&maxSize=12&includeLegend
             </p>
 
             <div class="note">
-                <strong>📄 Example JSON:</strong> <a href="example-custom-pokemon.json" target="_blank" style="color: #667eea; font-weight: bold;">example-custom-pokemon.json</a>
+                <strong>📄 Example JSON:</strong> <a href="example-custom-pokemon.json" target="_blank" class="doc-link">example-custom-pokemon.json</a>
             </div>
 
             <table class="params-table">
@@ -724,7 +487,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
         <!-- Load Custom Abilities -->
         <div class="endpoint">
             <div class="endpoint-header">
-                <span class="method method-get" style="background-color: #49cc90;">POST</span>
+                <span class="method method-post">POST</span>
                 <span class="endpoint-path">/custom/abilities</span>
             </div>
             <h3>Load Custom Abilities</h3>
@@ -733,7 +496,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
             </p>
 
             <div class="note">
-                <strong>📄 Example JSON:</strong> <a href="example-custom-abilities.json" target="_blank" style="color: #667eea; font-weight: bold;">example-custom-abilities.json</a>
+                <strong>📄 Example JSON:</strong> <a href="example-custom-abilities.json" target="_blank" class="doc-link">example-custom-abilities.json</a>
             </div>
 
             <table class="params-table">
@@ -771,7 +534,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
         <!-- Load Custom Moves -->
         <div class="endpoint">
             <div class="endpoint-header">
-                <span class="method method-get" style="background-color: #49cc90;">POST</span>
+                <span class="method method-post">POST</span>
                 <span class="endpoint-path">/custom/moves</span>
             </div>
             <h3>Load Custom Moves</h3>
@@ -780,7 +543,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
             </p>
 
             <div class="note">
-                <strong>📄 Example JSON:</strong> <a href="example-custom-moves.json" target="_blank" style="color: #667eea; font-weight: bold;">example-custom-moves.json</a>
+                <strong>📄 Example JSON:</strong> <a href="example-custom-moves.json" target="_blank" class="doc-link">example-custom-moves.json</a>
             </div>
 
             <table class="params-table">
@@ -846,7 +609,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
         <!-- Clear Custom Data -->
         <div class="endpoint">
             <div class="endpoint-header">
-                <span class="method method-get" style="background-color: #f93e3e;">DELETE</span>
+                <span class="method method-delete">DELETE</span>
                 <span class="endpoint-path">/custom</span>
             </div>
             <h3>Clear All Custom Data</h3>
@@ -1681,9 +1444,9 @@ GET https://ptu-gen.onrender.com/api/pokemon/team?
             </div>
         </div>
 
-        <div style="text-align: center; margin-top: 50px; padding-top: 30px; border-top: 2px solid #eee;">
-            <p style="color: #999; font-size: 0.9em;">PTU Pokémon Generator API | Made with ❤️</p>
-            <a href="index.html" class="back-link">← Back to Generator</a>
+        <div class="footer">
+            <p class="footer-text">PTU Pokémon Generator API | Made with ❤️</p>
+            <a href="index.html" class="footer-back">← Back to Generator</a>
         </div>
     </div>
 </body>
