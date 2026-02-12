@@ -397,11 +397,11 @@
 
                         ${Object.keys(pokemon.skills || {}).length > 0 ? `
                             <h3 class="section-title">📊 Skills</h3>
-                            <div class="skills-section">
-                                <div class="skills-grid">
+                            <div class="section-container skills">
+                                <div class="section-grid skills">
                                     ${Object.entries(pokemon.skills).map(([skillName, skillFormula]) => `
-                                        <div class="skill-card">
-                                            <div class="skill-card-title">${skillName}</div>
+                                        <div class="grid-item skill">
+                                            <div class="grid-item-title">${skillName}</div>
                                             <input type="text" class="skill-input" data-skill-name="${skillName}" value="${skillFormula}" />
                                         </div>
                                     `).join('')}
@@ -411,8 +411,8 @@
 
                         ${pokemon.capabilities && pokemon.capabilities.length > 0 ? `
                             <h3 class="section-title">🔧 Capabilities</h3>
-                            <div class="capabilities-section">
-                                <div id="capabilitiesContainer" class="capabilities-grid">
+                            <div class="section-container capabilities">
+                                <div id="capabilitiesContainer" class="section-grid capabilities">
                                     ${(() => {
                         const withValues = [];
                         const withoutValues = [];
@@ -430,16 +430,16 @@
 
                         // Capabilities with values - as cards
                         withValues.forEach(({ idx, name, value }) => {
-                            html += `<div class="capability-card">
-                                                <div class="capability-card-title" title="${name}">${name}</div>
+                            html += `<div class="grid-item capability">
+                                                <div class="grid-item-title" title="${name}">${name}</div>
                                                 <input type="text" class="capability-value-input" data-index="${idx}" value="${value}" />
                                             </div>`;
                         });
 
                         // Capabilities without values as one row
                         if (withoutValues.length > 0) {
-                            html += `<div class="capability-card-full">
-                                                <div class="capability-card-full-title">Other</div>
+                            html += `<div class="grid-item capability capability-full">
+                                                <div class="grid-item-title">Other</div>
                                                 <input type="text" id="capabilitiesNoValueInput" class="capability-no-value-input" value="${withoutValues.join(', ')}" />
                                             </div>`;
                         }
@@ -447,43 +447,43 @@
                         return html;
                     })()}
                                 </div>
-                                <div class="capabilities-buttons">
-                                    <button class="add-capability-btn" data-capability="Overland" title="Add Overland capability">+ Overland</button>
-                                    <button class="add-capability-btn" data-capability="Swim" title="Add Swim capability">+ Swim</button>
-                                    <button class="add-capability-btn" data-capability="Sky" title="Add Sky capability">+ Sky</button>
-                                    <button class="add-capability-btn" data-capability="Levitate" title="Add Levitate capability">+ Levitate</button>
-                                    <button class="add-capability-btn" data-capability="Burrow" title="Add Burrow capability">+ Burrow</button>
+                                <div class="section-buttons">
+                                    <button class="section-btn" data-capability="Overland" title="Add Overland capability">+ Overland</button>
+                                    <button class="section-btn" data-capability="Swim" title="Add Swim capability">+ Swim</button>
+                                    <button class="section-btn" data-capability="Sky" title="Add Sky capability">+ Sky</button>
+                                    <button class="section-btn" data-capability="Levitate" title="Add Levitate capability">+ Levitate</button>
+                                    <button class="section-btn" data-capability="Burrow" title="Add Burrow capability">+ Burrow</button>
                                 </div>
                             </div>
                         ` : `
                             <h3 class="section-title">🔧 Capabilities</h3>
-                            <div class="capabilities-section">
-                                <div id="capabilitiesContainer" class="capabilities-container">
+                            <div class="section-container capabilities">
+                                <div id="capabilitiesContainer" class="section-grid capabilities">
                                     No capabilities yet.
                                 </div>
-                                <div class="capabilities-buttons">
-                                    <button class="add-capability-btn" data-capability="Overland" title="Add Overland capability">+ Overland</button>
-                                    <button class="add-capability-btn" data-capability="Swim" title="Add Swim capability">+ Swim</button>
-                                    <button class="add-capability-btn" data-capability="Sky" title="Add Sky capability">+ Sky</button>
-                                    <button class="add-capability-btn" data-capability="Levitate" title="Add Levitate capability">+ Levitate</button>
-                                    <button class="add-capability-btn" data-capability="Burrow" title="Add Burrow capability">+ Burrow</button>
+                                <div class="section-buttons">
+                                    <button class="section-btn" data-capability="Overland" title="Add Overland capability">+ Overland</button>
+                                    <button class="section-btn" data-capability="Swim" title="Add Swim capability">+ Swim</button>
+                                    <button class="section-btn" data-capability="Sky" title="Add Sky capability">+ Sky</button>
+                                    <button class="section-btn" data-capability="Levitate" title="Add Levitate capability">+ Levitate</button>
+                                    <button class="section-btn" data-capability="Burrow" title="Add Burrow capability">+ Burrow</button>
                                 </div>
                             </div>
                         `}
                         
-                        <div class="abilities">
-                            <div class="abilities-header">
+                        <div class="section">
+                            <div class="section-header">
                                 <h3 class="section-title">🎯 Abilities</h3>
                                 <button id="addAbilityBtn" title="Add ability" class="add-ability-btn">✎ Edit</button>
                             </div>
-                            <div class="ability-list" id="abilitiesList">
+                            <div class="section-list" id="abilitiesList">
                                 ${pokemon.abilities.map(ability => `
-                                    <div class="ability" data-ability-name="${ability.name}">
-                                        <div class="ability-header">
-                                            <div class="ability-name">${ability.name}</div>
+                                    <div class="section-card" data-ability-name="${ability.name}">
+                                        <div class="section-card-header">
+                                            <div class="section-card-name">${ability.name}</div>
                                             <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
                                         </div>
-                                        ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}
+                                        ${ability.frequency ? `<div class="section-card-field"><strong>Frequency:</strong> ${ability.frequency}
                                             <span class="usage-tracker" data-ability-name="${ability.name}">
                                                 <span class="usage-label">Uses:</span>
                                                 <div class="usage-boxes">
@@ -495,11 +495,11 @@
                                                 </div>
                                             </span>
                                         </div>` : ''}
-                                        ${ability.trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
-                                        ${ability.effect ? `<div class="ability-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
-                                        ${ability.bonus ? `<div class="ability-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
-                                        ${ability.special ? `<div class="ability-field"><strong>Special:</strong> ${ability.special}</div>` : ''}
-                                        ${ability.note ? `<div class="ability-field note"><strong>Note:</strong> ${ability.note}</div>` : ''}
+                                        ${ability.trigger ? `<div class="section-card-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
+                                        ${ability.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
+                                        ${ability.bonus ? `<div class="section-card-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
+                                        ${ability.special ? `<div class="section-card-field"><strong>Special:</strong> ${ability.special}</div>` : ''}
+                                        ${ability.note ? `<div class="section-card-field note"><strong>Note:</strong> ${ability.note}</div>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
@@ -508,7 +508,7 @@
 
                     <div class="details-right">
                         <div class="info-box">
-                            <div class="flex-between-center-10">
+                            <div class="flex-between-center-15">
                                 <div class="info-label">Type Effectiveness</div>
                                 <div class="flex-gap-5">
                                     <button id="multiplyBtn15" class="multiplier-btn inactive" title="Multiply by 1.5">×1.5</button>
@@ -520,31 +520,31 @@
                             </div>
                         </div>
 
-                        <div class="moves">
+                        <div class="section">
                             <div class="flex-between-center-15">
                                 <h3 class="section-title">⚔️ Moves</h3>
                                 <button id="addMoveBtn" title="Edit" class="edit-action-btn">✎ Edit</button>
                             </div>
-                            <div class="moves-list" id="movesList">
+                            <div class="section-list" id="movesList">
                                 ${pokemon.moves.map(move => `
-                                    <div class="move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
-                                        <div class="move-header">
-                                            <div class="move-name">${move.name}${move.class ? `<span class="move-class-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
+                                    <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
+                                        <div class="section-card-header">
+                                            <div class="section-card-name">${move.name}${move.class ? `<span class="move-class-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
                                             <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
                                         </div>
-                                        <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
-                                        <div class="move-field">
+                                        <div class="section-card-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
+                                        <div class="section-card-field">
                                             <strong>Frequency:</strong> ${move.frequency || 'N/A'}
                                             ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
                                         </div>
-                                        <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
-                                        <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
-                                        ${move.ac ? `<div class="move-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
-                                        ${move.damageBase ? `<div class="move-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
+                                        <div class="section-card-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
+                                        <div class="section-card-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
+                                        ${move.ac ? `<div class="section-card-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
+                                        ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
                                             <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
                                             <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
                                         </div>` : ''}
-                                        ${move.effect ? `<div class="move-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
+                                        ${move.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
@@ -726,7 +726,7 @@
             }
 
             // Handle add capability buttons
-            document.querySelectorAll('.add-capability-btn').forEach(btn => {
+            document.querySelectorAll('.section-btn').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
                     const capabilityName = this.getAttribute('data-capability');
@@ -1516,7 +1516,7 @@
             // Setup remove buttons for existing moves
             document.querySelectorAll('.remove-move-btn').forEach(btn => {
                 btn.addEventListener('click', function () {
-                    const moveElement = btn.closest('.move');
+                    const moveElement = btn.closest('.section-card');
                     const moveName = moveElement.getAttribute('data-move-name');
                     removeMove(pokemon, moveName);
                 });
@@ -1682,31 +1682,31 @@
         function updateMovesDisplay(pokemon) {
             const movesList = document.getElementById('movesList');
             movesList.innerHTML = pokemon.moves.map(move => `
-                <div class="move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
-                    <div class="move-header">
-                        <div class="move-name">${move.name}${move.class ? `<span class="move-class-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
+                <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
+                    <div class="section-card-header">
+                        <div class="section-card-name">${move.name}${move.class ? `<span class="move-class-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
                         <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
                     </div>
-                    <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
-                    <div class="move-field">
+                    <div class="section-card-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
+                    <div class="section-card-field">
                         <strong>Frequency:</strong> ${move.frequency || 'N/A'}
                         ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
                     </div>
-                    <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
-                    <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
-                    ${move.ac ? `<div class="move-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
-                    ${move.damageBase ? `<div class="move-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
+                    <div class="section-card-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
+                    <div class="section-card-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
+                    ${move.ac ? `<div class="section-card-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
+                    ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
                         <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
                         <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
                     </div>` : ''}
-                    ${move.effect ? `<div class="move-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
+                    ${move.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                 </div>
             `).join('');
 
             // Re-attach remove listeners
             document.querySelectorAll('.remove-move-btn').forEach(btn => {
                 btn.addEventListener('click', function () {
-                    const moveElement = btn.closest('.move');
+                    const moveElement = btn.closest('.section-card');
                     const moveName = moveElement.getAttribute('data-move-name');
                     removeMove(pokemon, moveName);
                 });
@@ -2081,14 +2081,14 @@
             // Setup remove buttons for existing abilities
             document.querySelectorAll('.remove-ability-btn').forEach(btn => {
                 btn.addEventListener('click', function () {
-                    const abilityElement = btn.closest('.ability');
+                    const abilityElement = btn.closest('.section-card');
                     const abilityName = abilityElement.getAttribute('data-ability-name');
                     removeAbility(pokemon, abilityName);
                 });
             });
 
             // Setup usage tracker buttons for abilities
-            document.querySelectorAll('.ability .usage-checkbox').forEach(btn => {
+            document.querySelectorAll('.section-card .usage-checkbox').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
                     const tracker = btn.closest('.usage-tracker');
@@ -2165,12 +2165,12 @@
         function updateAbilitiesDisplay(pokemon) {
             const abilitiesList = document.getElementById('abilitiesList');
             abilitiesList.innerHTML = pokemon.abilities.map(ability => `
-                <div class="ability" data-ability-name="${ability.name}">
-                    <div class="ability-header">
-                        <div class="ability-name">${ability.name}</div>
+                <div class="section-card" data-ability-name="${ability.name}">
+                    <div class="section-card-header">
+                        <div class="section-card-name">${ability.name}</div>
                         <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
                     </div>
-                    ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}
+                    ${ability.frequency ? `<div class="section-card-field"><strong>Frequency:</strong> ${ability.frequency}
                         <span class="usage-tracker" data-ability-name="${ability.name}">
                             <span class="usage-label">Uses:</span>
                             <div class="usage-boxes">
@@ -2182,25 +2182,25 @@
                             </div>
                         </span>
                     </div>` : ''}
-                    ${ability.trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
-                    ${ability.effect ? `<div class="ability-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
-                    ${ability.bonus ? `<div class="ability-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
-                    ${ability.special ? `<div class="ability-field"><strong>Special:</strong> ${ability.special}</div>` : ''}
-                    ${ability.note ? `<div class="ability-field note"><strong>Note:</strong> ${ability.note}</div>` : ''}
+                    ${ability.trigger ? `<div class="section-card-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
+                    ${ability.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
+                    ${ability.bonus ? `<div class="section-card-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
+                    ${ability.special ? `<div class="section-card-field"><strong>Special:</strong> ${ability.special}</div>` : ''}
+                    ${ability.note ? `<div class="section-card-field note"><strong>Note:</strong> ${ability.note}</div>` : ''}
                 </div>
             `).join('');
 
             // Re-attach remove listeners
             document.querySelectorAll('.remove-ability-btn').forEach(btn => {
                 btn.addEventListener('click', function () {
-                    const abilityElement = btn.closest('.ability');
+                    const abilityElement = btn.closest('.section-card');
                     const abilityName = abilityElement.getAttribute('data-ability-name');
                     removeAbility(pokemon, abilityName);
                 });
             });
 
             // Re-attach usage tracker listeners for abilities
-            document.querySelectorAll('.ability .usage-checkbox').forEach(btn => {
+            document.querySelectorAll('.section-card .usage-checkbox').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
                     const tracker = btn.closest('.usage-tracker');

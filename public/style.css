@@ -591,7 +591,8 @@ button {
     border-radius: 4px;
 }
 
-.abilities {
+/* ===== UNIFIED SECTION SYSTEM ===== */
+.section {
     margin: 20px 0;
 }
 
@@ -599,23 +600,21 @@ button {
     font-weight: 600;
     color: var(--primary-color);
     margin: 0;
-    font-size: 1em;
-}
-
-.abilities-title {
-    font-weight: 600;
-    color: var(--primary-color);
+    font-size: 1.4em;
+    color: var(--text-primary);
+    border-bottom: 3px solid var(--primary-color);
+    padding-bottom: 10px;
+    margin-top: 10px;
     margin-bottom: 10px;
-    font-size: 0.95em;
 }
 
-.ability-list {
+.section-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.ability {
+.section-card {
     background: var(--bg-tertiary);
     padding: 12px 15px;
     border-radius: 5px;
@@ -624,24 +623,24 @@ button {
     font-size: 0.9em;
 }
 
-.ability-name {
+.section-card-name {
     font-weight: bold;
     font-size: 1.1em;
     margin-bottom: 8px;
     color: var(--primary-dark);
 }
 
-.ability-field {
+.section-card-field {
     font-size: 0.9em;
     color: var(--text-secondary);
     margin-bottom: 6px;
 }
 
-.ability-field strong {
+.section-card-field strong {
     font-weight: 600;
 }
 
-.ability-field.main-text {
+.section-card-field.main-text {
     font-size: 0.85em;
     color: var(--text-primary);
     margin-top: 5px;
@@ -649,57 +648,36 @@ button {
     font-style: italic;
 }
 
-.ability-field.note {
+.section-card-field.note {
     font-size: 0.8em;
     color: var(--text-tertiary);
     margin-top: 5px;
     font-style: italic;
 }
 
-.moves {
-    margin: 20px 0;
+/* Move type-specific border colors */
+.section-card.move {
+    border-left-color: var(--primary-color);
 }
 
-.moves-title {
-    font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: 10px;
-    font-size: 0.95em;
-}
-
-.moves-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.move {
-    background: var(--bg-tertiary);
-    padding: 12px 15px;
-    border-radius: 5px;
-    font-size: 0.9em;
-    color: var(--text-primary);
-    border-left: 4px solid var(--primary-color);
-}
-
-.move.type-normal { border-left-color: #A8A878; }
-.move.type-fire { border-left-color: #F08030; }
-.move.type-water { border-left-color: #6890F0; }
-.move.type-electric { border-left-color: #F8D030; }
-.move.type-grass { border-left-color: #78C850; }
-.move.type-ice { border-left-color: #98D8D8; }
-.move.type-fighting { border-left-color: #C03028; }
-.move.type-poison { border-left-color: #A040A0; }
-.move.type-ground { border-left-color: #E0C068; }
-.move.type-flying { border-left-color: #A890F0; }
-.move.type-psychic { border-left-color: #F85888; }
-.move.type-bug { border-left-color: #A8B820; }
-.move.type-rock { border-left-color: #B8A038; }
-.move.type-ghost { border-left-color: #705898; }
-.move.type-dragon { border-left-color: #7038F8; }
-.move.type-dark { border-left-color: #705848; }
-.move.type-steel { border-left-color: #B8B8D0; }
-.move.type-fairy { border-left-color: #EE99AC; }
+.section-card.move.type-normal { border-left-color: #A8A878; }
+.section-card.move.type-fire { border-left-color: #F08030; }
+.section-card.move.type-water { border-left-color: #6890F0; }
+.section-card.move.type-electric { border-left-color: #F8D030; }
+.section-card.move.type-grass { border-left-color: #78C850; }
+.section-card.move.type-ice { border-left-color: #98D8D8; }
+.section-card.move.type-fighting { border-left-color: #C03028; }
+.section-card.move.type-poison { border-left-color: #A040A0; }
+.section-card.move.type-ground { border-left-color: #E0C068; }
+.section-card.move.type-flying { border-left-color: #A890F0; }
+.section-card.move.type-psychic { border-left-color: #F85888; }
+.section-card.move.type-bug { border-left-color: #A8B820; }
+.section-card.move.type-rock { border-left-color: #B8A038; }
+.section-card.move.type-ghost { border-left-color: #705898; }
+.section-card.move.type-dragon { border-left-color: #7038F8; }
+.section-card.move.type-dark { border-left-color: #705848; }
+.section-card.move.type-steel { border-left-color: #B8B8D0; }
+.section-card.move.type-fairy { border-left-color: #EE99AC; }
 
 /* Move class indicators */
 .move-class-badge {
@@ -839,89 +817,78 @@ button {
     box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
-/* Skills and Capabilities sections */
-.skills-section {
+/* Section containers with grid layouts */
+.section-container {
     padding: 15px;
     background: var(--bg-tertiary);
     border-radius: 5px;
-    border-left: 4px solid var(--skills-border);
+    border-left: 4px solid;
 }
 
-.skills-grid {
+.section-container.skills {
+    border-left-color: var(--skills-border);
+}
+
+.section-container.capabilities {
+    border-left-color: var(--capabilities-border);
+}
+
+.section-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-}
-
-.skill-card {
-    background: var(--bg-main);
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid var(--skills-border);
-}
-
-.skill-card-title {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.9em;
-    margin-bottom: 4px;
-}
-
-.capabilities-section {
-    padding: 15px;
-    background: var(--bg-tertiary);
-    border-radius: 5px;
-    border-left: 4px solid var(--capabilities-border);
-}
-
-.capabilities-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 12px;
     margin-bottom: 12px;
 }
 
-.capability-card {
+.section-grid.skills {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.section-grid.capabilities {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+}
+
+.grid-item {
     background: var(--bg-main);
     padding: 10px;
     border-radius: 4px;
-    border: 1px solid var(--capabilities-border);
+    border: 1px solid;
 }
 
-.capability-card-title {
+.grid-item.skill {
+    border-color: var(--skills-border);
+}
+
+.grid-item.capability {
+    border-color: var(--capabilities-border);
+}
+
+.grid-item.capability-full {
+    grid-column: 1 / -1;
+}
+
+.grid-item-title {
     font-weight: 600;
     color: var(--text-primary);
     font-size: 0.9em;
     margin-bottom: 4px;
+}
+
+.grid-item.capability .grid-item-title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.capability-card-full {
-    grid-column: 1 / -1;
-    background: var(--bg-main);
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid var(--capabilities-border);
-}
-
-.capability-card-full-title {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.9em;
-    margin-bottom: 4px;
-}
-
-.capabilities-buttons {
+.section-buttons {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
-.add-capability-btn {
+.section-btn {
     padding: 4px 8px;
     color: white;
+    background: var(--primary-color);
     border: none;
     border-radius: 3px;
     cursor: pointer;
@@ -930,17 +897,7 @@ button {
     transition: all 0.2s ease;
 }
 
-.add-capability-btn[data-capability="Overland"],
-.add-capability-btn[data-capability="Swim"],
-.add-capability-btn[data-capability="Sky"] {
-    background: var(--primary-color);
-}
-
-.add-capability-btn[data-capability="Levitate"],
-.add-capability-btn[data-capability="Burrow"] {
-    background: var(--primary-dark);
-}
-
+/* Legacy aliases for header and name */
 .move-header {
     display: flex;
     justify-content: space-between;
@@ -979,6 +936,7 @@ button {
     flex-shrink: 0;
 }
 
+/* Legacy aliases for move fields */
 .move-field {
     font-size: 0.9em;
     color: var(--text-secondary);
@@ -1261,13 +1219,11 @@ button {
 .details-left {
     display: flex;
     flex-direction: column;
-    gap: 20px;
 }
 
 .details-right {
     display: flex;
     flex-direction: column;
-    gap: 20px;
 }
 
 @media (max-width: 768px) {
@@ -1559,15 +1515,6 @@ button {
 .endpoint h3 {
     margin-top: 0;
     color: var(--text-primary);
-}
-
-.section-title {
-    font-size: 1.8em;
-    color: var(--text-primary);
-    border-bottom: 3px solid var(--primary-color);
-    padding-bottom: 10px;
-    margin-top: 40px;
-    margin-bottom: 20px;
 }
 
 .description {
@@ -2197,10 +2144,6 @@ pre {
     color: white;
 }
 
-.move-section {
-    margin-bottom: 20px;
-}
-
 .section-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -2542,12 +2485,20 @@ pre {
     margin-bottom: 12px;
 }
 
-/* Abilities Section */
-.abilities-header {
+/* Section Headers */
+.section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
+}
+
+.section-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
 }
 
 .add-ability-btn {
@@ -2610,20 +2561,11 @@ pre {
 }
 
 /* Spacing variants */
-.flex-between-center-10 {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
 .flex-between-center-15 {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
-    margin-bottom: 15px;
 }
 
 /* Type Effectiveness Display */
@@ -2832,8 +2774,6 @@ pre {
     display: grid;
     gap: 8px;
 }
-
-/* Empty Grid Message */
 .empty-grid-message {
     padding: 20px;
     text-align: center;
