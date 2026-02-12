@@ -510,6 +510,7 @@ class PokemonGenerator {
       baseWithNature: baseWithNature,
       stats: stats,
       hitPoints: this.calculateHitPoints(level, stats.HP, hpFormula),
+      hpFormula: hpFormula,
       moves: this.selectMovesForPokemon(species, level, 6),
       item: this.selectItem(),
       skills: species.Skills || {},

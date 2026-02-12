@@ -202,9 +202,15 @@
                 return;
             }
 
+
             // Ensure capabilities is an array
             if (!pokemon.capabilities) {
                 pokemon.capabilities = [];
+            }
+
+            // Ensure hpFormula is present if exists in original object (from API or localStorage)
+            if (!pokemon.hpFormula && pokemon.hp_formula) {
+                pokemon.hpFormula = pokemon.hp_formula;
             }
 
             // Debug: log the pokemon object structure
@@ -332,6 +338,7 @@
                                 </div>
                             </div>
 
+
                             <div class="info-box">
                                 <div class="info-label">Level & HP</div>
                                 <div style="display: flex; gap: 20px; align-items: center; justify-content: center; margin-top: 8px;">
@@ -344,6 +351,7 @@
                                         <div id="hpDisplay" class="info-value" style="margin: 0; min-width: 40px; text-align: center;">${pokemon.hitPoints}</div>
                                     </div>
                                 </div>
+                                ${pokemon.hpFormula !== 'LEVEL + (HP * 3) + 10' ? `<div style="margin-top:6px; text-align:center; font-size:0.9em; color:#667eea;">HP Formula: <code>${pokemon.hpFormula}</code></div>` : ''}
                             </div>
 
                             <div class="info-box">
@@ -1246,7 +1254,19 @@
                     if (nature.raise === 'HP') hpStat += 1;
                     if (nature.lower === 'HP') hpStat -= 1;
 
-                    pokemon.hitPoints = Math.max(1, Math.floor(newLevel + (pokemon.stats.HP * 3) + 10));
+
+                    // Use custom formula if present
+                    let hpFormula = pokemon.hpFormula || pokemon.hp_formula || 'LEVEL + (HP * 3) + 10';
+                    console.log("hpFormula used:", hpFormula, "pokemon.hpFormula:", pokemon.hpFormula, "pokemon.hp_formula:", pokemon.hp_formula);
+                    let formulaStr = hpFormula.toUpperCase().replace(/LEVEL/g, newLevel).replace(/HP/g, pokemon.stats.HP);
+                    let newHP;
+                    try {
+                        if (!/^[\d+\-*/(). ]+$/.test(formulaStr)) throw new Error('Invalid formula');
+                        newHP = Math.max(1, Math.floor(eval(formulaStr)));
+                    } catch (e) {
+                        newHP = Math.max(1, Math.floor(newLevel + (pokemon.stats.HP * 3) + 10));
+                    }
+                    pokemon.hitPoints = newHP;
 
                     // Update HP display
                     const hpDisplay = document.getElementById('hpDisplay');
