@@ -555,6 +555,60 @@ button {
     color: white;
 }
 
+/* Move usage tracker */
+.move-usage-tracker {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: 12px;
+}
+
+.move-usage-label {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #666;
+    white-space: nowrap;
+}
+
+.move-usage-boxes {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.usage-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: white;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 0.9em;
+    position: relative;
+}
+
+.usage-checkbox:hover {
+    border-color: #667eea;
+    background-color: #f0f4ff;
+}
+
+.usage-checkbox.checked {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+    font-weight: bold;
+}
+
+.usage-checkbox.checked::after {
+    content: '✓';
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
 .move-header {
     display: flex;
     justify-content: space-between;

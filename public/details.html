@@ -489,7 +489,10 @@
                                             <button class="remove-move-btn" title="Remove this move" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
                                         </div>
                                         <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
-                                        <div class="move-field"><strong>Frequency:</strong> ${move.frequency || 'N/A'}</div>
+                                        <div class="move-field">
+                                            <strong>Frequency:</strong> ${move.frequency || 'N/A'}
+                                            ${move.frequency ? `<span class="move-usage-tracker" data-move-name="${move.name}"><span class="move-usage-label">Uses:</span><div class="move-usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
+                                        </div>
                                         <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
                                         <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
                                         ${move.ac ? `<div class="move-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
@@ -1334,6 +1337,17 @@
                     adjustMoveDB(pokemon, moveName, isIncrease ? 1 : -1);
                 });
             });
+
+            // Setup usage tracker buttons
+            document.querySelectorAll('.usage-checkbox').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const tracker = btn.closest('.move-usage-tracker');
+                    const moveName = tracker.getAttribute('data-move-name');
+                    const index = parseInt(btn.getAttribute('data-index'));
+                    toggleMoveUsage(pokemon, moveName, index);
+                });
+            });
         }
 
         // Remove a move from the pokemon
@@ -1413,6 +1427,30 @@
             updateMovesDisplay(pokemon);
         }
 
+        // Toggle move usage tracking
+        function toggleMoveUsage(pokemon, moveName, usageIndex) {
+            const move = pokemon.moves.find(m => m.name === moveName);
+            if (!move) return;
+
+            // Initialize usageCount if not present
+            if (!move.usageCount) {
+                move.usageCount = 0;
+            }
+
+            // Toggle the usage at this index
+            if (move.usageCount > usageIndex) {
+                // If we're toggling off a previous usage, set count to this index
+                move.usageCount = usageIndex;
+            } else if (move.usageCount === usageIndex) {
+                // If toggling on the next one, increment
+                move.usageCount = usageIndex + 1;
+            } else {
+                // Fill in gaps - if clicking further ahead, set to that index + 1
+                move.usageCount = usageIndex + 1;
+            }
+
+            updateMovesDisplay(pokemon);
+        }
 
         function addMove(pokemon, moveData) {
             // Check if move already exists - if so, remove it instead
@@ -1456,7 +1494,10 @@
                         <button class="remove-move-btn" title="Remove this move" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
                     </div>
                     <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
-                    <div class="move-field"><strong>Frequency:</strong> ${move.frequency || 'N/A'}</div>
+                    <div class="move-field">
+                        <strong>Frequency:</strong> ${move.frequency || 'N/A'}
+                        ${move.frequency ? `<span class="move-usage-tracker" data-move-name="${move.name}"><span class="move-usage-label">Uses:</span><div class="move-usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
+                    </div>
                     <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
                     <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
                     ${move.ac ? `<div class="move-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
@@ -1484,6 +1525,17 @@
                     const moveName = dbField.getAttribute('data-move-name');
                     const isIncrease = btn.classList.contains('db-increase');
                     adjustMoveDB(pokemon, moveName, isIncrease ? 1 : -1);
+                });
+            });
+
+            // Re-attach usage tracker listeners
+            document.querySelectorAll('.usage-checkbox').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const tracker = btn.closest('.move-usage-tracker');
+                    const moveName = tracker.getAttribute('data-move-name');
+                    const index = parseInt(btn.getAttribute('data-index'));
+                    toggleMoveUsage(pokemon, moveName, index);
                 });
             });
         }
