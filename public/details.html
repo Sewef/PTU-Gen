@@ -122,10 +122,24 @@
                 types.forEach(type => {
                     let eff = effectiveness[type.toLowerCase()];
                     
-                    // Apply multiplier only to 2x values
-                    if (eff === 2 && currentTypeMultiplier !== 2) {
-                        eff = 2 * (currentTypeMultiplier / 2);
+                    // Apply multiplier logic:
+                    // Mode x2: multiplicateurs normaux (x2, x4, etc)
+                    // Mode x1.5: système additif - chaque faiblesse ajoute 0.5 à la valeur de base (1)
+                    // - Une seule faiblesse (x2) → 1 + 0.5 = 1.5
+                    // - Double faiblesse (x4) → 1 + 0.5 + 0.5 = 2
+                    // - Résistances inchangées (x0.5, x0.25)
+                    if (currentTypeMultiplier === 1.5 && eff > 1) {
+                        // Compter le nombre de faiblesses (combien de fois on multiplie par 2)
+                        let weakness_count = 0;
+                        let temp = eff;
+                        while (temp > 1) {
+                            weakness_count++;
+                            temp = temp / 2;
+                        }
+                        // En mode x1.5, chaque faiblesse = +0.5
+                        eff = 1 + (0.5 * weakness_count);
                     }
+                    // Résistances et neutral restent inchangés
                     
                     let effClass = 'eff-neutral'; // Default
                     let effText = '1x';
