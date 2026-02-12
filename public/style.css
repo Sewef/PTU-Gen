@@ -556,21 +556,21 @@ button {
 }
 
 /* Move usage tracker */
-.move-usage-tracker {
+.usage-tracker {
     display: inline-flex;
     gap: 6px;
     align-items: center;
     margin-left: 12px;
 }
 
-.move-usage-label {
+.usage-label {
     font-size: 0.85em;
     font-weight: 600;
     color: #666;
     white-space: nowrap;
 }
 
-.move-usage-boxes {
+.usage-boxes {
     display: inline-flex;
     gap: 4px;
 }

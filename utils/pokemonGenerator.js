@@ -511,6 +511,7 @@ class PokemonGenerator {
       stats: stats,
       hitPoints: this.calculateHitPoints(level, stats.HP, hpFormula),
       hpFormula: hpFormula,
+      ignoreBaseRelation: ignoreBaseRelation,
       moves: this.selectMovesForPokemon(species, level, 6),
       item: this.selectItem(),
       skills: species.Skills || {},

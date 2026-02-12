@@ -484,9 +484,9 @@
                                             <button class="remove-ability-btn" title="Remove this ability" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
                                         </div>
                                         ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}
-                                            <span class="move-usage-tracker" data-ability-name="${ability.name}">
-                                                <span class="move-usage-label">Uses:</span>
-                                                <div class="move-usage-boxes">
+                                            <span class="usage-tracker" data-ability-name="${ability.name}">
+                                                <span class="usage-label">Uses:</span>
+                                                <div class="usage-boxes">
                                                     ${(() => {
                                                         const freqMatch = /\d+/.test(ability.frequency) ? parseInt(ability.frequency.match(/\d+/)[0]) : 1;
                                                         const count = ability.usageCount || 0;
@@ -535,7 +535,7 @@
                                         <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
                                         <div class="move-field">
                                             <strong>Frequency:</strong> ${move.frequency || 'N/A'}
-                                            ${move.frequency ? `<span class="move-usage-tracker" data-move-name="${move.name}"><span class="move-usage-label">Uses:</span><div class="move-usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
+                                            ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
                                         </div>
                                         <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
                                         <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
@@ -575,6 +575,9 @@
                 'spe': 'Speed'
             };
 
+            // Liste des noms courts pour les stats
+            const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+
             // Reverse map for looking up baseStats
             const baseStatsKeyMap = {
                 'HP': 'HP',
@@ -601,27 +604,30 @@
 
                 const isHP = statName === 'HP';
 
+                const ignoredStats = (pokemon.ignoreBaseRelation === 'IGNORE') ? shortNames : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(s => s.trim()) : []);
+                const isIgnored = ignoredStats.includes(statName);
                 statsHTML += `
                     <div class="stat-breakdown-row" data-stat="${statName}">
-                        <div class="stat-breakdown-label">${statDisplayNames[statName] || statName}</div>
-                        
+                        <div class="stat-breakdown-label">
+                            <div>${statDisplayNames[statName] || statName}</div>
+                            <span class="stat-ignore-btn ${isIgnored ? 'ignored' : ''}" data-stat="${statName}" title="Toggle ignore base relation" style="display:inline-block;cursor:pointer;margin-top:4px;font-size:0.9em;vertical-align:middle;color:${isIgnored ? '#dc3545' : '#667eea'};border-radius:3px;padding:4px 8px;transition:color 0.2s;border:1px solid ${isIgnored ? '#dc3545' : '#ddd'};background:${isIgnored ? 'rgba(220,53,69,0.1)' : '#f9f9f9'};white-space:nowrap;">
+                                ${isIgnored ? 'Ignored' : 'In Relation'}
+                            </span>
+                        </div>
                         <div class="stat-breakdown-component">
                             <label>Base</label>
                             <input type="number" class="base-stat-input" data-stat="${statName}" value="${baseStat}" />
                         </div>
-                        
                         <div class="stat-breakdown-component">
                             <label>Lvl Pts</label>
                             <input type="number" class="level-points-input" data-stat="${statName}" value="${levelPoints}" />
                         </div>
-                        
                         ${!isHP ? `
                             <div class="stat-breakdown-component">
                                 <label>CS</label>
                                 <input type="number" class="cs-input" data-stat="${statName}" min="-6" max="6" value="0" />
                             </div>
                         ` : ''}
-                        
                         <div class="stat-breakdown-component total">
                             <label>Total</label>
                             <span class="stat-total" data-stat="${statName}">${finalValue}</span>
@@ -631,6 +637,36 @@
             });
 
             statsBreakdownContainer.innerHTML = statsHTML;
+
+            // Add event listeners for stat ignore toggle (après rendu)
+            statsBreakdownContainer.querySelectorAll('.stat-ignore-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const stat = btn.dataset.stat;
+                    let ignoredStats = (pokemon.ignoreBaseRelation === 'IGNORE') ? shortNames : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(s => s.trim()) : []);
+                    if (pokemon.ignoreBaseRelation === 'IGNORE') {
+                        // Toggle off for this stat: switch to comma list minus this stat
+                        ignoredStats = shortNames.filter(s => s !== stat);
+                        pokemon.ignoreBaseRelation = ignoredStats.length === 0 ? undefined : ignoredStats.join(',');
+                    } else {
+                        if (ignoredStats.includes(stat)) {
+                            // Remove from ignored
+                            ignoredStats = ignoredStats.filter(s => s !== stat);
+                        } else {
+                            // Add to ignored
+                            ignoredStats.push(stat);
+                        }
+                        // If all stats are ignored, use 'IGNORE'
+                        if (ignoredStats.length === shortNames.length) {
+                            pokemon.ignoreBaseRelation = 'IGNORE';
+                        } else {
+                            pokemon.ignoreBaseRelation = ignoredStats.length === 0 ? undefined : ignoredStats.join(',');
+                        }
+                    }
+                    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+                    loadPokemonDetails();
+                });
+            });
 
             // Add event listeners for stat modifications
             document.querySelectorAll('.base-stat-input, .level-points-input, .cs-input').forEach(input => {
@@ -1478,7 +1514,7 @@
             document.querySelectorAll('.usage-checkbox').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
-                    const tracker = btn.closest('.move-usage-tracker');
+                    const tracker = btn.closest('.usage-tracker');
                     const moveName = tracker.getAttribute('data-move-name');
                     const index = parseInt(btn.getAttribute('data-index'));
                     toggleMoveUsage(pokemon, moveName, index);
@@ -1632,7 +1668,7 @@
                     <div class="move-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
                     <div class="move-field">
                         <strong>Frequency:</strong> ${move.frequency || 'N/A'}
-                        ${move.frequency ? `<span class="move-usage-tracker" data-move-name="${move.name}"><span class="move-usage-label">Uses:</span><div class="move-usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
+                        ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
                     </div>
                     <div class="move-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
                     <div class="move-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
@@ -1668,7 +1704,7 @@
             document.querySelectorAll('.usage-checkbox').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
-                    const tracker = btn.closest('.move-usage-tracker');
+                    const tracker = btn.closest('.usage-tracker');
                     const moveName = tracker.getAttribute('data-move-name');
                     const index = parseInt(btn.getAttribute('data-index'));
                     toggleMoveUsage(pokemon, moveName, index);
@@ -2088,7 +2124,7 @@
             document.querySelectorAll('.ability .usage-checkbox').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
-                    const tracker = btn.closest('.move-usage-tracker');
+                    const tracker = btn.closest('.usage-tracker');
                     const abilityName = tracker.getAttribute('data-ability-name');
                     const index = parseInt(btn.getAttribute('data-index'));
                     toggleAbilityUsage(pokemon, abilityName, index);
@@ -2168,9 +2204,9 @@
                         <button class="remove-ability-btn" title="Remove this ability" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
                     </div>
                     ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}
-                        <span class="move-usage-tracker" data-ability-name="${ability.name}">
-                            <span class="move-usage-label">Uses:</span>
-                            <div class="move-usage-boxes">
+                        <span class="usage-tracker" data-ability-name="${ability.name}">
+                            <span class="usage-label">Uses:</span>
+                            <div class="usage-boxes">
                                 ${(() => {
                                     const freqMatch = /\d+/.test(ability.frequency) ? parseInt(ability.frequency.match(/\d+/)[0]) : 1;
                                     const count = ability.usageCount || 0;
@@ -2200,7 +2236,7 @@
             document.querySelectorAll('.ability .usage-checkbox').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
-                    const tracker = btn.closest('.move-usage-tracker');
+                    const tracker = btn.closest('.usage-tracker');
                     const abilityName = tracker.getAttribute('data-ability-name');
                     const index = parseInt(btn.getAttribute('data-index'));
                     toggleAbilityUsage(pokemon, abilityName, index);
