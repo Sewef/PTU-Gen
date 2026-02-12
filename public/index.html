@@ -676,11 +676,20 @@
 
         async function generateMultiplePokemon(count) {
             try {
-                pokemonDisplay.innerHTML = '<div class="loading"><div class="spinner"></div>Generating ' + count + ' Pokémon...</div>';
+                pokemonDisplay.innerHTML = '<div class="loading"><div class="spinner"></div>Generating ' + count + ' Pokémon...<div id="generationLogs" style="margin-top: 15px; font-size: 0.9em; color: #888; line-height: 1.5; max-height: 200px; overflow-y: auto;"></div></div>';
 
                 const pokemons = [];
+                const addLog = (message) => {
+                    const logsDiv = document.getElementById('generationLogs');
+                    if (logsDiv) {
+                        logsDiv.innerHTML = message;
+                    }
+                };
+
                 for (let i = 0; i < count; i++) {
                     try {
+                        addLog(`⏳ Pokémon ${i + 1}/${count}: Building request...`);
+
                         // Build URL
                         const params = new URLSearchParams();
 
@@ -739,14 +748,18 @@
                             params.append('hpFormula', document.getElementById('hpFormula').value);
                         }
 
+                        addLog(`🌐 Pokémon ${i + 1}/${count}: Sending API request...`);
                         const response = await fetch(`/api/pokemon/generate?${params}`);
                         if (!response.ok) {
                             throw new Error('Failed to generate');
                         }
 
+                        addLog(`✓ Pokémon ${i + 1}/${count}: Received response, processing...`);
                         const pokemon = await response.json();
+                        addLog(`✅ Pokémon ${i + 1}/${count}: Complete`);
                         pokemons.push(pokemon);
                     } catch (err) {
+                        addLog(`❌ Pokémon ${i + 1}/${count}: Error - ${err.message}`);
                         console.error('Error generating pokemon', i, err);
                     }
                 }
