@@ -99,10 +99,8 @@
                 const selectedForme = typesToUse.selectedForme;
                 typesToUse = typesToUse.formes[selectedForme] || [];
             }
-            
-            console.log('displayTypeEffectiveness called with:', typesToUse);
+
             const effectiveness = calculateTypeEffectiveness(typesToUse);
-            console.log('Effectiveness calculated:', effectiveness);
             const container = document.getElementById('typeEffectiveness');
 
             if (!container) return;
@@ -204,10 +202,13 @@
                 return;
             }
 
+            // Ensure capabilities is an array
+            if (!pokemon.capabilities) {
+                pokemon.capabilities = [];
+            }
+
             // Debug: log the pokemon object structure
             console.log('Pokemon object:', pokemon);
-            console.log('baseStats:', pokemon.baseStats);
-            console.log('stats:', pokemon.stats);
 
             // Update page title and favicon
             const pageTitle = `${pokemon.name} - Lvl ${pokemon.level} - Pokémon Details`;
@@ -400,7 +401,7 @@
                             </div>
                         ` : ''}
 
-                        ${pokemon.capabilities.length > 0 ? `
+                        ${pokemon.capabilities && pokemon.capabilities.length > 0 ? `
                             <h3 class="section-title">🔧 Capabilities</h3>
                             <div style="padding: 15px; background: #f0f7ff; border-radius: 5px; border-left: 4px solid #667eea;">
                                 <div id="capabilitiesContainer" style="display: flex; flex-direction: column; gap: 8px;">
@@ -437,8 +438,29 @@
                         return html;
                     })()}
                                 </div>
+                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #d0e0ff; display: flex; flex-wrap: wrap; gap: 6px;">
+                                    <button class="add-capability-btn" data-capability="Overland" title="Add Overland capability" style="padding: 6px 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Overland</button>
+                                    <button class="add-capability-btn" data-capability="Swim" title="Add Swim capability" style="padding: 6px 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Swim</button>
+                                    <button class="add-capability-btn" data-capability="Sky" title="Add Sky capability" style="padding: 6px 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Sky</button>
+                                    <button class="add-capability-btn" data-capability="Levitate" title="Add Levitate capability" style="padding: 6px 10px; background: #8b7bb8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Levitate</button>
+                                    <button class="add-capability-btn" data-capability="Burrow" title="Add Burrow capability" style="padding: 6px 10px; background: #8b7bb8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Burrow</button>
+                                </div>
                             </div>
-                        ` : ''}
+                        ` : `
+                            <h3 class="section-title">🔧 Capabilities</h3>
+                            <div style="padding: 15px; background: #f0f7ff; border-radius: 5px; border-left: 4px solid #667eea;">
+                                <div id="capabilitiesContainer" style="display: flex; flex-direction: column; gap: 8px; color: #999; font-size: 0.9em;">
+                                    No capabilities yet.
+                                </div>
+                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #d0e0ff; display: flex; flex-wrap: wrap; gap: 6px;">
+                                    <button class="add-capability-btn" data-capability="Overland" title="Add Overland capability" style="padding: 6px 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Overland</button>
+                                    <button class="add-capability-btn" data-capability="Swim" title="Add Swim capability" style="padding: 6px 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Swim</button>
+                                    <button class="add-capability-btn" data-capability="Sky" title="Add Sky capability" style="padding: 6px 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Sky</button>
+                                    <button class="add-capability-btn" data-capability="Levitate" title="Add Levitate capability" style="padding: 6px 10px; background: #8b7bb8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Levitate</button>
+                                    <button class="add-capability-btn" data-capability="Burrow" title="Add Burrow capability" style="padding: 6px 10px; background: #8b7bb8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; transition: all 0.2s ease;">+ Burrow</button>
+                                </div>
+                            </div>
+                        `}
                         
                         <div class="abilities">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -646,6 +668,26 @@
                     pokemon.capabilities = [...capabilitiesWithValues, ...newCapNoValues];
                 });
             }
+
+            // Handle add capability buttons
+            document.querySelectorAll('.add-capability-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const capabilityName = this.getAttribute('data-capability');
+                    
+                    // Check if already exists (case-insensitive)
+                    const exists = pokemon.capabilities.some(cap => 
+                        cap.toLowerCase().startsWith(capabilityName.toLowerCase())
+                    );
+                    
+                    if (!exists) {
+                        // Add with default value of 0 (can be edited)
+                        pokemon.capabilities.push(`${capabilityName} 0`);
+                        // Re-render the capabilities section
+                        updateCapabilitiesDisplay(pokemon);
+                    }
+                });
+            });
 
             // Setup nature dropdown
             setupNatureDropdown(pokemon);
@@ -1935,6 +1977,15 @@
                     }
                 });
             });
+        }
+
+        // Update capabilities display
+        function updateCapabilitiesDisplay(pokemon) {
+            // Save the updated pokemon to localStorage before reloading
+            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            
+            // Simply reload the entire pokemon details
+            loadPokemonDetails();
         }
 
         // Setup abilities editor
