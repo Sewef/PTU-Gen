@@ -351,7 +351,9 @@
                                         <div id="hpDisplay" class="info-value" style="margin: 0; min-width: 40px; text-align: center;">${pokemon.hitPoints}</div>
                                     </div>
                                 </div>
-                                ${pokemon.hpFormula !== 'LEVEL + (HP * 3) + 10' ? `<div style="margin-top:6px; text-align:center; font-size:0.9em; color:#667eea;">HP Formula: <code>${pokemon.hpFormula}</code></div>` : ''}
+                                <div style="margin-top:8px; text-align:center">
+                                    <input type="text" id="hpFormulaInput" value="${pokemon.hpFormula || 'LEVEL + (HP * 3) + 10'}" class="skill-input" placeholder="e.g., LEVEL + (HP * 3) + 10" />
+                                </div>
                             </div>
 
                             <div class="info-box">
@@ -753,6 +755,9 @@
 
             // Setup level editor
             setupLevelEditor(pokemon);
+
+            // Setup HP formula editor
+            setupHPFormulaEditor(pokemon);
 
             // Display type effectiveness
             currentPokemon = pokemon;
@@ -1329,8 +1334,70 @@
 
                     // Update remaining points display
                     updateRemainingPoints(pokemon);
+
+                    // Save to localStorage
+                    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
                 } else {
                     this.value = pokemon.level;
+                }
+            });
+        }
+
+        // Setup HP Formula editor
+        function setupHPFormulaEditor(pokemon) {
+            const hpFormulaInput = document.getElementById('hpFormulaInput');
+            if (!hpFormulaInput) return;
+
+            // Function to recalculate HP based on current formula
+            const recalculateHP = (formula) => {
+                const formulaStr = formula.toUpperCase().replace(/LEVEL/g, pokemon.level).replace(/HP/g, pokemon.stats.HP);
+                let newHP;
+                try {
+                    if (!/^[\d+\-*/(). ]+$/.test(formulaStr)) throw new Error('Invalid formula');
+                    newHP = Math.max(1, Math.floor(eval(formulaStr)));
+                } catch (e) {
+                    return null; // Invalid formula
+                }
+                return newHP;
+            };
+
+            hpFormulaInput.addEventListener('change', function () {
+                let newFormula = this.value.trim();
+                if (!newFormula) {
+                    // Reset to default
+                    pokemon.hpFormula = 'LEVEL + (HP * 3) + 10';
+                    this.value = pokemon.hpFormula;
+                    newFormula = pokemon.hpFormula;
+                }
+
+                // Validate and recalculate HP
+                const newHP = recalculateHP(newFormula);
+                if (newHP !== null) {
+                    pokemon.hpFormula = newFormula;
+                    pokemon.hitPoints = newHP;
+
+                    // Update HP display
+                    const hpDisplay = document.getElementById('hpDisplay');
+                    if (hpDisplay) hpDisplay.textContent = pokemon.hitPoints;
+
+                    // Save to localStorage
+                    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+
+                    // Update input styling to show success
+                    hpFormulaInput.style.borderColor = '#28a745';
+                    hpFormulaInput.style.backgroundColor = '#f0fff4';
+                    setTimeout(() => {
+                        hpFormulaInput.style.borderColor = '#ddd';
+                        hpFormulaInput.style.backgroundColor = 'white';
+                    }, 1500);
+                } else {
+                    // Invalid formula
+                    hpFormulaInput.style.borderColor = '#dc3545';
+                    hpFormulaInput.style.backgroundColor = '#fff5f5';
+                    setTimeout(() => {
+                        hpFormulaInput.style.borderColor = '#ddd';
+                        hpFormulaInput.style.backgroundColor = 'white';
+                    }, 1500);
                 }
             });
         }
