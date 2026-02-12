@@ -483,7 +483,18 @@
                                             <div class="ability-name">${ability.name}</div>
                                             <button class="remove-ability-btn" title="Remove this ability" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
                                         </div>
-                                        ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}</div>` : ''}
+                                        ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}
+                                            <span class="move-usage-tracker" data-ability-name="${ability.name}">
+                                                <span class="move-usage-label">Uses:</span>
+                                                <div class="move-usage-boxes">
+                                                    ${(() => {
+                                                        const freqMatch = /\d+/.test(ability.frequency) ? parseInt(ability.frequency.match(/\d+/)[0]) : 1;
+                                                        const count = ability.usageCount || 0;
+                                                        return Array.from({length: freqMatch}, (_, i) => `<button class="usage-checkbox ${count > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('');
+                                                    })()}
+                                                </div>
+                                            </span>
+                                        </div>` : ''}
                                         ${ability.trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
                                         ${ability.effect ? `<div class="ability-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
                                         ${ability.bonus ? `<div class="ability-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
@@ -2072,6 +2083,39 @@
                     removeAbility(pokemon, abilityName);
                 });
             });
+
+            // Setup usage tracker buttons for abilities
+            document.querySelectorAll('.ability .usage-checkbox').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const tracker = btn.closest('.move-usage-tracker');
+                    const abilityName = tracker.getAttribute('data-ability-name');
+                    const index = parseInt(btn.getAttribute('data-index'));
+                    toggleAbilityUsage(pokemon, abilityName, index);
+                });
+            });
+        }
+
+        // Toggle ability usage tracking
+        function toggleAbilityUsage(pokemon, abilityName, usageIndex) {
+            const ability = pokemon.abilities.find(a => a.name === abilityName);
+            if (!ability) return;
+
+            // Initialize usageCount if not present
+            if (!ability.usageCount) {
+                ability.usageCount = 0;
+            }
+
+            // Toggle the usage at this index
+            if (ability.usageCount > usageIndex) {
+                ability.usageCount = usageIndex;
+            } else if (ability.usageCount === usageIndex) {
+                ability.usageCount = usageIndex + 1;
+            } else {
+                ability.usageCount = usageIndex + 1;
+            }
+
+            updateAbilitiesDisplay(pokemon);
         }
 
         // Remove an ability from the pokemon
@@ -2123,7 +2167,18 @@
                         <div class="ability-name">${ability.name}</div>
                         <button class="remove-ability-btn" title="Remove this ability" style="padding: 4px 8px; background: #f0f0f0; color: #dc3545; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 0.7em; font-weight: 600; transition: all 0.2s ease;">✕ Remove</button>
                     </div>
-                    ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}</div>` : ''}
+                    ${ability.frequency ? `<div class="ability-field"><strong>Frequency:</strong> ${ability.frequency}
+                        <span class="move-usage-tracker" data-ability-name="${ability.name}">
+                            <span class="move-usage-label">Uses:</span>
+                            <div class="move-usage-boxes">
+                                ${(() => {
+                                    const freqMatch = /\d+/.test(ability.frequency) ? parseInt(ability.frequency.match(/\d+/)[0]) : 1;
+                                    const count = ability.usageCount || 0;
+                                    return Array.from({length: freqMatch}, (_, i) => `<button class="usage-checkbox ${count > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('');
+                                })()}
+                            </div>
+                        </span>
+                    </div>` : ''}
                     ${ability.trigger ? `<div class="ability-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
                     ${ability.effect ? `<div class="ability-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
                     ${ability.bonus ? `<div class="ability-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
@@ -2138,6 +2193,17 @@
                     const abilityElement = btn.closest('.ability');
                     const abilityName = abilityElement.getAttribute('data-ability-name');
                     removeAbility(pokemon, abilityName);
+                });
+            });
+
+            // Re-attach usage tracker listeners for abilities
+            document.querySelectorAll('.ability .usage-checkbox').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const tracker = btn.closest('.move-usage-tracker');
+                    const abilityName = tracker.getAttribute('data-ability-name');
+                    const index = parseInt(btn.getAttribute('data-index'));
+                    toggleAbilityUsage(pokemon, abilityName, index);
                 });
             });
         }
