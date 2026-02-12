@@ -733,6 +733,37 @@
             const exportRoll20Btn = document.getElementById('exportRoll20Btn');
             const exportPokesheetsBtn = document.getElementById('exportPokesheetsBtn');
             
+            // Helper function to sync all pending changes to pokemon object before export
+            const syncPokemonBeforeExport = () => {
+                // Sync skill inputs
+                document.querySelectorAll('.skill-input').forEach(input => {
+                    const skillName = input.getAttribute('data-skill-name');
+                    if (skillName && pokemon.skills) {
+                        pokemon.skills[skillName] = input.value.trim();
+                    }
+                });
+                
+                // Sync capability value inputs
+                document.querySelectorAll('.capability-value-input').forEach(input => {
+                    const idx = parseInt(input.getAttribute('data-index'));
+                    const newValue = input.value;
+                    if (pokemon.capabilities[idx]) {
+                        const match = pokemon.capabilities[idx].match(/^(.+?)\s+[\d/]+$/);
+                        if (match) {
+                            pokemon.capabilities[idx] = match[1] + ' ' + newValue;
+                        }
+                    }
+                });
+                
+                // Sync capability no-value input
+                const capNoValueInput = document.getElementById('capabilitiesNoValueInput');
+                if (capNoValueInput) {
+                    const capabilitiesWithValues = pokemon.capabilities.filter(cap => /^.+\s+[\d/]+$/.test(cap));
+                    const newCapNoValues = capNoValueInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                    pokemon.capabilities = capabilitiesWithValues.concat(newCapNoValues);
+                }
+            };
+            
             if (exportBtn && exportDropdown) {
                 // Toggle dropdown
                 exportBtn.onclick = (e) => {
@@ -749,6 +780,7 @@
                 if (exportJsonBtn) {
                     exportJsonBtn.onclick = (e) => {
                         e.stopPropagation();
+                        syncPokemonBeforeExport();
                         exportPokemon(pokemon);
                         exportDropdown.style.display = 'none';
                     };
@@ -758,6 +790,7 @@
                 if (exportRoll20Btn) {
                     exportRoll20Btn.onclick = (e) => {
                         e.stopPropagation();
+                        syncPokemonBeforeExport();
                         exportPokemonRoll20(pokemon);
                         exportDropdown.style.display = 'none';
                     };
@@ -767,6 +800,7 @@
                 if (exportPokesheetsBtn) {
                     exportPokesheetsBtn.onclick = (e) => {
                         e.stopPropagation();
+                        syncPokemonBeforeExport();
                         exportPokemonPokesheets(pokemon);
                         exportDropdown.style.display = 'none';
                     };
