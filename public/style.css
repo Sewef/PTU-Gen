@@ -523,6 +523,38 @@ button {
 .move.type-steel { border-left-color: #B8B8D0; }
 .move.type-fairy { border-left-color: #EE99AC; }
 
+/* Move class indicators */
+.move-class-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.move-class-physical {
+    background-color: #d4a574;
+    color: white;
+}
+
+.move-class-special {
+    background-color: #7777dd;
+    color: white;
+}
+
+.move-class-status {
+    background-color: #A8A878;
+    color: white;
+}
+
+.move-class-versatile {
+    background-color: #b366cc;
+    color: white;
+}
+
 .move-header {
     display: flex;
     justify-content: space-between;
