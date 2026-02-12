@@ -389,12 +389,12 @@
 
                         ${Object.keys(pokemon.skills || {}).length > 0 ? `
                             <h3 class="section-title">📊 Skills</h3>
-                            <div style="padding: 15px; background: #f9f5f0; border-radius: 5px; border-left: 4px solid #e8a76e;">
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">
+                            <div class="skills-section">
+                                <div class="skills-grid">
                                     ${Object.entries(pokemon.skills).map(([skillName, skillFormula]) => `
-                                        <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e8a76e;">
-                                            <div style="font-weight: 600; color: #333; font-size: 0.9em; margin-bottom: 4px;">${skillName}</div>
-                                            <input type="text" class="skill-input" data-skill-name="${skillName}" value="${skillFormula}" style="font-family: monospace; font-size: 0.85em; color: #666; width: 100%; border: 1px solid #ddd; border-radius: 3px; padding: 4px; box-sizing: border-box; transition: border-color 0.2s ease;" />
+                                        <div class="skill-card">
+                                            <div class="skill-card-title">${skillName}</div>
+                                            <input type="text" class="skill-input" data-skill-name="${skillName}" value="${skillFormula}" />
                                         </div>
                                     `).join('')}
                                 </div>
@@ -403,8 +403,8 @@
 
                         ${pokemon.capabilities && pokemon.capabilities.length > 0 ? `
                             <h3 class="section-title">🔧 Capabilities</h3>
-                            <div style="padding: 15px; background: #f0f7ff; border-radius: 5px; border-left: 4px solid #667eea;">
-                                <div id="capabilitiesContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                            <div class="capabilities-section">
+                                <div id="capabilitiesContainer" class="capabilities-grid">
                                     ${(() => {
                         const withValues = [];
                         const withoutValues = [];
@@ -422,43 +422,43 @@
 
                         // Capabilities with values - as cards
                         withValues.forEach(({ idx, name, value }) => {
-                            html += `<div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #667eea;">
-                                                <div style="font-weight: 600; color: #333; font-size: 0.9em; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${name}">${name}</div>
-                                                <input type="text" class="capability-value-input" data-index="${idx}" value="${value}" style="font-family: monospace; font-size: 0.85em; color: #666; width: 100%; border: 1px solid #ddd; border-radius: 3px; padding: 4px; box-sizing: border-box;" />
+                            html += `<div class="capability-card">
+                                                <div class="capability-card-title" title="${name}">${name}</div>
+                                                <input type="text" class="capability-value-input" data-index="${idx}" value="${value}" />
                                             </div>`;
                         });
 
                         // Capabilities without values as one row
                         if (withoutValues.length > 0) {
-                            html += `<div style="grid-column: 1 / -1; background: white; padding: 10px; border-radius: 4px; border: 1px solid #667eea;">
-                                                <div style="font-weight: 600; color: #333; font-size: 0.9em; margin-bottom: 4px;">Other</div>
-                                                <input type="text" id="capabilitiesNoValueInput" class="capability-no-value-input" value="${withoutValues.join(', ')}" style="font-family: monospace; font-size: 0.85em; color: #666; width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box;" />
+                            html += `<div class="capability-card-full">
+                                                <div class="capability-card-full-title">Other</div>
+                                                <input type="text" id="capabilitiesNoValueInput" class="capability-no-value-input" value="${withoutValues.join(', ')}" />
                                             </div>`;
                         }
 
                         return html;
                     })()}
                                 </div>
-                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                    <button class="add-capability-btn" data-capability="Overland" title="Add Overland capability" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Overland</button>
-                                    <button class="add-capability-btn" data-capability="Swim" title="Add Swim capability" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Swim</button>
-                                    <button class="add-capability-btn" data-capability="Sky" title="Add Sky capability" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Sky</button>
-                                    <button class="add-capability-btn" data-capability="Levitate" title="Add Levitate capability" style="padding: 4px 8px; background: #8b7bb8; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Levitate</button>
-                                    <button class="add-capability-btn" data-capability="Burrow" title="Add Burrow capability" style="padding: 4px 8px; background: #8b7bb8; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Burrow</button>
+                                <div class="capabilities-buttons">
+                                    <button class="add-capability-btn" data-capability="Overland" title="Add Overland capability">+ Overland</button>
+                                    <button class="add-capability-btn" data-capability="Swim" title="Add Swim capability">+ Swim</button>
+                                    <button class="add-capability-btn" data-capability="Sky" title="Add Sky capability">+ Sky</button>
+                                    <button class="add-capability-btn" data-capability="Levitate" title="Add Levitate capability">+ Levitate</button>
+                                    <button class="add-capability-btn" data-capability="Burrow" title="Add Burrow capability">+ Burrow</button>
                                 </div>
                             </div>
                         ` : `
                             <h3 class="section-title">🔧 Capabilities</h3>
-                            <div style="padding: 15px; background: #f0f7ff; border-radius: 5px; border-left: 4px solid #667eea;">
+                            <div class="capabilities-section">
                                 <div id="capabilitiesContainer" style="color: #999; font-size: 0.9em; margin-bottom: 12px;">
                                     No capabilities yet.
                                 </div>
-                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                    <button class="add-capability-btn" data-capability="Overland" title="Add Overland capability" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Overland</button>
-                                    <button class="add-capability-btn" data-capability="Swim" title="Add Swim capability" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Swim</button>
-                                    <button class="add-capability-btn" data-capability="Sky" title="Add Sky capability" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Sky</button>
-                                    <button class="add-capability-btn" data-capability="Levitate" title="Add Levitate capability" style="padding: 4px 8px; background: #8b7bb8; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Levitate</button>
-                                    <button class="add-capability-btn" data-capability="Burrow" title="Add Burrow capability" style="padding: 4px 8px; background: #8b7bb8; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.75em; font-weight: 600; transition: all 0.2s ease;">+ Burrow</button>
+                                <div class="capabilities-buttons">
+                                    <button class="add-capability-btn" data-capability="Overland" title="Add Overland capability">+ Overland</button>
+                                    <button class="add-capability-btn" data-capability="Swim" title="Add Swim capability">+ Swim</button>
+                                    <button class="add-capability-btn" data-capability="Sky" title="Add Sky capability">+ Sky</button>
+                                    <button class="add-capability-btn" data-capability="Levitate" title="Add Levitate capability">+ Levitate</button>
+                                    <button class="add-capability-btn" data-capability="Burrow" title="Add Burrow capability">+ Burrow</button>
                                 </div>
                             </div>
                         `}
@@ -903,9 +903,11 @@
         // Setup type editor
         function setupTypeEditor(pokemon) {
             const editTypesBtn = document.getElementById('editTypesBtn');
+            console.log('setupTypeEditor called, editTypesBtn:', editTypesBtn);
             if (!editTypesBtn) return;
 
             editTypesBtn.addEventListener('click', function () {
+                console.log('editTypesBtn clicked');
                 showTypeModal(pokemon);
             });
         }
@@ -967,6 +969,7 @@
 
         // Show type selection modal
         function showTypeModal(pokemon) {
+            console.log('showTypeModal called');
             const availableTypes = [
                 'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting',
                 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost',
@@ -1045,6 +1048,8 @@
             const typeGrid = document.getElementById('typeGrid');
             const selectedTypes = [...pokemon.types];
 
+            console.log("About to attach save listener, saveTypesBtn element:", document.getElementById('saveTypesBtn'));
+
             // Create type buttons
             availableTypes.forEach(type => {
                 const isSelected = selectedTypes.includes(type);
@@ -1081,18 +1086,25 @@
             });
 
             // Save button handler
-            document.getElementById('saveTypesBtn').addEventListener('click', function () {
+            const saveTypesBtn = document.getElementById('saveTypesBtn');
+            const closeTypesBtn = document.getElementById('closeTypesBtn');
+            console.log("Save/Close buttons found:", { saveTypesBtn, closeTypesBtn });
+            
+            saveTypesBtn.addEventListener('click', function () {
+                console.log("Save button clicked! selectedTypes:", selectedTypes);
                 if (selectedTypes.length === 0) {
                     alert('Please select at least one type');
                     return;
                 }
                 pokemon.types = selectedTypes;
+                pokemon.actualTypes = selectedTypes; // Correction pour affichage
                 updateTypesDisplay(pokemon);
                 modal.remove();
             });
 
             // Close button handler
-            document.getElementById('closeTypesBtn').addEventListener('click', function () {
+            closeTypesBtn.addEventListener('click', function () {
+                console.log("Close button clicked");
                 modal.remove();
             });
 
