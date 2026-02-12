@@ -73,10 +73,10 @@ body.solarized-dark {
     --bg-gradient-2: #073642;
     --bg-main: #002b36;
     --bg-secondary: #073642;
-    --bg-tertiary: #586e75;
+    --bg-tertiary: #303e42;
     --text-primary: #93a1a1;
-    --text-secondary: #839496;
-    --text-tertiary: #657b83;
+    --text-secondary: #839496; 
+    --text-tertiary: #021317;
     --border-color: #073642;
     --shadow-color: rgba(0, 0, 0, 0.4);
     --info-box-bg: #073642;
@@ -397,7 +397,7 @@ button {
 }
 
 .info-box {
-    background: var(--info-box-bg);
+    background: var(--bg-tertiary);
     padding: 15px;
     border-radius: 5px;
     border-left: 4px solid var(--primary-color);
@@ -469,7 +469,7 @@ button {
 }
 
 .stat-breakdown-row {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 5px;
     padding: 8px;
@@ -526,7 +526,7 @@ button {
 
 .stat-breakdown-component.total {
     margin-left: auto;
-    background: var(--info-box-bg);
+    background: var(--bg-tertiary);
     padding: 4px 10px;
     border-radius: 3px;
     border: 1px solid var(--primary-color);
@@ -616,7 +616,7 @@ button {
 }
 
 .ability {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     padding: 12px 15px;
     border-radius: 5px;
     border-left: 4px solid var(--primary-dark);
@@ -674,7 +674,7 @@ button {
 }
 
 .move {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     padding: 12px 15px;
     border-radius: 5px;
     font-size: 0.9em;
@@ -739,6 +739,12 @@ button {
     gap: 6px;
     align-items: center;
     margin-left: 12px;
+}
+
+.usage-boxes {
+    display: flex;
+    gap: 4px;
+    align-items: center;
 }
 
 .usage-checkbox {
@@ -836,7 +842,7 @@ button {
 /* Skills and Capabilities sections */
 .skills-section {
     padding: 15px;
-    background: var(--skills-bg);
+    background: var(--bg-tertiary);
     border-radius: 5px;
     border-left: 4px solid var(--skills-border);
 }
@@ -863,7 +869,7 @@ button {
 
 .capabilities-section {
     padding: 15px;
-    background: var(--capabilities-bg);
+    background: var(--bg-tertiary);
     border-radius: 5px;
     border-left: 4px solid var(--capabilities-border);
 }
@@ -1235,7 +1241,7 @@ button {
 }
 
 .autocomplete-item.selected {
-    background-color: var(--info-box-bg);
+    background-color: var(--bg-tertiary);
     color: var(--primary-color);
 }
 
@@ -1599,7 +1605,7 @@ button {
 }
 
 .param-type {
-    background: var(--capabilities-bg);
+    background: var(--bg-tertiary);
     padding: 2px 6px;
     border-radius: 3px;
     font-family: 'Courier New', monospace;
@@ -1690,7 +1696,7 @@ pre {
 }
 
 .stats-info {
-    background: var(--info-box-bg);
+    background: var(--bg-tertiary);
     border-left: 3px solid var(--primary-color);
     padding: 15px;
     margin: 15px 0;
@@ -1737,13 +1743,6 @@ pre {
     margin-top: 5px;
     color: var(--text-secondary);
     font-size: 0.9em;
-}
-
-.info-box {
-    padding: 12px;
-    background: var(--bg-secondary);
-    border-radius: 6px;
-    margin-top: 12px;
 }
 
 .import-section-title {
@@ -1816,14 +1815,14 @@ pre {
 .modal-section {
     margin-bottom: 20px;
     padding: 10px;
-    background: var(--info-box-bg);
+    background: var(--bg-tertiary);
     border-radius: 5px;
     color: var(--text-secondary);
     font-size: 0.9em;
 }
 
 .stats-info-box {
-    background: var(--info-box-bg);
+    background: var(--bg-tertiary);
     border-left: 3px solid var(--primary-color);
     padding: 15px;
     margin: 15px 0;
@@ -1929,7 +1928,7 @@ pre {
 
 .remaining-points {
     padding: 6px 10px;
-    background: var(--info-box-bg);
+    background: var(--bg-tertiary);
     border: 1px solid var(--primary-color);
     border-radius: 4px;
     font-size: 0.75em;
@@ -2012,7 +2011,7 @@ pre {
 .type-selection-box {
     margin-bottom: 20px;
     padding: 10px;
-    background: var(--info-box-bg);
+    background: var(--bg-tertiary);
     border-radius: 5px;
 }
 
