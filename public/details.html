@@ -427,9 +427,11 @@
                                             </div>`;
                         });
 
-                        // Capabilities without values on one line
+                        // Capabilities without values as editable field
                         if (withoutValues.length > 0) {
-                            html += `<div style="color: #666; font-size: 0.9em;">${withoutValues.join(', ')}</div>`;
+                            html += `<div style="margin-top: 8px;">
+                                                <input type="text" id="capabilitiesNoValueInput" class="capability-no-value-input" value="${withoutValues.join(', ')}" style="font-size: 0.9em; width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-family: monospace; transition: border-color 0.2s ease, background-color 0.2s ease;" />
+                                            </div>`;
                         }
 
                         return html;
@@ -633,6 +635,17 @@
                     // Values persist in the input element
                 });
             });
+
+            // Handle capability without value changes
+            const capNoValueInput = document.getElementById('capabilitiesNoValueInput');
+            if (capNoValueInput) {
+                capNoValueInput.addEventListener('change', function () {
+                    // Parse the comma-separated input and update pokemon.capabilities
+                    const capabilitiesWithValues = pokemon.capabilities.filter(cap => /^.+\s+[\d/]+$/.test(cap));
+                    const newCapNoValues = this.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                    pokemon.capabilities = [...capabilitiesWithValues, ...newCapNoValues];
+                });
+            }
 
             // Setup nature dropdown
             setupNatureDropdown(pokemon);

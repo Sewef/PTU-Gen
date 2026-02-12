@@ -634,6 +634,31 @@ button {
     box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
+/* Capabilities without value input */
+.capability-no-value-input {
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #666;
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.capability-no-value-input:hover {
+    border-color: #bbb;
+    background-color: #fafafa;
+}
+
+.capability-no-value-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background-color: white;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
 .move-header {
     display: flex;
     justify-content: space-between;
