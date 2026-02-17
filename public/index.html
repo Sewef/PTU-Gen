@@ -105,6 +105,15 @@
                         <div class="autocomplete-suggestions" id="speciesSuggestions"></div>
                     </div>
 
+                    <!-- Form Variant -->
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="randomForm" style="width: auto;">
+                            <span>Random Form Variant</span>
+                        </label>
+                        <small class="small-block-text">When enabled, if the species has form variants (like Rotom), randomly select one. Leave unchecked to always use the selected form.</small>
+                    </div>
+
                     <!-- Habitat -->
                     <div class="form-group">
                         <label>Habitat (Optional)</label>
@@ -403,6 +412,13 @@
                         searchName: name.toLowerCase()
                     }));
                     console.log(`✓ Loaded ${allPokemon.length} species from ${dataset} dataset`);
+                    
+                    // Debug: show first few species and check for forms
+                    const withForms = allPokemon.filter(p => p.name.includes('('));
+                    console.log(`Species with forms: ${withForms.length}`);
+                    console.log('First 5 species:', allPokemon.slice(0, 5).map(p => p.name));
+                    console.log('First 5 with forms:', withForms.slice(0, 5).map(p => p.name));
+                    
                     // Clear species input when dataset changes
                     speciesInput.value = '';
                     suggestionsList.classList.remove('open');
@@ -709,6 +725,10 @@
 
                         if (document.getElementById('species').value) {
                             params.append('species', document.getElementById('species').value);
+                        }
+
+                        if (document.getElementById('randomForm').checked) {
+                            params.append('randomForm', 'true');
                         }
 
                         if (document.getElementById('habitat').value) {

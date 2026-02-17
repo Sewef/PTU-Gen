@@ -21,6 +21,7 @@ router.use((req, res, next) => {
  *   - maxLevel: number (1-100) - maximum level for random range
  *   - species: string (Pokemon name) - if not specified, random species is chosen
  *   - habitat: string (habitat name) - if specified, random species from that habitat is chosen
+ *   - randomForm: boolean - If enabled and species has form variants, randomly select one (default: false)
  *   - shiny: boolean
  *   - distribution: string - RANDOM (default), BALANCED, or MINMAXED
  *     * RANDOM: Points distributed randomly to stat groups
@@ -73,6 +74,7 @@ router.get('/generate', async (req, res) => {
       maxlevel: req.query.maxlevel ? parseInt(req.query.maxlevel) : undefined,
       species: req.query.species,
       habitat: req.query.habitat,
+      randomform: req.query.randomform === 'true',
       shiny: req.query.shiny === 'true',
       shinyodds: req.query.shinyodds ? parseFloat(req.query.shinyodds) : undefined,
       distribution: (req.query.distribution || 'RANDOM').toUpperCase(),

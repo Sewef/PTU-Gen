@@ -171,8 +171,11 @@ async function loadDataset(datasetKey) {
     const pokedexMap = new Map();
     pokedexArrays.forEach(pokedexArray => {
       pokedexArray.forEach(pokemon => {
-        // Use species name as key to avoid duplicates
-        pokedexMap.set(pokemon.Species.toLowerCase(), pokemon);
+        // Use species name + form as key to avoid duplicates (handle form variants)
+        const key = pokemon.Form 
+          ? `${pokemon.Species.toLowerCase()}|${pokemon.Form.toLowerCase()}`
+          : pokemon.Species.toLowerCase();
+        pokedexMap.set(key, pokemon);
       });
     });
     const mergedPokedex = Array.from(pokedexMap.values());
@@ -228,7 +231,13 @@ async function switchDataset(datasetKey) {
   movesMap = {};
 
   pokemonDatabase.forEach(pokemon => {
+    // Index by species name for base lookups
     pokemonByName[pokemon.Species.toLowerCase()] = pokemon;
+    // Also index form variants with full name (e.g., "palafin|zero form")
+    if (pokemon.Form) {
+      const formKey = `${pokemon.Species.toLowerCase()}|${pokemon.Form.toLowerCase()}`;
+      pokemonByName[formKey] = pokemon;
+    }
   });
 
   Object.keys(movesDatabase).forEach(moveName => {
@@ -417,6 +426,15 @@ class PokemonGenerator {
       throw new Error(`Species not found: ${options.species}`);
     }
 
+    // Apply random form selection if requested
+    if (options.randomform === true || options.randomform === 'true') {
+      const allForms = this.getAllFormsOfSpecies(species.Species);
+      if (allForms.length > 1) {
+        // Randomly select one of the available forms
+        species = allForms[Math.floor(Math.random() * allForms.length)];
+      }
+    }
+
     // Apply forceEvolution if specified
     if (options.forceevolution === 'true' || options.forceevolution === true) {
       // Get the base form of the evolution chain if a random species was selected
@@ -488,10 +506,18 @@ class PokemonGenerator {
     const extractedTypes = extractPokemonTypes(species['Basic Information'].Type);
     const actualTypes = getActualTypes(extractedTypes);
     
+    // Build display name, including Form if present
+    const displayName = species.Form 
+      ? `${species.Species} (${species.Form})`
+      : species.Species;
+    
     const pokemon = {
       id: species.Number,
       Icon: species.Icon,
-      name: species.Species,
+      name: displayName,
+      displayName: displayName,
+      baseName: species.Species,
+      form: species.Form || null,
       level: level,
       types: extractedTypes,
       actualTypes: actualTypes,
@@ -1127,10 +1153,73 @@ class PokemonGenerator {
 
   /**
    * Get species by name from database (checks custom first, then database)
+   * Accepts both formats: "Species" or "Species (Form)" or "species|form"
    */
   static getSpeciesByName(name) {
-    // Check custom data first
-    const customLower = name.toLowerCase();
+    if (!name) return null;
+    
+    const customLower = name.toLowerCase().trim();
+    
+    // Check if name includes form variant with parentheses (e.g., "rotom (heat rotom)")
+    if (customLower.includes('(') && customLower.includes(')')) {
+      const match = customLower.match(/^([^(]+)\s*\(([^)]+)\)$/);
+      if (match) {
+        const baseName = match[1].trim();
+        const formName = match[2].trim();
+        
+        // Check custom data for form variant
+        const customSpecies = customPokemon.find(p => 
+          p.Species.toLowerCase() === baseName && 
+          p.Form && 
+          p.Form.toLowerCase() === formName
+        );
+        if (customSpecies) {
+          return customSpecies;
+        }
+        
+        // Check database for form variant
+        const key = `${baseName}|${formName}`.toLowerCase();
+        if (pokemonByName[key]) {
+          return pokemonByName[key];
+        }
+        
+        // Fallback to base name if form variant not found
+        const baseSpecies = customPokemon.find(p => p.Species.toLowerCase() === baseName);
+        if (baseSpecies) {
+          return baseSpecies;
+        }
+        return pokemonByName[baseName];
+      }
+    }
+    
+    // Check if name includes form variant with pipe (e.g., "palafin|zero form")
+    if (customLower.includes('|')) {
+      const [baseName, formName] = customLower.split('|').map(s => s.trim());
+      
+      // Check custom data for form variant
+      const customSpecies = customPokemon.find(p => 
+        p.Species.toLowerCase() === baseName && 
+        p.Form && 
+        p.Form.toLowerCase() === formName
+      );
+      if (customSpecies) {
+        return customSpecies;
+      }
+      
+      // Check database for form variant
+      if (pokemonByName[customLower]) {
+        return pokemonByName[customLower];
+      }
+      
+      // Fallback to base name if form variant not found
+      const baseSpecies = customPokemon.find(p => p.Species.toLowerCase() === baseName);
+      if (baseSpecies) {
+        return baseSpecies;
+      }
+      return pokemonByName[baseName];
+    }
+    
+    // Search custom data for exact match (with or without form)
     const customSpecies = customPokemon.find(p => p.Species.toLowerCase() === customLower);
     if (customSpecies) {
       return customSpecies;
@@ -1138,6 +1227,35 @@ class PokemonGenerator {
     
     // Fall back to database
     return pokemonByName[customLower];
+  }
+
+  /**
+   * Get all form variants of a species
+   * Returns array of species including base form and all form variants
+   */
+  static getAllFormsOfSpecies(baseName) {
+    if (!baseName) return [];
+    const baseLower = baseName.toLowerCase();
+    const forms = [];
+
+    // Check custom data for this species and all its forms
+    customPokemon.forEach(p => {
+      if (p.Species.toLowerCase() === baseLower) {
+        forms.push(p);
+      }
+    });
+
+    // Check database for this species and all its forms
+    pokemonDatabase.forEach(p => {
+      if (p.Species.toLowerCase() === baseLower) {
+        // Don't add if already in custom data
+        if (!forms.some(f => f.Form === p.Form && f.Species === p.Species)) {
+          forms.push(p);
+        }
+      }
+    });
+
+    return forms;
   }
 
   /**
@@ -1293,18 +1411,27 @@ class PokemonGenerator {
       await switchDataset(dataset);
     }
     const allPokemon = [...customPokemon, ...pokemonDatabase];
-    return allPokemon.map(species => ({
-      id: species.Number,
-      name: species.Species,
-      types: species['Basic Information']?.Type,
-      abilities: {
-        basic1: species['Basic Information']?.['Basic Ability 1'],
-        basic2: species['Basic Information']?.['Basic Ability 2'],
-        adv1: species['Basic Information']?.['Adv Ability 1'],
-        adv2: species['Basic Information']?.['Adv Ability 2'],
-        high: species['Basic Information']?.['High Ability']
-      }
-    }));
+    return allPokemon.map(species => {
+      // Include Form in the display name if present
+      const displayName = species.Form 
+        ? `${species.Species} (${species.Form})`
+        : species.Species;
+      
+      return {
+        id: species.Number,
+        name: displayName,
+        baseName: species.Species,
+        form: species.Form || null,
+        types: species['Basic Information']?.Type,
+        abilities: {
+          basic1: species['Basic Information']?.['Basic Ability 1'],
+          basic2: species['Basic Information']?.['Basic Ability 2'],
+          adv1: species['Basic Information']?.['Adv Ability 1'],
+          adv2: species['Basic Information']?.['Adv Ability 2'],
+          high: species['Basic Information']?.['High Ability']
+        }
+      };
+    });
   }
 
   /**
