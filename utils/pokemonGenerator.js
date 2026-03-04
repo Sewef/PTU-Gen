@@ -451,10 +451,17 @@ class PokemonGenerator {
     const ignoreBaseRelation = options.ignorebaserelation ? (options.ignorebaserelation).toUpperCase() : undefined;
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
     
-    // Extract base stats, handling variants like Pumpkaboo (Small/Average/Large/Super Size)
-    const extractedStats = extractBaseStats(species['Base Stats']);
-    const baseStatsData = getActualBaseStats(extractedStats);
-    const stats = this.calculateStats(baseStatsData, level, nature, distribution, ignoreBaseRelation);
+    // Calculate baseWithNature for proper level points calculation on frontend
+    const baseWithNature = {
+      HP: Math.max(1, (baseStatsData.HP || 0) + (nature.raise === 'HP' ? 1 : 0) + (nature.lower === 'HP' ? -1 : 0)),
+      atk: Math.max(1, (baseStatsData.Attack || 0) + (nature.raise === 'atk' ? 2 : 0) + (nature.lower === 'atk' ? -2 : 0)),
+      def: Math.max(1, (baseStatsData.Defense || 0) + (nature.raise === 'def' ? 2 : 0) + (nature.lower === 'def' ? -2 : 0)),
+      spA: Math.max(1, (baseStatsData['Special Attack'] || 0) + (nature.raise === 'spA' ? 2 : 0) + (nature.lower === 'spA' ? -2 : 0)),
+      spD: Math.max(1, (baseStatsData['Special Defense'] || 0) + (nature.raise === 'spD' ? 2 : 0) + (nature.lower === 'spD' ? -2 : 0)),
+      spe: Math.max(1, (baseStatsData.Speed || 0) + (nature.raise === 'spe' ? 2 : 0) + (nature.lower === 'spe' ? -2 : 0))
+    };
+
+    const stats = this.calculateStats(baseWithNature, level, nature, distribution, ignoreBaseRelation);
     
     // Get selected abilities with their definitions
     const abilityNames = this.selectAbilities(species, level);
@@ -490,17 +497,6 @@ class PokemonGenerator {
       const malePercent = maleMatch ? parseFloat(maleMatch[1]) : 0;
       gender = Math.random() * 100 < malePercent ? 'Male' : 'Female';
     }
-    
-    // Calculate baseWithNature for proper level points calculation on frontend
-    // baseStatsData already extracted above with variant handling
-    const baseWithNature = {
-      HP: Math.max(1, (baseStatsData.HP || 0) + (nature.raise === 'HP' ? 1 : 0) + (nature.lower === 'HP' ? -1 : 0)),
-      atk: Math.max(1, (baseStatsData.Attack || 0) + (nature.raise === 'atk' ? 2 : 0) + (nature.lower === 'atk' ? -2 : 0)),
-      def: Math.max(1, (baseStatsData.Defense || 0) + (nature.raise === 'def' ? 2 : 0) + (nature.lower === 'def' ? -2 : 0)),
-      spA: Math.max(1, (baseStatsData['Special Attack'] || 0) + (nature.raise === 'spA' ? 2 : 0) + (nature.lower === 'spA' ? -2 : 0)),
-      spD: Math.max(1, (baseStatsData['Special Defense'] || 0) + (nature.raise === 'spD' ? 2 : 0) + (nature.lower === 'spD' ? -2 : 0)),
-      spe: Math.max(1, (baseStatsData.Speed || 0) + (nature.raise === 'spe' ? 2 : 0) + (nature.lower === 'spe' ? -2 : 0))
-    };
     
     // Extract types, handling forme variants like Oricorio
     const extractedTypes = extractPokemonTypes(species['Basic Information'].Type);
@@ -644,32 +640,13 @@ class PokemonGenerator {
    * - Distribution mode: RANDOM, BALANCED, or MINMAXED
    * - ignoreBaseRelation: 'IGNORE' to disable Base Relation, or comma-separated stats to exclude from grouping
    */
-  static calculateStats(baseStats, level, nature, distribution = 'RANDOM', ignoreBaseRelation = undefined) {
+  static calculateStats(baseWithNature, level, nature, distribution = 'RANDOM', ignoreBaseRelation = undefined) {
     const stats = {};
-    const statNames = ['HP', 'Attack', 'Defense', 'Special Attack', 'Special Defense', 'Speed'];
     const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
 
     // Total stat points available: level + 10
     const totalPoints = level + 10;
     
-    // Calculate base stats with nature applied
-    const baseWithNature = {};
-    shortNames.forEach((shortName, index) => {
-      const stat = statNames[index];
-      const base = baseStats[stat];
-      let value = base;
-
-      if (stat === 'HP') {
-        if (nature.raise === shortName) value += 1;
-        if (nature.lower === shortName) value -= 1;
-      } else {
-        if (nature.raise === shortName) value += 2;
-        if (nature.lower === shortName) value -= 2;
-      }
-
-      baseWithNature[shortName] = Math.max(1, value);
-    });
-
     // Group stats by their base value (equal base stats) unless ignoring Base Relation
     let groups;
     if (ignoreBaseRelation === 'IGNORE') {
@@ -763,16 +740,45 @@ class PokemonGenerator {
     const distributedPoints = {};
     shortNames.forEach(s => distributedPoints[s] = 0);
 
-    // Distribute points by randomly adding to stats, respecting Base Relation groups
-    for (let i = 0; i < totalPoints; i++) {
-      const groupIndex = Math.floor(Math.random() * groups.length);
-      const group = groups[groupIndex];
+    // Filter out HP if it should be handled differently (common house rule, but PTU RAW includes it)
+    // Here we follow RAW unless Base Relation is specifically handled
 
-      // Add one point to a randomly chosen stat in the group
-      const statIndex = Math.floor(Math.random() * group.stats.length);
-      const stat = group.stats[statIndex];
-      distributedPoints[stat]++;
+    // Distribute points by randomly adding to GROUPS, then splitting equally within the group
+    for (let i = 0; i < totalPoints; i++) {
+        const groupIndex = Math.floor(Math.random() * groups.length);
+        const group = groups[groupIndex];
+        
+        // When adding a point to a group, we must ensure all stats in the group stay equal.
+        // This effectively means we spend N points (where N is group size) to increase each stat by 1.
+        // But PTU points are individual. If we only have 1 point left and group size is 2, 
+        // we can't respect Base Relation perfectly if we want to spend all points.
+        // The most common interpretation is that you MUST spend points in multiples of group size 
+        // OR you just pick one and accept temporary inequality until next point.
+        // PTU 1.05 p214: "Stats which are equal at Base must remain equal."
+        
+        // To respect this, if we add a point to a group, we should ideally add it to all.
+        // But for simplicity's sake and to not exceed totalPoints, we'll pick one.
+        // Wait, if they must REMAIN equal, then adding a point to one and not the other violates it.
+        const statIndex = Math.floor(Math.random() * group.stats.length);
+        const stat = group.stats[statIndex];
+        distributedPoints[stat]++;
     }
+
+    // Post-processing: Balance groups to ensure equality within groups
+    // This is a "best effort" to fix the random distribution
+    groups.forEach(group => {
+        if (group.stats.length > 1) {
+            let totalGroupPoints = 0;
+            group.stats.forEach(s => totalGroupPoints += distributedPoints[s]);
+            
+            const pointsPerStat = Math.floor(totalGroupPoints / group.stats.length);
+            const remainder = totalGroupPoints % group.stats.length;
+            
+            group.stats.forEach((s, idx) => {
+                distributedPoints[s] = pointsPerStat + (idx < remainder ? 1 : 0);
+            });
+        }
+    });
 
     return distributedPoints;
   }
