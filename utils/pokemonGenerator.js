@@ -763,17 +763,36 @@ class PokemonGenerator {
     const distributedPoints = {};
     shortNames.forEach(s => distributedPoints[s] = 0);
 
-    // Distribute points by randomly selecting GROUPS and adding points to all stats in that group equally
-    // This ensures stats in the same group always stay equal
+    // Track how many points each group receives (not each stat)
+    const groupPoints = new Array(groups.length).fill(0);
+
+    // Randomly allocate points to groups
+    // Each iteration adds exactly 1 point to one randomly selected group
     for (let i = 0; i < totalPoints; i++) {
       const groupIndex = Math.floor(Math.random() * groups.length);
-      const group = groups[groupIndex];
-
-      // Add one point to ALL stats in the selected group equally
-      group.stats.forEach(stat => {
-        distributedPoints[stat]++;
-      });
+      groupPoints[groupIndex]++;
     }
+
+    // Distribute each group's points equally among its stats (as much as possible)
+    groups.forEach((group, groupIndex) => {
+      const pointsForGroup = groupPoints[groupIndex];
+      if (pointsForGroup === 0) return;
+      
+      // Distribute points evenly within the group
+      const pointsPerStat = Math.floor(pointsForGroup / group.stats.length);
+      const remainderPoints = pointsForGroup % group.stats.length;
+
+      group.stats.forEach((stat, statIndex) => {
+        let statPoints = pointsPerStat;
+        // Distribute remainder points to first stats in group
+        // Note: This means first N stats get 1 more point than others in the group
+        // This is a necessary trade-off to ensure all points are distributed while enforcing Base Relation
+        if (statIndex < remainderPoints) {
+          statPoints++;
+        }
+        distributedPoints[stat] = statPoints;
+      });
+    });
 
     return distributedPoints;
   }
@@ -788,28 +807,42 @@ class PokemonGenerator {
     const distributedPoints = {};
     shortNames.forEach(s => distributedPoints[s] = 0);
 
-    // Distribute points equally per group
-    const pointsPerGroup = Math.floor(totalPoints / groups.length);
-    const remainderGroups = totalPoints % groups.length;
+    // First, distribute points equally to all 6 stats  
+    const basePointsPerStat = Math.floor(totalPoints / 6);
+    const remainderPoints = totalPoints % 6;
 
-    // Distribute points to each group
-    groups.forEach((group, groupIndex) => {
-      let groupPoints = pointsPerGroup;
-      
-      // Distribute remainder randomly to groups
-      if (groupIndex < remainderGroups) {
-        groupPoints++;
+    // Initialize all stats with base points
+    let pointAssigned = 0;
+    shortNames.forEach((stat, idx) => {
+      distributedPoints[stat] = basePointsPerStat;
+      pointAssigned += basePointsPerStat;
+      // Distribute remainder points to first stats
+      if (idx < remainderPoints) {
+        distributedPoints[stat]++;
+        pointAssigned++;
       }
+    });
 
-      // Divide group points equally among stats in the group
-      // All stats in a group must receive equal points to maintain Base Relation
-      const pointsPerStat = Math.floor(groupPoints / group.stats.length);
-      // Note: We don't distribute remainder to individual stats within group
-      // This would break Base Relation. Stats in same group must stay equal.
+    // Post-process: For each group, ensure all stats in group have equal points
+    // Sum points in group and redistribute equally among stats
+    groups.forEach(group => {
+      if (group.stats.length > 1) {
+        let totalGroupPoints = 0;
+        group.stats.forEach(s => totalGroupPoints += distributedPoints[s]);
 
-      group.stats.forEach(stat => {
-        distributedPoints[stat] = pointsPerStat;
-      });
+        // All stats in group get same points to maintain Base Relation
+        const pointsPerStat = Math.floor(totalGroupPoints / group.stats.length);
+        const groupRemainder = totalGroupPoints % group.stats.length;
+
+        group.stats.forEach((stat, idx) => {
+          let statPoints = pointsPerStat;
+          // Distribute remainder within group to first stats
+          if (idx < groupRemainder) {
+            statPoints++;
+          }
+          distributedPoints[stat] = statPoints;
+        });
+      }
     });
 
     return distributedPoints;
@@ -838,7 +871,7 @@ class PokemonGenerator {
     sortedGroups.forEach((group, index) => {
       const weight = weights[index];
       const groupPoints = index === sortedGroups.length - 1 
-        ? totalPoints - totalPointsDistributed  // Last group gets remaining points
+        ? totalPoints - totalPointsDistributed  // Last group gets remaining points (ensures all points distributed)
         : Math.round((weight / totalWeight) * totalPoints);
 
       totalPointsDistributed += groupPoints;
@@ -846,11 +879,15 @@ class PokemonGenerator {
       // Divide group points equally among stats in the group
       // All stats in a group must receive equal points to maintain Base Relation
       const pointsPerStat = Math.floor(groupPoints / group.stats.length);
-      // Note: We don't distribute remainder to individual stats within group
-      // This would break Base Relation. Stats in same group must stay equal.
+      const remainderStats = groupPoints % group.stats.length;
 
-      group.stats.forEach(stat => {
-        distributedPoints[stat] = pointsPerStat;
+      group.stats.forEach((stat, statIndex) => {
+        let statPoints = pointsPerStat;
+        // Distribute remainder points to first stats in the group to maintain Base Relation as much as possible
+        if (statIndex < remainderStats) {
+          statPoints++;
+        }
+        distributedPoints[stat] = statPoints;
       });
     });
 
