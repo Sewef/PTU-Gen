@@ -377,6 +377,8 @@ class PokemonGenerator {
    * @param {number} options.minLevel - Minimum level for random range
    * @param {number} options.maxLevel - Maximum level for random range
    * @param {string} options.species - Specific species to generate
+   * @param {string} options.type - Specific type to generate (random Pokemon of that type)
+   * @param {string} options.habitat - Specific habitat to generate (random Pokemon from that habitat)
    * @param {boolean} options.shiny - Force shiny
    * @param {string} options.distribution - RANDOM (default), BALANCED, or MINMAXED
    * @param {string} options.ignoreBaseRelation - 'IGNORE' (all stats) or comma-separated list (e.g., 'HP,ATK,DEF')
@@ -418,9 +420,11 @@ class PokemonGenerator {
     
     let species = options.species 
       ? this.getSpeciesByName(options.species)
-      : options.habitat 
-        ? this.getRandomSpeciesByHabitat(options.habitat, includeLegendaries)
-        : this.getRandomSpecies(includeLegendaries);
+      : options.type 
+        ? this.getRandomSpeciesByType(options.type, includeLegendaries)
+        : options.habitat 
+          ? this.getRandomSpeciesByHabitat(options.habitat, includeLegendaries)
+          : this.getRandomSpecies(includeLegendaries);
 
     if (!species) {
       throw new Error(`Species not found: ${options.species}`);
@@ -1375,6 +1379,60 @@ class PokemonGenerator {
       throw new Error(`No Pokemon found in habitat: ${habitat}`);
     }
     return pokemonInHabitat[Math.floor(Math.random() * pokemonInHabitat.length)];
+  }
+
+  /**
+   * Get all available types
+   */
+  static getAvailableTypes() {
+    const types = new Set();
+    pokemonDatabase.forEach(pokemon => {
+      const typeField = pokemon['Basic Information']?.Type;
+      if (typeField) {
+        const extractedTypes = extractPokemonTypes(typeField);
+        const pokemonTypes = getActualTypes(extractedTypes);
+        pokemonTypes.forEach(type => {
+          if (typeof type === 'string') {
+            types.add(type.trim());
+          }
+        });
+      }
+    });
+    return Array.from(types).sort();
+  }
+
+  /**
+   * Get Pokemon by type (includes custom Pokemon)
+   */
+  static getPokemonByType(type) {
+    if (!type) return [];
+    const typeLower = type.toLowerCase();
+    const allPokemon = [...customPokemon, ...pokemonDatabase];
+    return allPokemon.filter(pokemon => {
+      const typeField = pokemon['Basic Information']?.Type;
+      if (!typeField) return false;
+      
+      const extractedTypes = extractPokemonTypes(typeField);
+      const pokemonTypes = getActualTypes(extractedTypes);
+      
+      return pokemonTypes.some(t => 
+        typeof t === 'string' && t.toLowerCase() === typeLower
+      );
+    });
+  }
+
+  /**
+   * Get random Pokemon from a specific type
+   */
+  static getRandomSpeciesByType(type, includeLegendaries = false) {
+    let pokemonOfType = this.getPokemonByType(type);
+    if (!includeLegendaries) {
+      pokemonOfType = pokemonOfType.filter(pokemon => !pokemon.Legendary);
+    }
+    if (pokemonOfType.length === 0) {
+      throw new Error(`No Pokemon found with type: ${type}`);
+    }
+    return pokemonOfType[Math.floor(Math.random() * pokemonOfType.length)];
   }
 
   /**

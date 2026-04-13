@@ -1316,6 +1316,32 @@
                 return newHP;
             };
 
+            // Real-time update on input event
+            hpFormulaInput.addEventListener('input', function () {
+                let newFormula = this.value.trim();
+                if (!newFormula) {
+                    return; // Don't update if formula is empty
+                }
+
+                // Validate and recalculate HP
+                const newHP = recalculateHP(newFormula);
+                if (newHP !== null) {
+                    pokemon.hitPoints = newHP;
+
+                    // Update HP display in real-time
+                    const hpDisplay = document.getElementById('hpDisplay');
+                    if (hpDisplay) hpDisplay.textContent = pokemon.hitPoints;
+
+                    // Update input styling to show success
+                    hpFormulaInput.style.borderColor = '#28a745';
+                    hpFormulaInput.style.backgroundColor = '#f0fff4';
+                } else {
+                    // Invalid formula
+                    hpFormulaInput.style.borderColor = '#dc3545';
+                    hpFormulaInput.style.backgroundColor = '#fff5f5';
+                }
+            });
+
             hpFormulaInput.addEventListener('change', function () {
                 let newFormula = this.value.trim();
                 if (!newFormula) {

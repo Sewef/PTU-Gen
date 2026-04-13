@@ -20,6 +20,7 @@ router.use((req, res, next) => {
  *   - minLevel: number (1-100) - minimum level for random range
  *   - maxLevel: number (1-100) - maximum level for random range
  *   - species: string (Pokemon name) - if not specified, random species is chosen
+ *   - type: string (type name) - if specified, random species of that type is chosen
  *   - habitat: string (habitat name) - if specified, random species from that habitat is chosen
  *   - randomForm: boolean - If enabled and species has form variants, randomly select one (default: false)
  *   - shiny: boolean
@@ -73,6 +74,7 @@ router.get('/generate', async (req, res) => {
       minlevel: req.query.minlevel ? parseInt(req.query.minlevel) : undefined,
       maxlevel: req.query.maxlevel ? parseInt(req.query.maxlevel) : undefined,
       species: req.query.species,
+      type: req.query.type,
       habitat: req.query.habitat,
       randomform: req.query.randomform === 'true',
       shiny: req.query.shiny === 'true',
@@ -279,6 +281,28 @@ router.get('/habitats', async (req, res) => {
     res.json({
       habitats: habitats,
       count: habitats.length,
+      dataset: dataset
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/pokemon/types
+ * List all available types
+ */
+router.get('/types', async (req, res) => {
+  try {
+    const dataset = (req.query.dataset || 'core').toLowerCase();
+    
+    // Trigger dataset switch by calling any method that does it
+    await PokemonGenerator.listAvailablePokemon(dataset);
+    
+    const types = PokemonGenerator.getAvailableTypes();
+    res.json({
+      types: types,
+      count: types.length,
       dataset: dataset
     });
   } catch (error) {

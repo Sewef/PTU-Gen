@@ -40,6 +40,8 @@ app.get('/api/info', (req, res) => {
       list: '/api/pokemon/list',
       datasets: '/api/pokemon/datasets',
       natures: '/api/pokemon/natures',
+      types: '/api/pokemon/types',
+      habitats: '/api/pokemon/habitats',
       moves: '/api/pokemon/moves/:species',
       abilities: '/api/pokemon/abilities/:species',
       allMoves: '/api/pokemon/all-moves',

@@ -123,6 +123,15 @@
                                                         <small class="small-block-text">Leave empty for any habitat. Overridden if species is specified.</small>
                     </div>
 
+                    <!-- Type -->
+                    <div class="form-group">
+                        <label>Type (Optional)</label>
+                        <select id="type">
+                            <option value="">Random Type</option>
+                        </select>
+                        <small class="small-block-text">Leave empty for any type. Overridden if species is specified.</small>
+                    </div>
+
                     <!-- Shiny -->
                     <div class="form-group">
                         <div style="display: flex; gap: 20px; align-items: center;">
@@ -456,6 +465,30 @@
             }
         }
 
+        // Load Types for a specific dataset
+        async function loadTypeList(dataset = 'core') {
+            try {
+                const response = await fetch(`/api/pokemon/types?dataset=${dataset}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const allTypes = data.types;
+                    console.log(`✓ Loaded ${allTypes.length} types from ${dataset} dataset`);
+                    
+                    // Populate type dropdown
+                    const typeSelect = document.getElementById('type');
+                    typeSelect.innerHTML = '<option value="">Random Type</option>';
+                    allTypes.forEach(type => {
+                        const option = document.createElement('option');
+                        option.value = type;
+                        option.textContent = type;
+                        typeSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load type list:', error);
+            }
+        }
+
         // Autocomplete logic
         speciesInput.addEventListener('input', function () {
             const value = this.value.trim().toLowerCase();
@@ -634,6 +667,7 @@
         datasetSelect.addEventListener('change', function () {
             loadPokemonList(this.value);
             loadHabitatList(this.value);
+            loadTypeList(this.value);
         });
 
         // Disable browser autocomplete on all inputs
@@ -733,6 +767,10 @@
 
                         if (document.getElementById('habitat').value) {
                             params.append('habitat', document.getElementById('habitat').value);
+                        }
+
+                        if (document.getElementById('type').value) {
+                            params.append('type', document.getElementById('type').value);
                         }
 
                         if (document.getElementById('shiny').checked) {
@@ -1140,6 +1178,7 @@
             console.log('📋 Loading Pokemon list...');
             loadPokemonList();
             loadHabitatList();
+            loadTypeList();
             loadNatures();
             // Optional: auto-generate
             // generatePokemon();
