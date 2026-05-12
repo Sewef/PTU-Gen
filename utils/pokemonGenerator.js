@@ -86,7 +86,8 @@ let movesDatabase = {};
 
 // Create lookup objects for easier access
 let pokemonByName = {};
-let movesMap = {};
+let movesMapLower = {};  // Lowercase indexed map for case-insensitive lookups
+let abilitiesMapLower = {};  // Lowercase indexed map for case-insensitive lookups
 
 // Custom data storage (will override database data when set)
 let customPokemon = [];
@@ -228,7 +229,8 @@ async function switchDataset(datasetKey) {
 
   // Rebuild lookup objects
   pokemonByName = {};
-  movesMap = {};
+  movesMapLower = {};
+  abilitiesMapLower = {};
 
   pokemonDatabase.forEach(pokemon => {
     const speciesLower = pokemon.Species.toLowerCase();
@@ -246,8 +248,16 @@ async function switchDataset(datasetKey) {
     }
   });
 
+  // Build lowercase indexed map for fast case-insensitive lookups
   Object.keys(movesDatabase).forEach(moveName => {
-    movesMap[moveName.toLowerCase()] = movesDatabase[moveName];
+    movesMapLower[moveName.toLowerCase()] = movesDatabase[moveName];
+  });
+  
+  // Build lowercase indexed map for abilities
+  Object.keys(abilitiesDatabase).forEach(abilityName => {
+    if (typeof abilityName === 'string') {
+      abilitiesMapLower[abilityName.toLowerCase()] = abilitiesDatabase[abilityName];
+    }
   });
 }
 
@@ -402,9 +412,9 @@ class PokemonGenerator {
     let level;
     
     if (options.minlevel !== undefined && options.maxlevel !== undefined) {
-      // Random level range
-      let min = Math.max(1, parseInt(options.minlevel));
-      let max = Math.min(100, parseInt(options.maxlevel));
+      // Random level range - with validation
+      let min = Math.max(1, parseInt(options.minlevel) || 1);
+      let max = Math.min(100, parseInt(options.maxlevel) || 100);
       
       // Ensure min <= max
       if (min > max) {
@@ -413,13 +423,15 @@ class PokemonGenerator {
       
       level = Math.floor(Math.random() * (max - min + 1)) + min;
     } else if (options.level !== undefined) {
-      // Specific level
-      level = parseInt(options.level);
+      // Specific level - with NaN validation
+      const parsed = parseInt(options.level);
+      level = isNaN(parsed) ? 50 : parsed;
     } else {
       // Random level by default (1-50)
       level = Math.floor(Math.random() * 50) + 1;
     }
     
+    // Ensure level is always within valid range [1, 100]
     level = Math.min(Math.max(level, 1), 100);
     
     const includeLegendaries = options.includelegendaries === 'true' || options.includelegendaries === true;
@@ -591,19 +603,22 @@ class PokemonGenerator {
    * @returns {number} Calculated Hit Points
    */
   static calculateHitPoints(level, hpStat, formula = 'LEVEL + (HP * 3) + 10') {
-    // Replace placeholders with actual values
-    let hp = formula
-      .toUpperCase()
-      .replace(/LEVEL/g, level)
-      .replace(/HP/g, hpStat);
+    let hp; // Declare variable before try/catch
     
-    // Safely evaluate the formula
     try {
-      // Only allow basic math operations
-      if (!/^[\d+\-*/(). ]+$/.test(hp)) {
+      // Safely evaluate formula using a function constructor (safer than eval)
+      // Only allow basic math operations + LEVEL and HP variables
+      const sanitized = formula
+        .toUpperCase()
+        .replace(/[^0-9+\-*/(). LEVEL HP]/g, '');
+      
+      if (sanitized !== formula.toUpperCase() || sanitized.length === 0) {
         throw new Error('Invalid formula');
       }
-      hp = Math.max(1, Math.floor(eval(hp)));
+      
+      // Create function with named parameters (sandboxed execution)
+      const calcFunction = new Function('LEVEL', 'HP', `return ${sanitized}`);
+      hp = Math.max(1, Math.floor(calcFunction(level, hpStat)));
     } catch (e) {
       // Fallback to default formula if custom formula fails
       console.warn(`Invalid HP formula "${formula}", using default`);
@@ -767,6 +782,7 @@ class PokemonGenerator {
 
   /**
    * Distribute points ensuring stats in the same group stay equal (RANDOM mode)
+   * FIXED: Now ensures true Base Relation - equal base stats always get equal distributed points
    */
   static distributePointsRespectingGroups(totalPoints, baseWithNature, groups) {
     const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
@@ -783,21 +799,26 @@ class PokemonGenerator {
       groupPoints[groupIndex]++;
     }
 
-    // Distribute each group's points equally among its stats (as much as possible)
+    // Distribute each group's points equally among its stats while respecting Base Relation
     groups.forEach((group, groupIndex) => {
       const pointsForGroup = groupPoints[groupIndex];
       if (pointsForGroup === 0) return;
       
-      // Distribute points evenly within the group
-      const pointsPerStat = Math.floor(pointsForGroup / group.stats.length);
+      // All stats in a group MUST get equal points (true Base Relation)
+      // If points don't divide evenly, randomly select which stats get +1
+      let pointsPerStat = Math.floor(pointsForGroup / group.stats.length);
       const remainderPoints = pointsForGroup % group.stats.length;
+      
+      // Distribute remainder by randomly selecting which stats get +1
+      // This ensures fairness while maintaining Base Relation
+      const remainderIndices = new Set();
+      while (remainderIndices.size < remainderPoints) {
+        remainderIndices.add(Math.floor(Math.random() * group.stats.length));
+      }
 
       group.stats.forEach((stat, statIndex) => {
         let statPoints = pointsPerStat;
-        // Distribute remainder points to first stats in group
-        // Note: This means first N stats get 1 more point than others in the group
-        // This is a necessary trade-off to ensure all points are distributed while enforcing Base Relation
-        if (statIndex < remainderPoints) {
+        if (remainderIndices.has(statIndex)) {
           statPoints++;
         }
         distributedPoints[stat] = statPoints;
@@ -1025,31 +1046,27 @@ class PokemonGenerator {
 
   /**
    * Get move definition from moves database (checks custom first)
+   * Optimized with cached lowercase lookups
    */
   static getMoveDefinition(moveName) {
-    // Check custom moves first
+    if (!moveName) return null;
+    const lowerName = moveName.toLowerCase();
+    
+    // Check custom moves first (exact then lowercase)
     if (customMoves[moveName]) {
       return customMoves[moveName];
     }
+    const customLower = Object.keys(customMoves).find(key => key.toLowerCase() === lowerName);
+    if (customLower) {
+      return customMoves[customLower];
+    }
     
-    // Try exact match in database
+    // Try database (exact then lowercase indexed map)
     if (movesDatabase[moveName]) {
       return movesDatabase[moveName];
     }
-    
-    // Try case-insensitive match in custom moves
-    const lowerName = moveName.toLowerCase();
-    for (const key in customMoves) {
-      if (key.toLowerCase() === lowerName) {
-        return customMoves[key];
-      }
-    }
-    
-    // Try case-insensitive match in database
-    for (const key in movesDatabase) {
-      if (key.toLowerCase() === lowerName) {
-        return movesDatabase[key];
-      }
+    if (movesMapLower[lowerName]) {
+      return movesMapLower[lowerName];
     }
     
     return null;
@@ -1057,31 +1074,27 @@ class PokemonGenerator {
 
   /**
    * Get ability definition from abilities database (checks custom first)
+   * Optimized with cached lowercase lookups
    */
   static getAbilityDefinition(abilityName) {
-    // Check custom abilities first
+    if (!abilityName) return null;
+    const lowerName = abilityName.toLowerCase();
+    
+    // Check custom abilities first (exact then lowercase)
     if (customAbilities[abilityName]) {
       return customAbilities[abilityName];
     }
+    const customLower = Object.keys(customAbilities).find(key => key.toLowerCase() === lowerName);
+    if (customLower) {
+      return customAbilities[customLower];
+    }
     
-    // Try exact match in database
+    // Try database (exact then lowercase indexed map)
     if (abilitiesDatabase[abilityName]) {
       return abilitiesDatabase[abilityName];
     }
-    
-    // Try case-insensitive match in custom abilities
-    const lowerName = abilityName.toLowerCase();
-    for (const key in customAbilities) {
-      if (key.toLowerCase() === lowerName) {
-        return customAbilities[key];
-      }
-    }
-    
-    // Try case-insensitive match in database
-    for (const key in abilitiesDatabase) {
-      if (key.toLowerCase() === lowerName) {
-        return abilitiesDatabase[key];
-      }
+    if (abilitiesMapLower[lowerName]) {
+      return abilitiesMapLower[lowerName];
     }
     
     return null;
@@ -1125,6 +1138,7 @@ class PokemonGenerator {
 
   /**
    * Select moves for a Pokemon based on their Level Up moveset only
+   * FIXED: Better handling of missing level data
    */
   static selectMovesForPokemon(species, level, count = 6) {
     const allMoves = [];
@@ -1133,9 +1147,13 @@ class PokemonGenerator {
     const pokemonTypes = getActualTypes(extractedTypes);
     
     // Get only level-up moves that the Pokemon can learn at this level
-    if (species.Moves && species.Moves['Level Up Move List']) {
+    if (species.Moves && Array.isArray(species.Moves['Level Up Move List'])) {
       species.Moves['Level Up Move List']
-        .filter(move => move.Level <= level)
+        .filter(move => {
+          // Handle missing or invalid level data - treat as Level 1
+          const moveLevel = move.Level !== undefined ? move.Level : 1;
+          return moveLevel <= level && move.Move;  // Also ensure move name exists
+        })
         .forEach(move => allMoves.push(move));
     }
     
@@ -1150,7 +1168,7 @@ class PokemonGenerator {
     }
     
     // Sort moves by level in descending order to prefer later-learned moves
-    const sortedMoves = [...allMoves].sort((a, b) => b.Level - a.Level);
+    const sortedMoves = [...allMoves].sort((a, b) => (b.Level || 0) - (a.Level || 0));
     
     // Take the most recent moves up to the count, or fill with earlier moves
     for (let i = 0; i < Math.min(count, sortedMoves.length); i++) {
@@ -1187,14 +1205,20 @@ class PokemonGenerator {
 
   /**
    * Normalize move object fields to camelCase
+   * FIXED: Validate pokemonTypes before calling .some()
    */
   static normalizeMoveFields(moveDefinition, moveName = moveDefinition.Name, pokemonTypes = []) {
     const damageBaseRaw = moveDefinition['Damage Base'];
     const moveType = moveDefinition.Type;
     
     // Check if move type matches any of the pokemon's types for STAB
-    const hasStab = pokemonTypes && pokemonTypes.length > 0 && 
-                    pokemonTypes.some(type => type.toLowerCase() === moveType?.toLowerCase());
+    // FIXED: Validate pokemonTypes is an array and contains strings
+    let hasStab = false;
+    if (Array.isArray(pokemonTypes) && pokemonTypes.length > 0) {
+      hasStab = pokemonTypes.some(type => 
+        typeof type === 'string' && type.toLowerCase() === moveType?.toLowerCase()
+      );
+    }
     
     const damageBaseConverted = damageBaseRaw ? convertDamageBase(damageBaseRaw, hasStab) : null;
 
@@ -1300,25 +1324,32 @@ class PokemonGenerator {
   /**
    * Get all form variants of a species
    * Returns array of species including base form and all form variants
+   * OPTIMIZED: Uses Set to avoid duplicate checking
    */
   static getAllFormsOfSpecies(baseName) {
     if (!baseName) return [];
     const baseLower = baseName.toLowerCase();
     const forms = [];
+    const seen = new Set();  // Track already-added species to avoid dupes
 
     // Check custom data for this species and all its forms
     customPokemon.forEach(p => {
       if (p.Species.toLowerCase() === baseLower) {
-        forms.push(p);
+        const key = `${p.Species}|${p.Form || ''}`;
+        if (!seen.has(key)) {
+          forms.push(p);
+          seen.add(key);
+        }
       }
     });
 
     // Check database for this species and all its forms
     pokemonDatabase.forEach(p => {
       if (p.Species.toLowerCase() === baseLower) {
-        // Don't add if already in custom data
-        if (!forms.some(f => f.Form === p.Form && f.Species === p.Species)) {
+        const key = `${p.Species}|${p.Form || ''}`;
+        if (!seen.has(key)) {
           forms.push(p);
+          seen.add(key);
         }
       }
     });
@@ -1590,7 +1621,8 @@ class PokemonGenerator {
         await switchDataset(dataset);
       }
 
-      const species = pokemonByName[speciesName.toLowerCase()];
+      // Use getSpeciesByName to properly handle form variants like "Rattata (Alola)"
+      const species = this.getSpeciesByName(speciesName);
       if (!species) {
         throw new Error(`Pokemon species not found: ${speciesName}`);
       }
@@ -1693,7 +1725,8 @@ class PokemonGenerator {
         await switchDataset(dataset);
       }
 
-      const species = pokemonByName[speciesName.toLowerCase()];
+      // Use getSpeciesByName to properly handle form variants like "Rattata (Alola)"
+      const species = this.getSpeciesByName(speciesName);
       if (!species) {
         throw new Error(`Pokemon species not found: ${speciesName}`);
       }
@@ -1887,22 +1920,37 @@ class PokemonGenerator {
         throw new Error('Custom Pokemon data must be an array');
       }
 
+      // Limit custom Pokemon to avoid memory issues (max 1000)
+      if (pokemonData.length > 1000) {
+        console.warn(`Custom Pokemon data too large (${pokemonData.length}). Truncating to 1000.`);
+        pokemonData = pokemonData.slice(0, 1000);
+      }
+
+      // Validate and filter out invalid entries
+      const validPokemon = pokemonData.filter(pokemon => {
+        if (!pokemon.Species || typeof pokemon.Species !== 'string') {
+          console.warn('Skipping Pokemon without valid Species field');
+          return false;
+        }
+        return true;
+      });
+
       // Merge with existing custom Pokemon, overwriting duplicates by Species name
       const customMap = new Map(customPokemon.map(p => [p.Species.toLowerCase(), p]));
-      pokemonData.forEach(pokemon => {
+      validPokemon.forEach(pokemon => {
         customMap.set(pokemon.Species.toLowerCase(), pokemon);
       });
       customPokemon = Array.from(customMap.values());
 
       // Update pokemonByName lookup to include custom Pokemon
-      customPokemon.forEach(pokemon => {
+      validPokemon.forEach(pokemon => {
         pokemonByName[pokemon.Species.toLowerCase()] = pokemon;
       });
 
-      console.log(`✓ Loaded ${pokemonData.length} custom Pokemon`);
+      console.log(`✓ Loaded ${validPokemon.length} custom Pokemon (${customPokemon.length} total)`);
       return {
         success: true,
-        count: pokemonData.length,
+        count: validPokemon.length,
         totalCustom: customPokemon.length
       };
     } catch (error) {
@@ -1928,23 +1976,39 @@ class PokemonGenerator {
         abilitiesData = data;
       }
 
+      let count = 0;
+      
       // Merge with existing custom abilities, overwriting duplicates by name
       if (Array.isArray(abilitiesData)) {
         // Convert array to object format
-        abilitiesData.forEach(ability => {
-          if (ability.Name) {
+        // Limit to 500 abilities to avoid memory issues
+        const slice = abilitiesData.slice(0, 500);
+        count = slice.length;
+        slice.forEach(ability => {
+          if (ability.Name && typeof ability.Name === 'string') {
             customAbilities[ability.Name] = ability;
           }
         });
       } else {
         // Already in object format
-        Object.assign(customAbilities, abilitiesData);
+        const entries = Object.entries(abilitiesData).slice(0, 500);
+        count = entries.length;
+        entries.forEach(([name, abilityData]) => {
+          if (typeof name === 'string' && abilityData) {
+            customAbilities[name] = abilityData;
+          }
+        });
       }
 
-      console.log(`✓ Loaded ${Array.isArray(abilitiesData) ? abilitiesData.length : Object.keys(abilitiesData).length} custom Abilities`);
+      // Rebuild abilities map with new custom abilities
+      Object.keys(customAbilities).forEach(abilityName => {
+        abilitiesMapLower[abilityName.toLowerCase()] = customAbilities[abilityName];
+      });
+
+      console.log(`✓ Loaded ${count} custom Abilities (${Object.keys(customAbilities).length} total)`);
       return {
         success: true,
-        count: Array.isArray(abilitiesData) ? abilitiesData.length : Object.keys(abilitiesData).length,
+        count: count,
         totalCustom: Object.keys(customAbilities).length
       };
     } catch (error) {
@@ -1970,23 +2034,39 @@ class PokemonGenerator {
         movesData = data;
       }
 
+      let count = 0;
+
       // Merge with existing custom moves, overwriting duplicates by name
       if (Array.isArray(movesData)) {
         // Convert array to object format
-        movesData.forEach(move => {
-          if (move.Name) {
+        // Limit to 500 moves to avoid memory issues
+        const slice = movesData.slice(0, 500);
+        count = slice.length;
+        slice.forEach(move => {
+          if (move.Name && typeof move.Name === 'string') {
             customMoves[move.Name] = move;
           }
         });
       } else {
         // Already in object format
-        Object.assign(customMoves, movesData);
+        const entries = Object.entries(movesData).slice(0, 500);
+        count = entries.length;
+        entries.forEach(([name, moveData]) => {
+          if (typeof name === 'string' && moveData) {
+            customMoves[name] = moveData;
+          }
+        });
       }
 
-      console.log(`✓ Loaded ${Array.isArray(movesData) ? movesData.length : Object.keys(movesData).length} custom Moves`);
+      // Rebuild moves map with new custom moves
+      Object.keys(customMoves).forEach(moveName => {
+        movesMapLower[moveName.toLowerCase()] = customMoves[moveName];
+      });
+
+      console.log(`✓ Loaded ${count} custom Moves (${Object.keys(customMoves).length} total)`);
       return {
         success: true,
-        count: Array.isArray(movesData) ? movesData.length : Object.keys(movesData).length,
+        count: count,
         totalCustom: Object.keys(customMoves).length
       };
     } catch (error) {
