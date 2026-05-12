@@ -231,11 +231,17 @@ async function switchDataset(datasetKey) {
   movesMap = {};
 
   pokemonDatabase.forEach(pokemon => {
-    // Index by species name for base lookups
-    pokemonByName[pokemon.Species.toLowerCase()] = pokemon;
-    // Also index form variants with full name (e.g., "palafin|zero form")
+    const speciesLower = pokemon.Species.toLowerCase();
+    
+    // Only index base form (without Form field) for species name lookups
+    // This prevents form variants from overwriting the base form
+    if (!pokemon.Form) {
+      pokemonByName[speciesLower] = pokemon;
+    }
+    
+    // Always index form variants with full name (e.g., "ratata|alola form")
     if (pokemon.Form) {
-      const formKey = `${pokemon.Species.toLowerCase()}|${pokemon.Form.toLowerCase()}`;
+      const formKey = `${speciesLower}|${pokemon.Form.toLowerCase()}`;
       pokemonByName[formKey] = pokemon;
     }
   });
