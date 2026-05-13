@@ -674,11 +674,6 @@
         const allInputs = document.querySelectorAll('input, select');
         allInputs.forEach(input => {
             input.setAttribute('autocomplete', 'off');
-            // Prevent Firefox from auto-filling
-            input.addEventListener('change', function () {
-                this.blur();
-                this.focus();
-            });
         });
 
         // Toggle level range
