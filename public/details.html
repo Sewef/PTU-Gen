@@ -698,8 +698,8 @@
                 let levelPts = parseInt(levelInput?.value) || 0;
                 let cs = parseInt(csInput?.value) || 0;
 
-                // Calculate total: (base + levelPts) * csMultiplier
-                let subtotal = base + levelPts;
+                // Calculate total after applying the current nature to the edited base stat.
+                let subtotal = Math.max(1, base + getNatureModifier(statName, pokemon.nature)) + levelPts;
                 let multiplier = csMultipliers[cs] || 1;
                 let total = Math.floor(subtotal * multiplier);
 
@@ -901,7 +901,7 @@
                             pokemon.nature = selectedNature;
 
                             // Recalculate and update stats with new nature
-                            updateStatsWithNature(selectedNature);
+                            updateStatsWithNature(pokemon, selectedNature);
                         }
                     });
                 }
@@ -911,7 +911,7 @@
         }
 
         // Recalculate stats when nature changes
-        function updateStatsWithNature(newNature) {
+        function updateStatsWithNature(pokemon, newNature) {
             const statsBreakdownContainer = document.getElementById('statsBreakdown');
             const statRows = statsBreakdownContainer.querySelectorAll('.stat-breakdown-row');
 
@@ -924,6 +924,8 @@
                 'spD': 'Special Defense',
                 'spe': 'Speed'
             };
+
+            pokemon.baseWithNature = getBaseStatsWithNature(pokemon.baseStats, newNature);
 
             statRows.forEach(row => {
                 const statName = row.getAttribute('data-stat');
@@ -956,6 +958,197 @@
 
                 row.querySelector('.stat-total').textContent = total;
             });
+        }
+
+        function getNatureModifier(statName, nature) {
+            if (!nature) return 0;
+
+            if (statName === 'HP') {
+                if (nature.raise === statName) return 1;
+                if (nature.lower === statName) return -1;
+                return 0;
+            }
+
+            if (nature.raise === statName) return 2;
+            if (nature.lower === statName) return -2;
+            return 0;
+        }
+
+        function getBaseStatsWithNature(baseStats, nature) {
+            const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+            const baseStatsKeyMap = {
+                'HP': 'HP',
+                'atk': 'Attack',
+                'def': 'Defense',
+                'spA': 'Special Attack',
+                'spD': 'Special Defense',
+                'spe': 'Speed'
+            };
+            const baseWithNature = {};
+
+            shortNames.forEach(statName => {
+                const baseValue = baseStats?.[baseStatsKeyMap[statName]] || 0;
+                baseWithNature[statName] = Math.max(1, baseValue + getNatureModifier(statName, nature));
+            });
+
+            return baseWithNature;
+        }
+
+        function groupStatsByValue(baseWithNature) {
+            const groups = [];
+            const processed = new Set();
+
+            Object.entries(baseWithNature).forEach(([stat, value]) => {
+                if (processed.has(stat)) return;
+
+                const group = [stat];
+                processed.add(stat);
+
+                Object.entries(baseWithNature).forEach(([otherStat, otherValue]) => {
+                    if (otherStat !== stat && !processed.has(otherStat) && value === otherValue) {
+                        group.push(otherStat);
+                        processed.add(otherStat);
+                    }
+                });
+
+                groups.push({ stats: group, baseValue: value });
+            });
+
+            return groups.sort((a, b) => b.baseValue - a.baseValue);
+        }
+
+        function getStatGroups(baseWithNature, ignoreBaseRelation) {
+            if (ignoreBaseRelation === 'IGNORE') {
+                return Object.keys(baseWithNature).map(stat => ({
+                    stats: [stat],
+                    baseValue: baseWithNature[stat]
+                }));
+            }
+
+            if (!ignoreBaseRelation) {
+                return groupStatsByValue(baseWithNature);
+            }
+
+            const ignoredStats = ignoreBaseRelation.split(',').map(s => s.trim());
+            const groupedStats = groupStatsByValue(baseWithNature);
+
+            return groupedStats.map(group => {
+                const ignoredInGroup = group.stats.filter(stat => ignoredStats.includes(stat));
+
+                if (ignoredInGroup.length === 0) {
+                    return group;
+                }
+
+                if (ignoredInGroup.length === group.stats.length) {
+                    return ignoredInGroup.map(stat => ({
+                        stats: [stat],
+                        baseValue: baseWithNature[stat]
+                    }));
+                }
+
+                const keptStats = group.stats.filter(stat => !ignoredStats.includes(stat));
+                return [
+                    { stats: keptStats, baseValue: baseWithNature[keptStats[0]] },
+                    ...ignoredInGroup.map(stat => ({
+                        stats: [stat],
+                        baseValue: baseWithNature[stat]
+                    }))
+                ];
+            }).flat();
+        }
+
+        function distributePointsRandom(totalPoints, groups) {
+            const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+            const distributedPoints = {};
+            const groupPoints = new Array(groups.length).fill(0);
+
+            shortNames.forEach(stat => {
+                distributedPoints[stat] = 0;
+            });
+
+            for (let index = 0; index < totalPoints; index++) {
+                const groupIndex = Math.floor(Math.random() * groups.length);
+                groupPoints[groupIndex]++;
+            }
+
+            groups.forEach((group, groupIndex) => {
+                const pointsForGroup = groupPoints[groupIndex];
+                if (pointsForGroup === 0) return;
+
+                const pointsPerStat = Math.floor(pointsForGroup / group.stats.length);
+                const remainderPoints = pointsForGroup % group.stats.length;
+                const remainderIndices = new Set();
+
+                while (remainderIndices.size < remainderPoints) {
+                    remainderIndices.add(Math.floor(Math.random() * group.stats.length));
+                }
+
+                group.stats.forEach((stat, statIndex) => {
+                    distributedPoints[stat] = pointsPerStat + (remainderIndices.has(statIndex) ? 1 : 0);
+                });
+            });
+
+            return distributedPoints;
+        }
+
+        function distributePointsBalanced(totalPoints, groups) {
+            const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+            const distributedPoints = {};
+            const basePointsPerStat = Math.floor(totalPoints / shortNames.length);
+            const remainderPoints = totalPoints % shortNames.length;
+
+            shortNames.forEach((stat, index) => {
+                distributedPoints[stat] = basePointsPerStat + (index < remainderPoints ? 1 : 0);
+            });
+
+            groups.forEach(group => {
+                if (group.stats.length <= 1) return;
+
+                let totalGroupPoints = 0;
+                group.stats.forEach(stat => {
+                    totalGroupPoints += distributedPoints[stat];
+                });
+
+                const pointsPerStat = Math.floor(totalGroupPoints / group.stats.length);
+                const groupRemainder = totalGroupPoints % group.stats.length;
+
+                group.stats.forEach((stat, index) => {
+                    distributedPoints[stat] = pointsPerStat + (index < groupRemainder ? 1 : 0);
+                });
+            });
+
+            return distributedPoints;
+        }
+
+        function distributePointsMinmaxed(totalPoints, groups) {
+            const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+            const distributedPoints = {};
+            const sortedGroups = [...groups].sort((a, b) => b.baseValue - a.baseValue);
+            const weights = sortedGroups.map(group => group.baseValue);
+            const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+            let totalPointsDistributed = 0;
+
+            shortNames.forEach(stat => {
+                distributedPoints[stat] = 0;
+            });
+
+            sortedGroups.forEach((group, index) => {
+                const weight = weights[index];
+                const groupPoints = index === sortedGroups.length - 1
+                    ? totalPoints - totalPointsDistributed
+                    : Math.round((weight / totalWeight) * totalPoints);
+
+                totalPointsDistributed += groupPoints;
+
+                const pointsPerStat = Math.floor(groupPoints / group.stats.length);
+                const remainderStats = groupPoints % group.stats.length;
+
+                group.stats.forEach((stat, statIndex) => {
+                    distributedPoints[stat] = pointsPerStat + (statIndex < remainderStats ? 1 : 0);
+                });
+            });
+
+            return distributedPoints;
         }
 
         // Setup type editor
@@ -1408,69 +1601,23 @@
         function recalculateStatsWithDistribution(pokemon, distribution) {
             const totalPoints = pokemon.level + 10;
             const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
-            const baseStatsKeyMap = {
-                'HP': 'HP',
-                'atk': 'Attack',
-                'def': 'Defense',
-                'spA': 'Special Attack',
-                'spD': 'Special Defense',
-                'spe': 'Speed'
-            };
-
-            // Get base stats without nature modifiers
-            const baseStats = {};
-            shortNames.forEach(shortName => {
-                baseStats[shortName] = pokemon.baseStats[baseStatsKeyMap[shortName]] || 0;
-            });
-
-            // Calculate distribution of level points
+            const baseWithNature = getBaseStatsWithNature(pokemon.baseStats, pokemon.nature);
+            const groups = getStatGroups(baseWithNature, pokemon.ignoreBaseRelation);
             let distributedPoints = {};
-            shortNames.forEach(s => distributedPoints[s] = 0);
 
             if (distribution === 'BALANCED') {
-                // Equal distribution
-                const pointsPerStat = Math.floor(totalPoints / shortNames.length);
-                const remainder = totalPoints % shortNames.length;
-                shortNames.forEach((s, index) => {
-                    distributedPoints[s] = pointsPerStat + (index < remainder ? 1 : 0);
-                });
+                distributedPoints = distributePointsBalanced(totalPoints, groups);
             } else if (distribution === 'MINMAXED') {
-                // More to high base stats, less to low
-                const basesWithValues = shortNames.map(s => ({
-                    stat: s,
-                    base: baseStats[s]
-                })).sort((a, b) => b.base - a.base);
-
-                const totalWeight = shortNames.length * (shortNames.length + 1) / 2;
-                basesWithValues.forEach((item, index) => {
-                    const weight = shortNames.length - index;
-                    const points = Math.round((weight / totalWeight) * totalPoints);
-                    distributedPoints[item.stat] = points;
-                });
+                distributedPoints = distributePointsMinmaxed(totalPoints, groups);
             } else {
-                // RANDOM - random distribution
-                for (let i = 0; i < totalPoints; i++) {
-                    const randomStat = shortNames[Math.floor(Math.random() * shortNames.length)];
-                    distributedPoints[randomStat]++;
-                }
+                distributedPoints = distributePointsRandom(totalPoints, groups);
             }
 
-            // Apply nature modifiers and calculate final stats
+            pokemon.baseWithNature = baseWithNature;
+            pokemon.distribution = distribution;
+
             shortNames.forEach(shortName => {
-                let baseValue = baseStats[shortName];
-                let levelPoints = distributedPoints[shortName];
-
-                // Apply nature modifier
-                let natureModifier = 0;
-                if (shortName === 'HP') {
-                    if (pokemon.nature.raise === shortName) natureModifier = 1;
-                    if (pokemon.nature.lower === shortName) natureModifier = -1;
-                } else {
-                    if (pokemon.nature.raise === shortName) natureModifier = 2;
-                    if (pokemon.nature.lower === shortName) natureModifier = -2;
-                }
-
-                pokemon.stats[shortName] = Math.max(1, baseValue + levelPoints + natureModifier);
+                pokemon.stats[shortName] = baseWithNature[shortName] + distributedPoints[shortName];
             });
 
             // Update display
