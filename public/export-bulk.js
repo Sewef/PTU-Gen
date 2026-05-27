@@ -91,8 +91,7 @@ async function exportBulkOwlbear(pokemons) {
     const mergedShared = {};
     const sizeScales = { 'Large': 2, 'Huge': 3, 'Gigantic': 4 };
 
-    // We'll place tokens in a row, each spaced by one grid cell (475px)
-    const SPACING = 475;
+    let currentX = 0;
 
     for (let i = 0; i < pokemons.length; i++) {
         const pokemon = pokemons[i];
@@ -112,7 +111,7 @@ async function exportBulkOwlbear(pokemons) {
         const item = items[itemKey];
 
         // Position tokens side by side
-        item.position.x = i * SPACING;
+        item.position.x = currentX;
         item.position.y = 0;
 
         // Scale from size category
@@ -134,6 +133,8 @@ async function exportBulkOwlbear(pokemons) {
             };
             img.src = imageUrl;
         });
+
+        currentX += item.image.width;
 
         mergedShared[uuid] = item;
     }
