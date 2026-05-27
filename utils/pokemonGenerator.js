@@ -569,7 +569,7 @@ class PokemonGenerator {
         weightClass: weightClass,
         gender: gender,
         diet: otherInfo.Diet || 'Unknown',
-        habitat: otherInfo.Habitat || 'Unknown'
+        habitat: (otherInfo.Habitat || 'Unknown').split(',').map(h => h.trim()).join(', ')
       },
       capabilities: species.Capabilities || [],
       legendary: species.Legendary || false,
