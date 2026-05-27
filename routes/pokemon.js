@@ -515,4 +515,63 @@ router.delete('/custom', (req, res) => {
   }
 });
 
+/**
+ * GET /api/pokemon/evolutions/:species
+ * Get evolution chain information for a Pokemon species
+ * Params:
+ *   - species: string (Pokemon name)
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ */
+router.get('/evolutions/:species', async (req, res) => {
+  try {
+    const species = decodeURIComponent(req.params.species);
+    const dataset = req.query.dataset || 'core';
+    
+    // Switch to the specified dataset if needed
+    if (dataset !== PokemonGenerator.getCurrentDataset()) {
+      await PokemonGenerator.switchDataset(dataset);
+    }
+    
+    // Get the raw species data with evolution information
+    const pokemon = PokemonGenerator.getSpeciesByName(species);
+    
+    if (!pokemon) {
+      return res.status(404).json({ error: `Pokemon "${species}" not found in dataset "${dataset}"` });
+    }
+    
+    // Get the evolution chain - it already includes the current Pokemon
+    const evolutionData = pokemon.Evolution || [];
+    
+    if (evolutionData.length === 0) {
+      return res.json({ evolutionChain: [{ stage: 1, species: pokemon.Species, minimumLevel: 1 }] });
+    }
+    
+    // Find current pokemon's stage in the evolution chain
+    let currentStage = 1;
+    let maxStage = 1;
+    
+    evolutionData.forEach(evo => {
+      const stage = evo.Stade || 1;
+      if (evo.Species?.toLowerCase() === species.toLowerCase()) {
+        currentStage = stage;
+      }
+      maxStage = Math.max(maxStage, stage);
+    });
+    
+    // Calculate evolutions remaining
+    const evolutionsRemaining = maxStage - currentStage;
+    
+    // Build response with evolution chain info
+    res.json({ 
+      evolutionChain: evolutionData,
+      currentSpecies: pokemon.Species,
+      currentStage: currentStage,
+      maxStage: maxStage,
+      evolutionsRemaining: evolutionsRemaining
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

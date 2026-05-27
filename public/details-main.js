@@ -17,6 +17,17 @@ function loadPokemonDetails() {
         pokemon.hpFormula = pokemon.hp_formula;
     }
 
+    // Initialize hitPoints and hitPointsMax if not present
+    if (pokemon.stats && pokemon.stats.HP) {
+        const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
+        if (!pokemon.hitPointsMax) {
+            pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+        }
+        if (!pokemon.hitPoints) {
+            pokemon.hitPoints = pokemon.hitPointsMax;
+        }
+    }
+
     // Debug: log the pokemon object structure
     console.log('Pokemon object:', pokemon);
 
@@ -188,6 +199,79 @@ function loadPokemonDetails() {
                             </div>
                         </div>
                     ` : ''}
+
+                    <!-- Capture Rate Section -->
+                    <div class="info-box">
+                        <div class="info-label">Capture Rate</div>
+                        <div class="capture-rate-display" id="captureRateDisplay">
+                            <div class="capture-rate-value">Base: <span id="baseCapture">100</span></div>
+                            <div class="capture-rate-value">Current: <span id="currentCapture">100</span></div>
+                        </div>
+                    </div>
+                    <div class="info-box">
+                    
+                        <div class="capture-rate-modifiers">
+                            <div class="modifiers-grid">
+                                <!-- HP (Automatic) -->
+                                <div class="modifier-item" title="Based on current HP percentage">
+                                    <span class="modifier-label">HP:</span>
+                                    <span class="modifier-value" id="hpModifier">0</span>
+                                </div>
+                                
+                                <!-- Evolution (Automatic) -->
+                                <div class="modifier-item">
+                                    <span class="modifier-label" title="Evolutionary stages remaining" id="evolutionTooltip">Evolution:</span>
+                                    <span class="modifier-value" id="evolutionModifier">0</span>
+                                </div>
+                                
+                                <!-- Shiny (Automatic) -->
+                                <div class="modifier-item" id="shinyItem" style="display: none;" title="Pokemon is Shiny">
+                                    <span class="modifier-label">Shiny:</span>
+                                    <span class="modifier-value">-10</span>
+                                </div>
+                                
+                                <!-- Legendary (Automatic) -->
+                                <div class="modifier-item" id="legendaryItem" style="display: none;" title="Pokemon is Legendary">
+                                    <span class="modifier-label">Legendary:</span>
+                                    <span class="modifier-value">-30</span>
+                                </div>
+                                
+                                <!-- Persistent Afflictions (Manual) -->
+                                <div class="modifier-item">
+                                    <label style="display: flex; align-items: center; gap: 6px;">
+                                        <span class="modifier-label" title="Persistent Conditions: +10 each">Persistent:</span>
+                                        <input type="number" class="status-count-input" data-type="persistent" min="0" value="0" style="width: 45px; padding: 4px; border: 1px solid var(--primary-color); border-radius: 3px;">
+                                        <span style="font-size: 0.8em;">× 10</span>
+                                    </label>
+                                </div>
+                                
+                                <!-- Injuries/Volatile Afflictions (Manual) -->
+                                <div class="modifier-item">
+                                    <label style="display: flex; align-items: center; gap: 6px;">
+                                        <span class="modifier-label" title="Injuries/Volatile: +5 each">Injuries:</span>
+                                        <input type="number" class="status-count-input" data-type="injuries" min="0" value="0" style="width: 45px; padding: 4px; border: 1px solid var(--primary-color); border-radius: 3px;">
+                                        <span style="font-size: 0.8em;">× 5</span>
+                                    </label>
+                                </div>
+                                
+                                <!-- Stuck (Manual) -->
+                                <div class="modifier-item">
+                                    <label style="display: flex; align-items: center; gap: 6px;">
+                                        <input type="checkbox" class="status-modifier-checkbox" data-value="10" data-type="stuck" title="Stuck: +10">
+                                        <span style="font-size: 0.9em;">Stuck: +10</span>
+                                    </label>
+                                </div>
+                                
+                                <!-- Slow (Manual) -->
+                                <div class="modifier-item">
+                                    <label style="display: flex; align-items: center; gap: 6px;">
+                                        <input type="checkbox" class="status-modifier-checkbox" data-value="5" data-type="slow" title="Slow: +5">
+                                        <span style="font-size: 0.9em;">Slow: +5</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
                     
@@ -625,6 +709,9 @@ function loadPokemonDetails() {
     // Setup abilities editor
     setupAbilitiesEditor(pokemon);
 
+    // Setup capture rate calculator
+    setupCaptureRateCalculator(pokemon);
+
     // Setup nickname input
     const nicknameInput = document.getElementById('nicknameInput');
     if (nicknameInput) {
@@ -758,6 +845,165 @@ function loadPokemonDetails() {
             };
         }
     }
+}
+
+// Setup capture rate calculator
+async function setupCaptureRateCalculator(pokemon) {
+    const statusCountInputs = document.querySelectorAll('.status-count-input');
+    const statusCheckboxes = document.querySelectorAll('.status-modifier-checkbox');
+    
+    // Determine evolution stages remaining
+    let evolutionStagesRemaining = 0;
+    try {
+        const response = await fetch(`/api/pokemon/evolutions/${encodeURIComponent(pokemon.name)}?dataset=${pokemon.dataset || 'core'}`);
+        if (response.ok) {
+            const data = await response.json();
+            
+            console.log('Evolution API response:', data);
+            
+            // Use the evolutionsRemaining value directly from the API
+            evolutionStagesRemaining = data.evolutionsRemaining || 0;
+            
+            console.log('Evolutions remaining from API:', evolutionStagesRemaining);
+        } else {
+            console.error('Failed to fetch evolution data:', response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('Could not fetch evolution data:', error);
+    }
+    
+    // Display evolution modifier
+    const evolutionModifier = document.getElementById('evolutionModifier');
+    if (evolutionModifier) {
+        if (evolutionStagesRemaining === 2) {
+            evolutionModifier.textContent = '+10';
+        } else if (evolutionStagesRemaining === 1) {
+            evolutionModifier.textContent = '0';
+        } else {
+            evolutionModifier.textContent = '-10';
+        }
+    }
+
+    // Auto-show Shiny and Legendary modifiers
+    if (pokemon.shiny) {
+        const shinyItem = document.getElementById('shinyItem');
+        if (shinyItem) {
+            shinyItem.style.display = 'flex';
+            console.log('Showing Shiny modifier');
+        }
+    }
+
+    if (pokemon.legendary) {
+        const legendaryItem = document.getElementById('legendaryItem');
+        if (legendaryItem) {
+            legendaryItem.style.display = 'flex';
+            console.log('Showing Legendary modifier');
+        }
+    }
+
+    const updateCaptureRate = () => {
+        let captureRate = 100;
+
+        // Step 1: Subtract Level x2
+        captureRate -= pokemon.level * 2;
+
+        // Step 2: HP modification (automatic based on current HP)
+        let hpModifier = 0;
+        const hpPercentage = (pokemon.hitPoints / pokemon.hitPointsMax) * 100;
+        if (pokemon.hitPoints <= 0) {
+            // Cannot capture
+            captureRate = 'CANNOT CAPTURE (0 HP)';
+        } else if (pokemon.hitPoints === 1) {
+            hpModifier = 30;
+            captureRate += 30;
+        } else if (hpPercentage <= 25) {
+            hpModifier = 15;
+            captureRate += 15;
+        } else if (hpPercentage <= 50) {
+            // No change
+            hpModifier = 0;
+        } else if (hpPercentage <= 75) {
+            hpModifier = -15;
+            captureRate -= 15;
+        } else {
+            hpModifier = -30;
+            captureRate -= 30;
+        }
+        
+        // Display HP modifier
+        const hpModifierDisplay = document.getElementById('hpModifier');
+        if (hpModifierDisplay && typeof captureRate === 'number') {
+            hpModifierDisplay.textContent = hpModifier >= 0 ? `+${hpModifier}` : `${hpModifier}`;
+        }
+
+        // Step 3: Evolutionary stage (automatic)
+        if (typeof captureRate === 'number') {
+            if (evolutionStagesRemaining === 2) {
+                captureRate += 10;
+            } else if (evolutionStagesRemaining === 1) {
+                // No change
+            } else {
+                captureRate -= 10;
+            }
+        }
+
+        // Step 4: Rarity (automatic)
+        if (pokemon.shiny) {
+            captureRate = typeof captureRate === 'string' ? captureRate : captureRate - 10;
+        }
+        if (pokemon.legendary) {
+            captureRate = typeof captureRate === 'string' ? captureRate : captureRate - 30;
+        }
+
+        // Step 5: Status afflictions (manual)
+        statusCountInputs.forEach(input => {
+            const count = parseInt(input.value) || 0;
+            const type = input.getAttribute('data-type');
+            if (type === 'persistent') {
+                captureRate = typeof captureRate === 'string' ? captureRate : captureRate + (count * 10);
+            } else if (type === 'injuries') {
+                captureRate = typeof captureRate === 'string' ? captureRate : captureRate + (count * 5);
+            }
+        });
+
+        statusCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const value = parseInt(checkbox.getAttribute('data-value'));
+                captureRate = typeof captureRate === 'string' ? captureRate : captureRate + value;
+            }
+        });
+
+        // Update display
+        const baseValue = 100 - (pokemon.level * 2);
+        document.getElementById('baseCapture').textContent = baseValue;
+        document.getElementById('currentCapture').textContent = typeof captureRate === 'string' ? captureRate : Math.max(0, captureRate);
+    };
+
+    // Attach event listeners
+    statusCountInputs.forEach(input => {
+        input.addEventListener('input', updateCaptureRate);
+        input.addEventListener('change', updateCaptureRate);
+    });
+
+    statusCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateCaptureRate);
+    });
+
+    // Listen to HP changes
+    const hpCurrentInput = document.getElementById('hpCurrentInput');
+    if (hpCurrentInput) {
+        hpCurrentInput.addEventListener('input', function () {
+            pokemon.hitPoints = parseInt(this.value) || 0;
+            updateCaptureRate();
+        });
+        hpCurrentInput.addEventListener('change', function () {
+            pokemon.hitPoints = parseInt(this.value) || 0;
+            updateCaptureRate();
+        });
+    }
+
+    // Initial calculation
+    updateCaptureRate();
 }
 
 window.addEventListener('load', function () {

@@ -407,6 +407,142 @@ button {
     text-align: center;
 }
 
+/* Capture Rate Specific Styles */
+.info-box .capture-rate-display {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.capture-rate-value {
+    font-size: 1em;
+    color: var(--text-primary);
+}
+
+.capture-rate-value span {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.2em;
+}
+
+.capture-rate-modifiers {
+    text-align: left;
+    width: 100%;
+}
+
+.modifiers-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    padding: 6px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    max-width: 500px;
+}
+
+@media (max-width: 768px) {
+    .modifiers-grid {
+        grid-template-columns: 1fr;
+        max-width: none;
+    }
+}
+
+.modifier-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    cursor: help;
+    padding: 6px;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+}
+
+.modifier-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.modifier-label {
+    font-weight: 600;
+    color: var(--primary-color);
+    min-width: 70px;
+}
+
+.modifier-value {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+
+.modifier-item label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    width: 100%;
+    margin: 0;
+}
+
+.modifier-item input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.status-count-input {
+    padding: 4px !important;
+    border: 1px solid var(--primary-color) !important;
+    border-radius: 3px !important;
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+.modifier-section {
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.modifier-title {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.modifier-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modifier-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: var(--text-primary);
+}
+
+.modifier-group input[type="radio"],
+.modifier-group input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.modifier-info {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
 .info-label {
     font-weight: 600;
     color: var(--primary-color);

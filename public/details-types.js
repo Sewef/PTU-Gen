@@ -160,7 +160,7 @@ function displayTypeEffectiveness(pokemon) {
 
 function setupTypeEditor(pokemon) {
     const editTypesBtn = document.getElementById('editTypesBtn');
-    console.log('setupTypeEditor called, editTypesBtn:', editTypesBtn);
+    // console.log('setupTypeEditor called, editTypesBtn:', editTypesBtn);
     if (!editTypesBtn) return;
 
     editTypesBtn.addEventListener('click', function () {
@@ -398,4 +398,4 @@ function updateTypesDisplay(pokemon) {
     displayTypeEffectiveness(pokemon);
 }
 
-// Update remaining points display
+// Update remaining points display
