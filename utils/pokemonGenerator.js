@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const statCalc = require('../public/stat-calculator');
 
 // Base URL for external datasets
 const DATASETS_BASE_URL = 'https://sewef.github.io/ptu/data/';
@@ -671,258 +672,34 @@ class PokemonGenerator {
    */
   static calculateStats(baseStats, level, nature, distribution = 'RANDOM', ignoreBaseRelation = undefined) {
     const stats = {};
-    const statNames = ['HP', 'Attack', 'Defense', 'Special Attack', 'Special Defense', 'Speed'];
-    const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+    const shortNames = statCalc.STAT_SHORT_NAMES;
 
     // Total stat points available: level + 10
     const totalPoints = level + 10;
-    
-    // Calculate base stats with nature applied
-    const baseWithNature = {};
-    shortNames.forEach((shortName, index) => {
-      const stat = statNames[index];
-      const base = baseStats[stat];
-      let value = base;
 
-      if (stat === 'HP') {
-        if (nature.raise === shortName) value += 1;
-        if (nature.lower === shortName) value -= 1;
-      } else {
-        if (nature.raise === shortName) value += 2;
-        if (nature.lower === shortName) value -= 2;
-      }
+    // Apply nature modifiers to base stats
+    const baseWithNature = statCalc.getBaseStatsWithNature(baseStats, nature);
 
-      baseWithNature[shortName] = Math.max(1, value);
-    });
-
-    // Group stats by their base value (equal base stats) unless ignoring Base Relation
-    let groups;
-    if (ignoreBaseRelation === 'IGNORE') {
-      // Ignore Base Relation completely - each stat is its own group
-      groups = Object.keys(baseWithNature).map(stat => ({
-        stats: [stat],
-        baseValue: baseWithNature[stat]
-      }));
-    } else if (ignoreBaseRelation) {
-      // Ignore Base Relation for specific stats only
-      const ignoreStats = ignoreBaseRelation.split(',').map(s => s.trim());
-      const groupedStats = this.groupStatsByValue(baseWithNature);
-      groups = groupedStats.map(group => {
-        const ignoredInGroup = group.stats.filter(stat => ignoreStats.includes(stat));
-        if (ignoredInGroup.length === 0) {
-          // No ignored stats in this group, keep as-is
-          return group;
-        } else if (ignoredInGroup.length === group.stats.length) {
-          // All stats in group are ignored, split into individual groups
-          return ignoredInGroup.map(stat => ({
-            stats: [stat],
-            baseValue: baseWithNature[stat]
-          }));
-        } else {
-          // Some stats ignored, split group
-          const keptStats = group.stats.filter(stat => !ignoreStats.includes(stat));
-          return [
-            { stats: keptStats, baseValue: baseWithNature[keptStats[0]] },
-            ...ignoredInGroup.map(stat => ({
-              stats: [stat],
-              baseValue: baseWithNature[stat]
-            }))
-          ];
-        }
-      }).flat();
-    } else {
-      // Normal Base Relation grouping
-      groups = this.groupStatsByValue(baseWithNature);
-    }
+    // Build groups respecting ignoreBaseRelation
+    const groups = statCalc.getStatGroups(baseWithNature, ignoreBaseRelation);
 
     // Distribute points based on distribution mode
     let distributedPoints;
     if (distribution === 'BALANCED') {
-      distributedPoints = this.distributePointsBalanced(totalPoints, groups);
+      distributedPoints = statCalc.distributePointsBalanced(totalPoints, groups);
     } else if (distribution === 'MINMAXED') {
-      distributedPoints = this.distributePointsMinMaxed(totalPoints, baseWithNature, groups);
+      distributedPoints = statCalc.distributePointsMinmaxed(totalPoints, groups);
     } else {
       // RANDOM (default)
-      distributedPoints = this.distributePointsRespectingGroups(totalPoints, baseWithNature, groups);
+      distributedPoints = statCalc.distributePointsRandom(totalPoints, groups);
     }
 
     // Calculate final stats
-    shortNames.forEach((shortName) => {
+    shortNames.forEach(shortName => {
       stats[shortName] = baseWithNature[shortName] + distributedPoints[shortName];
     });
 
     return stats;
-  }
-
-  /**
-   * Group stats that have the same base value
-   */
-  static groupStatsByValue(baseWithNature) {
-    const groups = [];
-    const processed = new Set();
-
-    Object.entries(baseWithNature).forEach(([stat, value]) => {
-      if (processed.has(stat)) return;
-
-      const group = [stat];
-      processed.add(stat);
-
-      Object.entries(baseWithNature).forEach(([otherStat, otherValue]) => {
-        if (otherStat !== stat && !processed.has(otherStat) && value === otherValue) {
-          group.push(otherStat);
-          processed.add(otherStat);
-        }
-      });
-
-      groups.push({ stats: group, baseValue: value });
-    });
-
-    return groups.sort((a, b) => b.baseValue - a.baseValue);
-  }
-
-  /**
-   * Distribute points ensuring stats in the same group stay equal (RANDOM mode)
-   * FIXED: Now ensures true Base Relation - equal base stats always get equal distributed points
-   */
-  static distributePointsRespectingGroups(totalPoints, baseWithNature, groups) {
-    const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
-    const distributedPoints = {};
-    shortNames.forEach(s => distributedPoints[s] = 0);
-
-    // Track how many points each group receives (not each stat)
-    const groupPoints = new Array(groups.length).fill(0);
-
-    // Randomly allocate points to groups
-    // Each iteration adds exactly 1 point to one randomly selected group
-    for (let i = 0; i < totalPoints; i++) {
-      const groupIndex = Math.floor(Math.random() * groups.length);
-      groupPoints[groupIndex]++;
-    }
-
-    // Distribute each group's points equally among its stats while respecting Base Relation
-    groups.forEach((group, groupIndex) => {
-      const pointsForGroup = groupPoints[groupIndex];
-      if (pointsForGroup === 0) return;
-      
-      // All stats in a group MUST get equal points (true Base Relation)
-      // If points don't divide evenly, randomly select which stats get +1
-      let pointsPerStat = Math.floor(pointsForGroup / group.stats.length);
-      const remainderPoints = pointsForGroup % group.stats.length;
-      
-      // Distribute remainder by randomly selecting which stats get +1
-      // This ensures fairness while maintaining Base Relation
-      const remainderIndices = new Set();
-      while (remainderIndices.size < remainderPoints) {
-        remainderIndices.add(Math.floor(Math.random() * group.stats.length));
-      }
-
-      group.stats.forEach((stat, statIndex) => {
-        let statPoints = pointsPerStat;
-        if (remainderIndices.has(statIndex)) {
-          statPoints++;
-        }
-        distributedPoints[stat] = statPoints;
-      });
-    });
-
-    return distributedPoints;
-  }
-
-  /**
-   * Distribute points equally across all groups (BALANCED mode)
-   * Each group gets equal points, and points within groups are distributed equally
-   * This ensures Base Relation is respected: equal base stats stay equal
-   */
-  static distributePointsBalanced(totalPoints, groups) {
-    const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
-    const distributedPoints = {};
-    shortNames.forEach(s => distributedPoints[s] = 0);
-
-    // First, distribute points equally to all 6 stats  
-    const basePointsPerStat = Math.floor(totalPoints / 6);
-    const remainderPoints = totalPoints % 6;
-
-    // Initialize all stats with base points
-    let pointAssigned = 0;
-    shortNames.forEach((stat, idx) => {
-      distributedPoints[stat] = basePointsPerStat;
-      pointAssigned += basePointsPerStat;
-      // Distribute remainder points to first stats
-      if (idx < remainderPoints) {
-        distributedPoints[stat]++;
-        pointAssigned++;
-      }
-    });
-
-    // Post-process: For each group, ensure all stats in group have equal points
-    // Sum points in group and redistribute equally among stats
-    groups.forEach(group => {
-      if (group.stats.length > 1) {
-        let totalGroupPoints = 0;
-        group.stats.forEach(s => totalGroupPoints += distributedPoints[s]);
-
-        // All stats in group get same points to maintain Base Relation
-        const pointsPerStat = Math.floor(totalGroupPoints / group.stats.length);
-        const groupRemainder = totalGroupPoints % group.stats.length;
-
-        group.stats.forEach((stat, idx) => {
-          let statPoints = pointsPerStat;
-          // Distribute remainder within group to first stats
-          if (idx < groupRemainder) {
-            statPoints++;
-          }
-          distributedPoints[stat] = statPoints;
-        });
-      }
-    });
-
-    return distributedPoints;
-  }
-
-  /**
-   * Distribute points to extremes (MINMAXED mode)
-   * Highest base stats groups get more points, lowest get fewer
-   * Respects Base Relation: equal stats stay equal
-   */
-  static distributePointsMinMaxed(totalPoints, baseWithNature, groups) {
-    const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
-    const distributedPoints = {};
-    shortNames.forEach(s => distributedPoints[s] = 0);
-
-    // Sort groups by their highest base value (highest first)
-    const sortedGroups = [...groups].sort((a, b) => b.baseValue - a.baseValue);
-
-    // Distribute points proportionally based on group base values
-    const weights = sortedGroups.map(group => group.baseValue);
-    const totalWeight = weights.reduce((a, b) => a + b, 0);
-
-    let totalPointsDistributed = 0;
-
-    // Distribute points to each group proportionally
-    sortedGroups.forEach((group, index) => {
-      const weight = weights[index];
-      const groupPoints = index === sortedGroups.length - 1 
-        ? totalPoints - totalPointsDistributed  // Last group gets remaining points (ensures all points distributed)
-        : Math.round((weight / totalWeight) * totalPoints);
-
-      totalPointsDistributed += groupPoints;
-
-      // Divide group points equally among stats in the group
-      // All stats in a group must receive equal points to maintain Base Relation
-      const pointsPerStat = Math.floor(groupPoints / group.stats.length);
-      const remainderStats = groupPoints % group.stats.length;
-
-      group.stats.forEach((stat, statIndex) => {
-        let statPoints = pointsPerStat;
-        // Distribute remainder points to first stats in the group to maintain Base Relation as much as possible
-        if (statIndex < remainderStats) {
-          statPoints++;
-        }
-        distributedPoints[stat] = statPoints;
-      });
-    });
-
-    return distributedPoints;
   }
 
   /**
