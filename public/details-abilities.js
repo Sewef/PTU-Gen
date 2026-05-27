@@ -26,6 +26,9 @@ function setupAbilitiesEditor(pokemon) {
     const addBlankAbilityBtn = document.getElementById('addBlankAbilityBtn');
     if (!addAbilityBtn) return;
 
+    // Generate the dynamic abilities display with all ability cards
+    updateAbilitiesDisplay(pokemon);
+
     addAbilityBtn.addEventListener('click', function () {
         showAddAbilityModal(pokemon);
     });
@@ -35,26 +38,6 @@ function setupAbilitiesEditor(pokemon) {
             addBlankAbility(pokemon);
         });
     }
-
-    // Setup remove buttons for existing abilities
-    document.querySelectorAll('.remove-ability-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const abilityElement = btn.closest('.section-card');
-            const abilityName = abilityElement.getAttribute('data-ability-name');
-            removeAbility(pokemon, abilityName);
-        });
-    });
-
-    // Setup usage tracker buttons for abilities
-    document.querySelectorAll('.section-card .usage-checkbox').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            const tracker = btn.closest('.usage-tracker');
-            const abilityName = tracker.getAttribute('data-ability-name');
-            const index = parseInt(btn.getAttribute('data-index'));
-            toggleAbilityUsage(pokemon, abilityName, index);
-        });
-    });
 }
 
 // Toggle ability usage tracking
@@ -131,7 +114,8 @@ function addBlankAbility(pokemon) {
     const blankAbility = {
         name: newName,
         frequency: '',
-        effect: ''
+        effect: '',
+        editable: true
     };
     
     pokemon.abilities.push(blankAbility);
@@ -143,7 +127,7 @@ function addBlankAbility(pokemon) {
 function updateAbilitiesDisplay(pokemon) {
     const abilitiesList = document.getElementById('abilitiesList');
     abilitiesList.innerHTML = pokemon.abilities.map(ability => {
-        const isCustom = ability.name.startsWith('Custom Ability');
+        const isCustom = ability.editable === true;
         if (isCustom) {
             return `
                 <div class="section-card" data-ability-name="${ability.name}">
@@ -190,34 +174,6 @@ function updateAbilitiesDisplay(pokemon) {
             const abilityElement = btn.closest('.section-card');
             const abilityName = abilityElement.getAttribute('data-ability-name');
             removeAbility(pokemon, abilityName);
-        });
-    });
-
-    // Custom ability field listeners
-    document.querySelectorAll('.custom-ability-name-input').forEach(input => {
-        input.addEventListener('change', function () {
-            const abilityCard = this.closest('.section-card');
-            const oldName = abilityCard.getAttribute('data-ability-name');
-            const ability = pokemon.abilities.find(a => a.name === oldName);
-            if (ability) {
-                ability.name = this.value.trim() || oldName;
-                abilityCard.setAttribute('data-ability-name', ability.name);
-                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
-                updateAbilitiesDisplay(pokemon);
-            }
-        });
-    });
-
-    document.querySelectorAll('.custom-ability-field-input').forEach(input => {
-        input.addEventListener('change', function () {
-            const abilityCard = this.closest('.section-card');
-            const abilityName = abilityCard.getAttribute('data-ability-name');
-            const field = this.getAttribute('data-field');
-            const ability = pokemon.abilities.find(a => a.name === abilityName);
-            if (ability) {
-                ability[field] = this.value.trim();
-                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
-            }
         });
     });
 
