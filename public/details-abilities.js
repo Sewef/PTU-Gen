@@ -301,7 +301,7 @@ function createAddAbilityModalHTML(availableAbilities) {
                     <input type="text" id="abilitySearchInput" placeholder="Search abilities..." class="modal-search-input" />
                     <button id="toggleAllAbilitiesBtn" class="modal-action-btn">Show All Abilities</button>
                 </div>
-                <div class="modal-info-box" style="margin-bottom: 20px;">
+                <div class="modal-info-box"">
                     <p class="modal-info-text"><strong>Total abilities available:</strong> <span id="abilityCountSpan">${(availableAbilities.basic?.length || 0) + (availableAbilities.advanced?.length || 0) + (availableAbilities.high?.length || 0)}</span></p>
                 </div>
                 <div id="abilitiesGrid" class="move-grid"></div>

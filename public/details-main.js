@@ -35,55 +35,55 @@ function loadPokemonDetails() {
     const pageTitle = `${pokemon.name} - Lvl ${pokemon.level} - Pokémon Details`;
     document.getElementById('pageTitle').textContent = pageTitle;
     const iconNumber = pokemon.Icon || pokemon.id;
-    
+
     // Load and crop favicon to remove transparency padding
     const faviconUrl = `https://sewef.github.io/ptu/img/pokemon/icons/${iconNumber}.png`;
     const faviconImg = new Image();
     faviconImg.crossOrigin = 'anonymous';
-    faviconImg.onload = function() {
+    faviconImg.onload = function () {
         try {
             const canvas = document.createElement('canvas');
             canvas.width = faviconImg.width;
             canvas.height = faviconImg.height;
             const ctx = canvas.getContext('2d');
-            
+
             ctx.drawImage(faviconImg, 0, 0);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
-            
+
             // Find bounds of non-transparent pixels
             let minX = canvas.width, maxX = 0;
             let minY = canvas.height, maxY = 0;
-            
+
             for (let i = 3; i < data.length; i += 4) {
                 const alpha = data[i];
                 if (alpha > 128) {
                     const pixelIndex = (i - 3) / 4;
                     const x = pixelIndex % canvas.width;
                     const y = Math.floor(pixelIndex / canvas.width);
-                    
+
                     minX = Math.min(minX, x);
                     maxX = Math.max(maxX, x);
                     minY = Math.min(minY, y);
                     maxY = Math.max(maxY, y);
                 }
             }
-            
+
             // Add padding around subject
             const padding = 4;
             const cropX = Math.max(0, minX - padding);
             const cropY = Math.max(0, minY - padding);
             const cropWidth = Math.min(canvas.width - cropX, maxX - minX + 2 * padding + 1);
             const cropHeight = Math.min(canvas.height - cropY, maxY - minY + 2 * padding + 1);
-            
+
             // Create cropped image
             const croppedCanvas = document.createElement('canvas');
             croppedCanvas.width = cropWidth;
             croppedCanvas.height = cropHeight;
             const croppedCtx = croppedCanvas.getContext('2d');
-            
+
             croppedCtx.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-            
+
             // Set as favicon
             const dataUrl = croppedCanvas.toDataURL('image/png');
             document.getElementById('dynamicFavicon').href = dataUrl;
@@ -92,7 +92,7 @@ function loadPokemonDetails() {
             document.getElementById('dynamicFavicon').href = faviconUrl;
         }
     };
-    faviconImg.onerror = function() {
+    faviconImg.onerror = function () {
         document.getElementById('dynamicFavicon').href = faviconUrl;
     };
     faviconImg.src = faviconUrl;
@@ -145,12 +145,12 @@ function loadPokemonDetails() {
                         </div>
                         <div id="typesDisplay" class="types">
                             ${(() => {
-                                let typesToShow = pokemon.actualTypes || pokemon.types || [];
-                                if (typesToShow.isFormeVariant) {
-                                    typesToShow = typesToShow.formes[typesToShow.selectedForme] || [];
-                                }
-                                return typesToShow.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('');
-                            })()}
+            let typesToShow = pokemon.actualTypes || pokemon.types || [];
+            if (typesToShow.isFormeVariant) {
+                typesToShow = typesToShow.formes[typesToShow.selectedForme] || [];
+            }
+            return typesToShow.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('');
+        })()}
                         </div>
                     </div>
 
@@ -202,14 +202,24 @@ function loadPokemonDetails() {
 
                     <!-- Capture Rate Section -->
                     <div class="info-box">
-                        <div class="info-label">Capture Rate</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                            <div class="info-label">Capture Rate</div>
+                        </div>
                         <div class="capture-rate-display" id="captureRateDisplay">
                             <div class="capture-rate-value">Base: <span id="baseCapture">100</span></div>
                             <div class="capture-rate-value">Current: <span id="currentCapture">100</span></div>
                         </div>
+
+                        <div>
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85em; cursor: pointer;">
+                                <input type="checkbox" id="errata2015Toggle" style="width: 16px; height: 16px;" />
+                                <span>Erratum Sept 2015</span>
+                            </label>
+                        </div>
                     </div>
-                    <div class="info-box">
-                    
+
+                    <!-- Standard Capture Rate Modifiers -->
+                    <div class="info-box" id="standardCaptureModifiers">
                         <div class="capture-rate-modifiers">
                             <div class="modifiers-grid">
                                 <!-- HP (Automatic) -->
@@ -238,36 +248,98 @@ function loadPokemonDetails() {
                                 
                                 <!-- Persistent Afflictions (Manual) -->
                                 <div class="modifier-item">
-                                    <label style="display: flex; align-items: center; gap: 6px;">
+                                    <label>
                                         <span class="modifier-label" title="Persistent Conditions: +10 each">Persistent:</span>
-                                        <input type="number" class="status-count-input" data-type="persistent" min="0" value="0" style="width: 45px; padding: 4px; border: 1px solid var(--primary-color); border-radius: 3px;">
-                                        <span style="font-size: 0.8em;">× 10</span>
+                                        <input type="number" class="status-count-input-standard" data-type="persistent" min="0" value="0">
+                                        <span class="status-multiplier-text">× 10</span>
                                     </label>
                                 </div>
                                 
                                 <!-- Injuries/Volatile Afflictions (Manual) -->
                                 <div class="modifier-item">
-                                    <label style="display: flex; align-items: center; gap: 6px;">
+                                    <label>
                                         <span class="modifier-label" title="Injuries/Volatile: +5 each">Injuries:</span>
-                                        <input type="number" class="status-count-input" data-type="injuries" min="0" value="0" style="width: 45px; padding: 4px; border: 1px solid var(--primary-color); border-radius: 3px;">
-                                        <span style="font-size: 0.8em;">× 5</span>
+                                        <input type="number" class="status-count-input-standard" data-type="injuries" min="0" value="0">
+                                        <span class="status-multiplier-text">× 5</span>
                                     </label>
                                 </div>
                                 
                                 <!-- Stuck (Manual) -->
                                 <div class="modifier-item">
-                                    <label style="display: flex; align-items: center; gap: 6px;">
-                                        <input type="checkbox" class="status-modifier-checkbox" data-value="10" data-type="stuck" title="Stuck: +10">
+                                    <label>
+                                        <input type="checkbox" class="status-modifier-checkbox-standard" data-value="10" data-type="stuck" title="Stuck: +10">
                                         <span style="font-size: 0.9em;">Stuck: +10</span>
                                     </label>
                                 </div>
                                 
                                 <!-- Slow (Manual) -->
                                 <div class="modifier-item">
-                                    <label style="display: flex; align-items: center; gap: 6px;">
-                                        <input type="checkbox" class="status-modifier-checkbox" data-value="5" data-type="slow" title="Slow: +5">
+                                    <label>
+                                        <input type="checkbox" class="status-modifier-checkbox-standard" data-value="5" data-type="slow" title="Slow: +5">
                                         <span style="font-size: 0.9em;">Slow: +5</span>
                                     </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Errata 2015 Capture Rate Modifiers -->
+                    <div class="info-box" id="errata2015Modifiers" style="display: none;">
+                        <div class="capture-rate-modifiers">
+                            <div class="errata-container">
+                                <!-- <div class="errata-info">
+                                    <strong>Base:</strong> 10 + (Level ÷ 10). Subtract 2 for each checkbox below.
+                                </div> -->
+                                
+                                <!-- HP at or under 50% -->
+                                <div class="errata-row">
+                                    <input type="checkbox" class="errata-checkbox" data-type="hp50" />
+                                    <span class="errata-row-text">At or under 50% HP?</span>
+                                </div>
+                                
+                                <!-- HP at or under 25% -->
+                                <div class="errata-row">
+                                    <input type="checkbox" class="errata-checkbox" data-type="hp25" />
+                                    <span class="errata-row-text">At or under 25% HP?</span>
+                                </div>
+                                
+                                <!-- Exactly 2 evolution stages (2 checkboxes) -->
+                                <div class="errata-row">
+                                    <div class="errata-checkbox-group">
+                                        <input type="checkbox" class="errata-checkbox" data-type="evo2a" />
+                                        <input type="checkbox" class="errata-checkbox" data-type="evo2b" disabled />
+                                    </div>
+                                    <span class="errata-row-text">Exactly 2 evolution stages? <span class="errata-hint">(counts as 2)</span></span>
+                                </div>
+                                
+                                <!-- At least 1 Persistent/Volatile Status -->
+                                <div class="errata-row">
+                                    <input type="checkbox" class="errata-checkbox" data-type="status" />
+                                    <span class="errata-row-text">Persistent or Volatile Status?</span>
+                                </div>
+                                
+                                <!-- 5 or more Injuries (2 checkboxes) -->
+                                <div class="errata-row">
+                                    <div class="errata-checkbox-group">
+                                        <input type="checkbox" class="errata-checkbox" data-type="injuries5a" />
+                                        <input type="checkbox" class="errata-checkbox" data-type="injuries5b" disabled />
+                                    </div>
+                                    <span class="errata-row-text">5 or more Injuries? <span class="errata-hint">(counts as 2)</span></span>
+                                </div>
+                                
+                                <!-- Exactly 1 evolution stage -->
+                                <div class="errata-row">
+                                    <input type="checkbox" class="errata-checkbox" data-type="evo1" />
+                                    <span class="errata-row-text">Exactly 1 evolution stage remaining?</span>
+                                </div>
+
+                                <!-- Manual Rarity Modifier -->
+                                <div class="errata-row">
+                                    <span style="font-weight: 600; text-align: center;">+</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="errata-row-text">Rarity Bonus:</span>
+                                        <input type="number" id="errata2015RarityBonus" min="0" max="20" value="0" class="errata-rarity-input">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -386,10 +458,10 @@ function loadPokemonDetails() {
                                         <span class="usage-label">Uses:</span>
                                         <div class="usage-boxes">
                                             ${(() => {
-                                                const freqMatch = /\d+/.test(ability.frequency) ? parseInt(ability.frequency.match(/\d+/)[0]) : 1;
-                                                const count = ability.usageCount || 0;
-                                                return Array.from({length: freqMatch}, (_, i) => `<button class="usage-checkbox ${count > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('');
-                                            })()}
+                        const freqMatch = /\d+/.test(ability.frequency) ? parseInt(ability.frequency.match(/\d+/)[0]) : 1;
+                        const count = ability.usageCount || 0;
+                        return Array.from({ length: freqMatch }, (_, i) => `<button class="usage-checkbox ${count > i ? 'checked' : ''}" data-index="${i}" title="Use #${i + 1}"></button>`).join('');
+                    })()}
                                         </div>
                                     </span>
                                 </div>` : ''}
@@ -436,7 +508,7 @@ function loadPokemonDetails() {
                                 <div class="section-card-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
                                 <div class="section-card-field">
                                     <strong>Frequency:</strong> ${move.frequency || 'N/A'}
-                                    ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
+                                    ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({ length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1 }, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i + 1}"></button>`).join('')}</div></span>` : ''}
                                 </div>
                                 <div class="section-card-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
                                 <div class="section-card-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
@@ -492,7 +564,7 @@ function loadPokemonDetails() {
     const naturalGroups = groupStatsByValue(pokemon.baseWithNature);
     const ignoredStatsSet = new Set(
         pokemon.ignoreBaseRelation === 'IGNORE' ? shortNames
-        : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(s => s.trim()) : [])
+            : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(s => s.trim()) : [])
     );
     const baseRelationSummary = naturalGroups
         .map(group => group.stats
@@ -644,12 +716,12 @@ function loadPokemonDetails() {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
             const capabilityName = this.getAttribute('data-capability');
-            
+
             // Check if already exists (case-insensitive)
-            const exists = pokemon.capabilities.some(cap => 
+            const exists = pokemon.capabilities.some(cap =>
                 cap.toLowerCase().startsWith(capabilityName.toLowerCase())
             );
-            
+
             if (!exists) {
                 // Add with default value of 0 (can be edited)
                 pokemon.capabilities.push(`${capabilityName} 0`);
@@ -674,15 +746,15 @@ function loadPokemonDetails() {
     // Setup HP current value editor
     const hpCurrentInput = document.getElementById('hpCurrentInput');
     const hpMaxDisplay = document.getElementById('hpMaxDisplay');
-    
+
     function updateHPMax() {
         const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
         const hpMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
         if (hpMaxDisplay) hpMaxDisplay.textContent = hpMax;
     }
-    
+
     updateHPMax();
-    
+
     if (hpCurrentInput) {
         hpCurrentInput.addEventListener('change', function () {
             pokemon.hitPoints = parseInt(this.value) || 0;
@@ -728,7 +800,7 @@ function loadPokemonDetails() {
     const exportRoll20Btn = document.getElementById('exportRoll20Btn');
     const exportPokesheetsBtn = document.getElementById('exportPokesheetsBtn');
     const exportOwlbearBtn = document.getElementById('exportOwlbearBtn');
-    
+
     // Helper function to sync all pending changes to pokemon object before export
     const syncPokemonBeforeExport = () => {
         // Sync stats from DOM (level points may have been manually edited)
@@ -747,7 +819,7 @@ function loadPokemonDetails() {
         if (hpCurrentInput) {
             pokemon.hitPoints = parseInt(hpCurrentInput.value) || 0;
         }
-        
+
         // Calculate and store HP max
         const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
         pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
@@ -759,7 +831,7 @@ function loadPokemonDetails() {
                 pokemon.skills[skillName] = input.value.trim();
             }
         });
-        
+
         // Sync capability value inputs
         document.querySelectorAll('.capability-value-input').forEach(input => {
             const idx = parseInt(input.getAttribute('data-index'));
@@ -771,7 +843,7 @@ function loadPokemonDetails() {
                 }
             }
         });
-        
+
         // Sync capability no-value input
         const capNoValueInput = document.getElementById('capabilitiesNoValueInput');
         if (capNoValueInput) {
@@ -780,19 +852,19 @@ function loadPokemonDetails() {
             pokemon.capabilities = capabilitiesWithValues.concat(newCapNoValues);
         }
     };
-    
+
     if (exportBtn && exportDropdown) {
         // Toggle dropdown
         exportBtn.onclick = (e) => {
             e.stopPropagation();
             exportDropdown.style.display = exportDropdown.style.display === 'none' ? 'block' : 'none';
         };
-        
+
         // Close dropdown when clicking outside
         document.addEventListener('click', () => {
             exportDropdown.style.display = 'none';
         });
-        
+
         // Export JSON
         if (exportJsonBtn) {
             exportJsonBtn.onclick = (e) => {
@@ -802,7 +874,7 @@ function loadPokemonDetails() {
                 exportDropdown.style.display = 'none';
             };
         }
-        
+
         // Export Roll20
         if (exportRoll20Btn) {
             exportRoll20Btn.onclick = (e) => {
@@ -812,7 +884,7 @@ function loadPokemonDetails() {
                 exportDropdown.style.display = 'none';
             };
         }
-        
+
         // Export Pokésheets
         if (exportPokesheetsBtn) {
             exportPokesheetsBtn.onclick = (e) => {
@@ -849,21 +921,26 @@ function loadPokemonDetails() {
 
 // Setup capture rate calculator
 async function setupCaptureRateCalculator(pokemon) {
-    const statusCountInputs = document.querySelectorAll('.status-count-input');
-    const statusCheckboxes = document.querySelectorAll('.status-modifier-checkbox');
-    
+    const standardModifiers = document.getElementById('standardCaptureModifiers');
+    const errata2015Modifiers = document.getElementById('errata2015Modifiers');
+    const errata2015Toggle = document.getElementById('errata2015Toggle');
+
+    // Standard system selectors
+    const statusCountInputs = document.querySelectorAll('.status-count-input-standard');
+    const statusCheckboxes = document.querySelectorAll('.status-modifier-checkbox-standard');
+
+    // Errata 2015 selectors
+    const errataCheckboxes = document.querySelectorAll('.errata-checkbox:not(.errata-double)');
+    const errataDoubleCheckboxes = document.querySelectorAll('.errata-checkbox.errata-double');
+    const errataRarityInput = document.getElementById('errata2015RarityBonus');
+
     // Determine evolution stages remaining
     let evolutionStagesRemaining = 0;
     try {
         const response = await fetch(`/api/pokemon/evolutions/${encodeURIComponent(pokemon.name)}?dataset=${pokemon.dataset || 'core'}`);
         if (response.ok) {
             const data = await response.json();
-            
-            console.log('Evolution API response:', data);
-            
-            // Use the evolutionsRemaining value directly from the API
             evolutionStagesRemaining = data.evolutionsRemaining || 0;
-            
             console.log('Evolutions remaining from API:', evolutionStagesRemaining);
         } else {
             console.error('Failed to fetch evolution data:', response.status, response.statusText);
@@ -871,8 +948,8 @@ async function setupCaptureRateCalculator(pokemon) {
     } catch (error) {
         console.error('Could not fetch evolution data:', error);
     }
-    
-    // Display evolution modifier
+
+    // Display evolution modifier (standard system)
     const evolutionModifier = document.getElementById('evolutionModifier');
     if (evolutionModifier) {
         if (evolutionStagesRemaining === 2) {
@@ -889,7 +966,6 @@ async function setupCaptureRateCalculator(pokemon) {
         const shinyItem = document.getElementById('shinyItem');
         if (shinyItem) {
             shinyItem.style.display = 'flex';
-            console.log('Showing Shiny modifier');
         }
     }
 
@@ -897,21 +973,18 @@ async function setupCaptureRateCalculator(pokemon) {
         const legendaryItem = document.getElementById('legendaryItem');
         if (legendaryItem) {
             legendaryItem.style.display = 'flex';
-            console.log('Showing Legendary modifier');
         }
     }
 
-    const updateCaptureRate = () => {
+    // Standard system capture rate calculation
+    const updateCaptureRateStandard = () => {
         let captureRate = 100;
-
-        // Step 1: Subtract Level x2
         captureRate -= pokemon.level * 2;
 
-        // Step 2: HP modification (automatic based on current HP)
+        // HP modification
         let hpModifier = 0;
         const hpPercentage = (pokemon.hitPoints / pokemon.hitPointsMax) * 100;
         if (pokemon.hitPoints <= 0) {
-            // Cannot capture
             captureRate = 'CANNOT CAPTURE (0 HP)';
         } else if (pokemon.hitPoints === 1) {
             hpModifier = 30;
@@ -920,7 +993,6 @@ async function setupCaptureRateCalculator(pokemon) {
             hpModifier = 15;
             captureRate += 15;
         } else if (hpPercentage <= 50) {
-            // No change
             hpModifier = 0;
         } else if (hpPercentage <= 75) {
             hpModifier = -15;
@@ -929,14 +1001,13 @@ async function setupCaptureRateCalculator(pokemon) {
             hpModifier = -30;
             captureRate -= 30;
         }
-        
-        // Display HP modifier
+
         const hpModifierDisplay = document.getElementById('hpModifier');
         if (hpModifierDisplay && typeof captureRate === 'number') {
             hpModifierDisplay.textContent = hpModifier >= 0 ? `+${hpModifier}` : `${hpModifier}`;
         }
 
-        // Step 3: Evolutionary stage (automatic)
+        // Evolutionary stage
         if (typeof captureRate === 'number') {
             if (evolutionStagesRemaining === 2) {
                 captureRate += 10;
@@ -947,7 +1018,7 @@ async function setupCaptureRateCalculator(pokemon) {
             }
         }
 
-        // Step 4: Rarity (automatic)
+        // Rarity
         if (pokemon.shiny) {
             captureRate = typeof captureRate === 'string' ? captureRate : captureRate - 10;
         }
@@ -955,7 +1026,7 @@ async function setupCaptureRateCalculator(pokemon) {
             captureRate = typeof captureRate === 'string' ? captureRate : captureRate - 30;
         }
 
-        // Step 5: Status afflictions (manual)
+        // Status afflictions
         statusCountInputs.forEach(input => {
             const count = parseInt(input.value) || 0;
             const type = input.getAttribute('data-type');
@@ -973,37 +1044,129 @@ async function setupCaptureRateCalculator(pokemon) {
             }
         });
 
-        // Update display
         const baseValue = 100 - (pokemon.level * 2);
         document.getElementById('baseCapture').textContent = baseValue;
         document.getElementById('currentCapture').textContent = typeof captureRate === 'string' ? captureRate : Math.max(0, captureRate);
     };
 
-    // Attach event listeners
+    // Errata 2015 system capture rate calculation
+    const updateCaptureRateErrata2015 = () => {
+        let captureRate = 10 + Math.floor(pokemon.level / 10);
+
+        // Count checked boxes
+        let checkboxCount = 0;
+
+        // Standard conditions (1 checkbox each = -2)
+        const hp50 = document.querySelector('.errata-checkbox[data-type="hp50"]');
+        const hp25 = document.querySelector('.errata-checkbox[data-type="hp25"]');
+        const status = document.querySelector('.errata-checkbox[data-type="status"]');
+        const evo1 = document.querySelector('.errata-checkbox[data-type="evo1"]');
+
+        // Double conditions (2 checkboxes each = -4 total)
+        const evo2a = document.querySelector('.errata-checkbox[data-type="evo2a"]');
+        const evo2b = document.querySelector('.errata-checkbox[data-type="evo2b"]');
+        const injuries5a = document.querySelector('.errata-checkbox[data-type="injuries5a"]');
+        const injuries5b = document.querySelector('.errata-checkbox[data-type="injuries5b"]');
+
+        const hpPercentage = (pokemon.hitPoints / pokemon.hitPointsMax) * 100;
+
+        // Auto-check conditions based on pokemon state
+        if (hp50 && hpPercentage <= 50) {
+            hp50.checked = true;
+        } else if (hp50) {
+            hp50.checked = false;
+        }
+
+        if (hp25 && hpPercentage <= 25) {
+            hp25.checked = true;
+        } else if (hp25) {
+            hp25.checked = false;
+        }
+
+        // Count all checked boxes
+        if (hp50 && hp50.checked) checkboxCount++;
+        if (hp25 && hp25.checked) checkboxCount++;
+        if (status && status.checked) checkboxCount++;
+        if (evo1 && evo1.checked) checkboxCount++;
+        if (evo2a && evo2a.checked) checkboxCount += 2;
+        if (injuries5a && injuries5a.checked) checkboxCount += 2;
+
+        // Sync double checkboxes
+        if (evo2a && evo2b) {
+            evo2b.checked = evo2a.checked;
+        }
+        if (injuries5a && injuries5b) {
+            injuries5b.checked = injuries5a.checked;
+        }
+
+        // Apply rarity bonus
+        const rarityBonus = parseInt(errataRarityInput.value) || 0;
+        captureRate += rarityBonus;
+
+        // Subtract 2 for each checkbox
+        captureRate -= (checkboxCount * 2);
+
+        const baseValue = 10 + Math.floor(pokemon.level / 10);
+        document.getElementById('baseCapture').textContent = baseValue;
+        document.getElementById('currentCapture').textContent = Math.max(0, captureRate);
+    };
+
+    // Toggle between systems
+    const toggleSystem = () => {
+        const useErrata = errata2015Toggle.checked;
+        standardModifiers.style.display = useErrata ? 'none' : 'block';
+        errata2015Modifiers.style.display = useErrata ? 'block' : 'none';
+
+        if (useErrata) {
+            updateCaptureRateErrata2015();
+        } else {
+            updateCaptureRateStandard();
+        }
+    };
+
+    errata2015Toggle.addEventListener('change', toggleSystem);
+
+    // Attach listeners for standard system
     statusCountInputs.forEach(input => {
-        input.addEventListener('input', updateCaptureRate);
-        input.addEventListener('change', updateCaptureRate);
+        input.addEventListener('input', updateCaptureRateStandard);
+        input.addEventListener('change', updateCaptureRateStandard);
     });
 
     statusCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateCaptureRate);
+        checkbox.addEventListener('change', updateCaptureRateStandard);
     });
+
+    // Attach listeners for errata 2015 system
+    errataCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateCaptureRateErrata2015);
+    });
+
+    errataDoubleCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateCaptureRateErrata2015);
+    });
+
+    if (errataRarityInput) {
+        errataRarityInput.addEventListener('input', updateCaptureRateErrata2015);
+        errataRarityInput.addEventListener('change', updateCaptureRateErrata2015);
+    }
 
     // Listen to HP changes
     const hpCurrentInput = document.getElementById('hpCurrentInput');
     if (hpCurrentInput) {
         hpCurrentInput.addEventListener('input', function () {
             pokemon.hitPoints = parseInt(this.value) || 0;
-            updateCaptureRate();
+            const updateFn = errata2015Toggle.checked ? updateCaptureRateErrata2015 : updateCaptureRateStandard;
+            updateFn();
         });
         hpCurrentInput.addEventListener('change', function () {
             pokemon.hitPoints = parseInt(this.value) || 0;
-            updateCaptureRate();
+            const updateFn = errata2015Toggle.checked ? updateCaptureRateErrata2015 : updateCaptureRateStandard;
+            updateFn();
         });
     }
 
     // Initial calculation
-    updateCaptureRate();
+    updateCaptureRateStandard();
 }
 
 window.addEventListener('load', function () {

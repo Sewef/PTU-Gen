@@ -366,7 +366,7 @@ function createAddMoveModalHTML(availableMoves) {
                     <input type="text" id="moveSearchInput" placeholder="Search moves..." class="modal-search-input" />
                     <button id="toggleAllMovesBtn" class="modal-action-btn">Show All Moves</button>
                 </div>
-                <div class="modal-info-box" style="margin-bottom: 20px;">
+                <div class="modal-info-box"">
                     <p class="modal-info-text"><strong>Total moves available:</strong> <span id="moveCountSpan">${(availableMoves.levelUp?.length || 0) + (availableMoves.tm?.length || 0) + (availableMoves.tutor?.length || 0)}</span></p>
                 </div>
                 <div id="moveGrid" class="move-grid"></div>
