@@ -118,6 +118,7 @@ function loadPokemonDetails() {
                         <button id="exportJsonBtn" class="export-dropdown-item">📄 Export PTU-Gen JSON</button>
                         <button id="exportRoll20Btn" class="export-dropdown-item">🎲 Export Roll20</button>
                         <button id="exportPokesheetsBtn" class="export-dropdown-item">📊 Export Pokésheets</button>
+                        <button id="exportOwlbearBtn" class="export-dropdown-item">🐻 Copy Owlbear Token</button>
                     </div>
                 </div>
             </div>
@@ -610,6 +611,7 @@ function loadPokemonDetails() {
     const exportJsonBtn = document.getElementById('exportJsonBtn');
     const exportRoll20Btn = document.getElementById('exportRoll20Btn');
     const exportPokesheetsBtn = document.getElementById('exportPokesheetsBtn');
+    const exportOwlbearBtn = document.getElementById('exportOwlbearBtn');
     
     // Helper function to sync all pending changes to pokemon object before export
     const syncPokemonBeforeExport = () => {
@@ -696,6 +698,27 @@ function loadPokemonDetails() {
                 syncPokemonBeforeExport();
                 exportPokemonPokesheets(pokemon);
                 exportDropdown.style.display = 'none';
+            };
+        }
+
+        // Export Owlbear token (copy to clipboard)
+        if (exportOwlbearBtn) {
+            exportOwlbearBtn.onclick = async (e) => {
+                e.stopPropagation();
+                exportDropdown.style.display = 'none';
+                const originalText = exportOwlbearBtn.textContent;
+                exportOwlbearBtn.textContent = '⏳ Generating...';
+                exportOwlbearBtn.disabled = true;
+                try {
+                    await exportPokemonOwlbear(pokemon);
+                    exportOwlbearBtn.textContent = '✅ Copied!';
+                } catch (err) {
+                    console.error('Owlbear export failed:', err);
+                    exportOwlbearBtn.textContent = '❌ Failed';
+                } finally {
+                    exportOwlbearBtn.disabled = false;
+                    setTimeout(() => { exportOwlbearBtn.textContent = originalText; }, 2000);
+                }
             };
         }
     }
