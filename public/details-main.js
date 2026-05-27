@@ -130,7 +130,7 @@ function loadPokemonDetails() {
                     <div class="info-box">
                         <div class="flex-between-center">
                             <div class="info-label">Type(s)</div>
-                            <button id="editTypesBtn" title="Edit types" class="edit-action-btn">✎ Edit</button>
+                            <button id="editTypesBtn" title="Edit types" class="edit-bn">✎ Edit</button>
                         </div>
                         <div id="typesDisplay" class="types">
                             ${(() => {
@@ -281,7 +281,7 @@ function loadPokemonDetails() {
                 <div class="section">
                     <div class="section-header">
                         <h3 class="section-title">🎯 Abilities</h3>
-                        <button id="addAbilityBtn" title="Add ability" class="add-ability-btn">✎ Edit</button>
+                        <button id="addAbilityBtn" title="Add ability" class="edit-bn">✎ Edit</button>
                     </div>
                     <div class="section-list" id="abilitiesList">
                         ${pokemon.abilities.map(ability => `
@@ -330,7 +330,7 @@ function loadPokemonDetails() {
                 <div class="section">
                     <div class="flex-between-center-15">
                         <h3 class="section-title">⚔️ Moves</h3>
-                        <button id="addMoveBtn" title="Edit" class="edit-action-btn">✎ Edit</button>
+                        <button id="addMoveBtn" title="Edit" class="edit-bn">✎ Edit</button>
                     </div>
                     <div class="section-list" id="movesList">
                         ${pokemon.moves.map(move => `

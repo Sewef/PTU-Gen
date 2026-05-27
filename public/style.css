@@ -1460,7 +1460,7 @@ button {
 }
 
 /* Edit action buttons (small buttons for Add Move, Add Ability, Edit Types) */
-.edit-action-btn {
+/* .edit-action-btn {
     padding: 6px 12px !important;
     background: var(--primary-color) !important;
     color: white !important;
@@ -1477,7 +1477,7 @@ button {
     background: var(--primary-dark) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3) !important;
-}
+} */
 
 
 .toc {
@@ -2545,7 +2545,7 @@ pre {
     gap: 10px;
 }
 
-.add-ability-btn {
+.edit-bn {
     padding: 6px 12px;
     background: var(--primary-color);
     color: white;
@@ -2557,7 +2557,7 @@ pre {
     transition: all 0.2s ease;
 }
 
-.add-ability-btn:hover {
+.edit-bn:hover {
     background: var(--primary-dark);
 }
 
