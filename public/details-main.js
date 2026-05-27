@@ -113,12 +113,12 @@ function loadPokemonDetails() {
                     <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level} • ${pokemon.dataset ? pokemon.dataset.charAt(0).toUpperCase() + pokemon.dataset.slice(1) : 'Core'} Dataset</div>
                 </div>
                 <div class="export-button-wrapper">
+                    <button id="exportOwlbearBtn" class="export-btn-main">🐻 Copy Owlbear Token</button>
                     <button id="exportBtn" title="Export options" class="export-btn-main">📥 Export <span class="dropdown-arrow">▼</span></button>
                     <div id="exportDropdown" class="export-dropdown">
                         <button id="exportJsonBtn" class="export-dropdown-item">📄 Export PTU-Gen JSON</button>
                         <button id="exportRoll20Btn" class="export-dropdown-item">🎲 Export Roll20</button>
                         <button id="exportPokesheetsBtn" class="export-dropdown-item">📊 Export Pokésheets</button>
-                        <button id="exportOwlbearBtn" class="export-dropdown-item">🐻 Copy Owlbear Token</button>
                     </div>
                 </div>
             </div>

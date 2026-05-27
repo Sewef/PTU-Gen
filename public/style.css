@@ -2262,6 +2262,10 @@ pre {
     align-self: flex-start;
 }
 
+.export-button-wrapper > button {
+    margin-top: 6px;
+}
+
 .export-btn-main {
     padding: 8px 16px;
     background: var(--primary-color);
@@ -2272,7 +2276,7 @@ pre {
     font-size: 0.85em;
     font-weight: 600;
     transition: all 0.2s ease;
-    display: flex;
+    /* display: flex; */
     align-items: center;
     gap: 6px;
 }
