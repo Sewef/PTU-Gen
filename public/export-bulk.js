@@ -84,74 +84,23 @@ async function exportBulkPokesheets(pokemons) {
 // ─── Owlbear (merged) ────────────────────────────────────────────────────────
 
 async function exportBulkOwlbear(pokemons) {
-    // Load template once
     const response = await fetch('owlbear_template.json');
     const templateText = await response.text();
 
-    const mergedShared = {};
-    const sizeScales = { 'Large': 2, 'Huge': 3, 'Gigantic': 4 };
-
+    const shared = {};
     let currentX = 0;
 
-    for (let i = 0; i < pokemons.length; i++) {
-        const pokemon = pokemons[i];
-        const imageNumber = pokemon.Icon || pokemon.id;
-        const imageUrl = `https://sewef.github.io/ptu/img/pokemon/full/${imageNumber}.png`;
-        const pokemonName = pokemon.nickname || pokemon.name;
-        const uuid = generateOwlbearUUID();
-
-        let filled = templateText
-            .split('PLACEHOLDER_UUID').join(uuid)
-            .split('PLACEHOLDER_POKEMON_NAME').join(pokemonName.replace(/"/g, '\\"'))
-            .split('PLACEHOLDER_IMAGE_URL').join(imageUrl);
-
-        const result = JSON.parse(filled);
-        const items = result.items.shared;
-        const itemKey = Object.keys(items)[0];
-        const item = items[itemKey];
-
-        // Position tokens side by side
-        item.position.x = currentX;
-        item.position.y = 0;
-
-        // Scale from size category
-        const scale = sizeScales[pokemon.otherInfo?.sizeCategory] || 1;
-        item.scale.x = scale;
-        item.scale.y = scale;
-
-        // Fixed token dimensions
-        applyTokenDimensions(item, 96, 96);
-
-        currentX += 96;
-
-        mergedShared[uuid] = item;
+    for (const pokemon of pokemons) {
+        const { uuid, item } = buildOwlbearItem(pokemon, templateText, { x: currentX, y: 0 });
+        shared[uuid] = item;
+        currentX += OWLBEAR_TOKEN_SIZE;
     }
 
-    // Compute global bounds from all token positions + half-size
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    Object.values(mergedShared).forEach(item => {
-        const hw = item.image.width / 2;
-        const hh = item.image.height / 2;
-        minX = Math.min(minX, item.position.x - hw);
-        minY = Math.min(minY, item.position.y - hh);
-        maxX = Math.max(maxX, item.position.x + hw);
-        maxY = Math.max(maxY, item.position.y + hh);
-    });
-
     const merged = {
-        items: { shared: mergedShared, local: {} },
-        bounds: { min: { x: minX, y: minY }, max: { x: maxX, y: maxY } }
+        items: { shared, local: {} },
+        bounds: computeOwlbearBounds(shared)
     };
 
     const jsonStr = JSON.stringify(merged, null, 2);
     await navigator.clipboard.writeText(jsonStr);
-}
-
-function applyTokenDimensions(item, w, h) {
-    const dpi = Math.max(w, h);
-    item.image.width = w;
-    item.image.height = h;
-    item.grid.dpi = dpi;
-    item.grid.offset.x = w / 2;
-    item.grid.offset.y = h / 2;
 }

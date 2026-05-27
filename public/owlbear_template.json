@@ -1,9 +1,9 @@
 {
     "items": {
         "shared": {
-            "PLACEHOLDER_UUID": {
+            "PLACEHOLDER_TOKEN_UUID": {
                 "type": "IMAGE",
-                "id": "PLACEHOLDER_UUID",
+                "id": "PLACEHOLDER_TOKEN_UUID",
                 "name": "PLACEHOLDER_POKEMON_NAME",
                 "position": {
                     "x": 0,
@@ -17,6 +17,24 @@
                 "visible": true,
                 "locked": false,
                 "metadata": {
+                    "com.owl-trackers/trackers": [
+                        {
+                            "id": "PLACEHOLDER_TRACKER_UUID_HP",
+                            "variant": "value-max",
+                            "color": 2,
+                            "value": "PLACEHOLDER_HP_VALUE",
+                            "max": "PLACEHOLDER_HP_MAX",
+                            "name": "HP"
+                        },
+                        {
+                            "id": "PLACEHOLDER_TRACKER_UUID_INJURIES",
+                            "variant": "counter",
+                            "color": 2,
+                            "inlineMath": true,
+                            "value": 0,
+                            "name": "Injuries"
+                        }
+                    ]
                 },
                 "image": {
                     "width": "PLACEHOLDER_IMAGE_WIDTH",
