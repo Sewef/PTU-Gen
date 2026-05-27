@@ -386,7 +386,18 @@
                     </div>
                 </div>
 
-                <h2>📊 Generated Pokémon</h2>
+                <div class="flex-between-center" style="margin-bottom: 8px;">
+                    <h2 style="margin:0">📊 Generated Pokémon</h2>
+                    <div class="export-button-wrapper" id="bulkExportWrapper" style="display:none">
+                        <button id="bulkExportBtn" class="export-btn-main">📥 Export <span class="dropdown-arrow">▼</span></button>
+                        <div id="bulkExportDropdown" class="export-dropdown" style="display:none">
+                            <button id="bulkExportJsonBtn" class="export-dropdown-item">📄 Export PTU-Gen JSON</button>
+                            <button id="bulkExportRoll20Btn" class="export-dropdown-item">🎲 Export Roll20</button>
+                            <button id="bulkExportPokesheetsBtn" class="export-dropdown-item">📊 Export Pokésheets</button>
+                            <button id="bulkExportOwlbearBtn" class="export-dropdown-item">🐻 Copy Owlbear Tokens</button>
+                        </div>
+                    </div>
+                </div>
                 <div id="pokemonDisplay" class="no-pokemon">
                     Click "Generate Pokémon" to start
                 </div>
@@ -394,6 +405,12 @@
         </div>
     </div>
 
+    <script src="export.js"></script>
+    <script src="export-roll20.js"></script>
+    <script src="export-pokesheets.js"></script>
+    <script src="export-owlbear.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="export-bulk.js"></script>
     <script>
         let allPokemon = [];
         let allHabitats = [];
@@ -865,6 +882,59 @@
 
             // Store the count for reference
             sessionStorage.setItem('pokemon_count', pokemons.length);
+
+            // Show bulk export dropdown
+            document.getElementById('bulkExportWrapper').style.display = 'block';
+            setupBulkExportDropdown(pokemons);
+        }
+
+        function setupBulkExportDropdown(pokemons) {
+            const btn = document.getElementById('bulkExportBtn');
+            const dropdown = document.getElementById('bulkExportDropdown');
+
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            };
+
+            document.addEventListener('click', () => { dropdown.style.display = 'none'; });
+
+            const withFeedback = async (buttonId, action) => {
+                const b = document.getElementById(buttonId);
+                const orig = b.textContent;
+                b.disabled = true;
+                b.textContent = '⏳ ...';
+                try {
+                    await action();
+                    b.textContent = '✅ Done';
+                } catch (err) {
+                    console.error(err);
+                    b.textContent = '❌ Failed';
+                } finally {
+                    b.disabled = false;
+                    setTimeout(() => {
+                        b.textContent = orig;
+                        dropdown.style.display = 'none';
+                    }, 2000);
+                }
+            };
+
+            document.getElementById('bulkExportJsonBtn').onclick = (e) => {
+                e.stopPropagation();
+                withFeedback('bulkExportJsonBtn', () => exportBulkPTUGen(pokemons));
+            };
+            document.getElementById('bulkExportRoll20Btn').onclick = (e) => {
+                e.stopPropagation();
+                withFeedback('bulkExportRoll20Btn', () => exportBulkRoll20(pokemons));
+            };
+            document.getElementById('bulkExportPokesheetsBtn').onclick = (e) => {
+                e.stopPropagation();
+                withFeedback('bulkExportPokesheetsBtn', () => exportBulkPokesheets(pokemons));
+            };
+            document.getElementById('bulkExportOwlbearBtn').onclick = (e) => {
+                e.stopPropagation();
+                withFeedback('bulkExportOwlbearBtn', () => exportBulkOwlbear(pokemons));
+            };
         }
 
         function openPokemonDetail(index) {
