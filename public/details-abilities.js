@@ -23,11 +23,18 @@ function updateCapabilitiesDisplay(pokemon) {
 // Setup abilities editor
 function setupAbilitiesEditor(pokemon) {
     const addAbilityBtn = document.getElementById('addAbilityBtn');
+    const addBlankAbilityBtn = document.getElementById('addBlankAbilityBtn');
     if (!addAbilityBtn) return;
 
     addAbilityBtn.addEventListener('click', function () {
         showAddAbilityModal(pokemon);
     });
+
+    if (addBlankAbilityBtn) {
+        addBlankAbilityBtn.addEventListener('click', function () {
+            addBlankAbility(pokemon);
+        });
+    }
 
     // Setup remove buttons for existing abilities
     document.querySelectorAll('.remove-ability-btn').forEach(btn => {
@@ -112,34 +119,70 @@ function addAbility(pokemon, abilityData) {
     }
 }
 
+// Add a blank ability
+function addBlankAbility(pokemon) {
+    let counter = 1;
+    let newName = `Custom Ability ${counter}`;
+    while (pokemon.abilities.some(a => a.name === newName)) {
+        counter++;
+        newName = `Custom Ability ${counter}`;
+    }
+    
+    const blankAbility = {
+        name: newName,
+        frequency: '',
+        effect: ''
+    };
+    
+    pokemon.abilities.push(blankAbility);
+    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    updateAbilitiesDisplay(pokemon);
+}
+
 // Update abilities display
 function updateAbilitiesDisplay(pokemon) {
     const abilitiesList = document.getElementById('abilitiesList');
-    abilitiesList.innerHTML = pokemon.abilities.map(ability => `
-        <div class="section-card" data-ability-name="${ability.name}">
-            <div class="section-card-header">
-                <div class="section-card-name">${ability.name}</div>
-                <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
-            </div>
-            ${ability.frequency ? `<div class="section-card-field"><strong>Frequency:</strong> ${ability.frequency}
-                <span class="usage-tracker" data-ability-name="${ability.name}">
-                    <span class="usage-label">Uses:</span>
-                    <div class="usage-boxes">
-                        ${(() => {
-                            const freqMatch = /\d+/.test(ability.frequency) ? parseInt(ability.frequency.match(/\d+/)[0]) : 1;
-                            const count = ability.usageCount || 0;
-                            return Array.from({length: freqMatch}, (_, i) => `<button class="usage-checkbox ${count > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('');
-                        })()}
+    abilitiesList.innerHTML = pokemon.abilities.map(ability => {
+        const isCustom = ability.name.startsWith('Custom Ability');
+        if (isCustom) {
+            return `
+                <div class="section-card" data-ability-name="${ability.name}">
+                    <div class="section-card-header">
+                        <input type="text" class="custom-ability-name-input" value="${ability.name}" placeholder="Ability name" style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 4px;" />
+                        <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
                     </div>
-                </span>
-            </div>` : ''}
-            ${ability.trigger ? `<div class="section-card-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
-            ${ability.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
-            ${ability.bonus ? `<div class="section-card-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
-            ${ability.special ? `<div class="section-card-field"><strong>Special:</strong> ${ability.special}</div>` : ''}
-            ${ability.note ? `<div class="section-card-field note"><strong>Note:</strong> ${ability.note}</div>` : ''}
-        </div>
-    `).join('');
+                    <div class="section-card-field"><strong>Frequency:</strong> <input type="text" class="custom-ability-field-input" data-field="frequency" value="${ability.frequency || ''}" placeholder="e.g., Static, Daily x3" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 200px;" /></div>
+                    <div class="section-card-field"><strong>Effect:</strong> <input type="text" class="custom-ability-field-input" data-field="effect" value="${ability.effect || ''}" placeholder="Ability effect" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 100%;" /></div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="section-card" data-ability-name="${ability.name}">
+                    <div class="section-card-header">
+                        <div class="section-card-name">${ability.name}</div>
+                        <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
+                    </div>
+                    ${ability.frequency ? `<div class="section-card-field"><strong>Frequency:</strong> ${ability.frequency}
+                        <span class="usage-tracker" data-ability-name="${ability.name}">
+                            <span class="usage-label">Uses:</span>
+                            <div class="usage-boxes">
+                                ${(() => {
+                                    const freqMatch = /\d+/.test(ability.frequency) ? parseInt(ability.frequency.match(/\d+/)[0]) : 1;
+                                    const count = ability.usageCount || 0;
+                                    return Array.from({length: freqMatch}, (_, i) => `<button class="usage-checkbox ${count > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('');
+                                })()}
+                            </div>
+                        </span>
+                    </div>` : ''}
+                    ${ability.trigger ? `<div class="section-card-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
+                    ${ability.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
+                    ${ability.bonus ? `<div class="section-card-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
+                    ${ability.special ? `<div class="section-card-field"><strong>Special:</strong> ${ability.special}</div>` : ''}
+                    ${ability.note ? `<div class="section-card-field note"><strong>Note:</strong> ${ability.note}</div>` : ''}
+                </div>
+            `;
+        }
+    }).join('');
 
     // Re-attach remove listeners
     document.querySelectorAll('.remove-ability-btn').forEach(btn => {
@@ -147,6 +190,34 @@ function updateAbilitiesDisplay(pokemon) {
             const abilityElement = btn.closest('.section-card');
             const abilityName = abilityElement.getAttribute('data-ability-name');
             removeAbility(pokemon, abilityName);
+        });
+    });
+
+    // Custom ability field listeners
+    document.querySelectorAll('.custom-ability-name-input').forEach(input => {
+        input.addEventListener('change', function () {
+            const abilityCard = this.closest('.section-card');
+            const oldName = abilityCard.getAttribute('data-ability-name');
+            const ability = pokemon.abilities.find(a => a.name === oldName);
+            if (ability) {
+                ability.name = this.value.trim() || oldName;
+                abilityCard.setAttribute('data-ability-name', ability.name);
+                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+                updateAbilitiesDisplay(pokemon);
+            }
+        });
+    });
+
+    document.querySelectorAll('.custom-ability-field-input').forEach(input => {
+        input.addEventListener('change', function () {
+            const abilityCard = this.closest('.section-card');
+            const abilityName = abilityCard.getAttribute('data-ability-name');
+            const field = this.getAttribute('data-field');
+            const ability = pokemon.abilities.find(a => a.name === abilityName);
+            if (ability) {
+                ability[field] = this.value.trim();
+                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            }
         });
     });
 
@@ -434,4 +505,4 @@ function filterAllAbilities(grid, searchTerm, allAbilities) {
         'no-results-abilities', 'No abilities match your search');
 }
 
-// Load on page load
+// Load on page load

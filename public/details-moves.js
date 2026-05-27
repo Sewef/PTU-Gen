@@ -1,10 +1,17 @@
 function setupMovesEditor(pokemon) {
     const addMoveBtn = document.getElementById('addMoveBtn');
+    const addBlankMoveBtn = document.getElementById('addBlankMoveBtn');
     if (!addMoveBtn) return;
 
     addMoveBtn.addEventListener('click', function () {
         showAddMoveModal(pokemon);
     });
+
+    if (addBlankMoveBtn) {
+        addBlankMoveBtn.addEventListener('click', function () {
+            addBlankMove(pokemon);
+        });
+    }
 
     // Setup remove buttons for existing moves
     document.querySelectorAll('.remove-move-btn').forEach(btn => {
@@ -171,30 +178,74 @@ function addMove(pokemon, moveData) {
     }
 }
 
+// Add a blank move
+function addBlankMove(pokemon) {
+    let counter = 1;
+    let newName = `Custom Move ${counter}`;
+    while (pokemon.moves.some(m => m.name === newName)) {
+        counter++;
+        newName = `Custom Move ${counter}`;
+    }
+    
+    const blankMove = {
+        name: newName,
+        type: '',
+        frequency: '',
+        class: '',
+        range: '',
+        ac: '',
+        effect: ''
+    };
+    
+    pokemon.moves.push(blankMove);
+    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    updateMovesDisplay(pokemon);
+}
+
 // Update moves display
 function updateMovesDisplay(pokemon) {
     const movesList = document.getElementById('movesList');
-    movesList.innerHTML = pokemon.moves.map(move => `
-        <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
-            <div class="section-card-header">
-                <div class="section-card-name">${move.name}${move.class ? `<span class="move-class-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
-                <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
-            </div>
-            <div class="section-card-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
-            <div class="section-card-field">
-                <strong>Frequency:</strong> ${move.frequency || 'N/A'}
-                ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
-            </div>
-            <div class="section-card-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
-            <div class="section-card-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
-            ${move.ac ? `<div class="section-card-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
-            ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
-                <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
-                <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
-            </div>` : ''}
-            ${move.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
-        </div>
-    `).join('');
+    movesList.innerHTML = pokemon.moves.map(move => {
+        const isCustom = move.name.startsWith('Custom Move');
+        if (isCustom) {
+            return `
+                <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
+                    <div class="section-card-header">
+                        <input type="text" class="custom-move-name-input" value="${move.name}" placeholder="Move name" style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 4px;" />
+                        <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
+                    </div>
+                    <div class="section-card-field"><strong>Type:</strong> <input type="text" class="custom-move-field-input" data-field="type" value="${move.type || ''}" placeholder="Type" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 150px;" /></div>
+                    <div class="section-card-field"><strong>Frequency:</strong> <input type="text" class="custom-move-field-input" data-field="frequency" value="${move.frequency || ''}" placeholder="e.g., At-Will" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 150px;" /></div>
+                    <div class="section-card-field"><strong>Class:</strong> <input type="text" class="custom-move-field-input" data-field="class" value="${move.class || ''}" placeholder="Physical/Special" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 150px;" /></div>
+                    <div class="section-card-field"><strong>Range:</strong> <input type="text" class="custom-move-field-input" data-field="range" value="${move.range || ''}" placeholder="Melee, 1 Target" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 150px;" /></div>
+                    <div class="section-card-field"><strong>AC:</strong> <input type="text" class="custom-move-field-input" data-field="ac" value="${move.ac || ''}" placeholder="AC" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 100px;" /></div>
+                    <div class="section-card-field"><strong>Effect:</strong> <input type="text" class="custom-move-field-input" data-field="effect" value="${move.effect || ''}" placeholder="Move effect" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 100%;" /></div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
+                    <div class="section-card-header">
+                        <div class="section-card-name">${move.name}${move.class ? `<span class="move-class-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
+                        <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
+                    </div>
+                    <div class="section-card-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
+                    <div class="section-card-field">
+                        <strong>Frequency:</strong> ${move.frequency || 'N/A'}
+                        ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1}, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i+1}"></button>`).join('')}</div></span>` : ''}
+                    </div>
+                    <div class="section-card-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
+                    <div class="section-card-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
+                    ${move.ac ? `<div class="section-card-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
+                    ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
+                        <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
+                        <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
+                    </div>` : ''}
+                    ${move.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
+                </div>
+            `;
+        }
+    }).join('');
 
     // Re-attach remove listeners
     document.querySelectorAll('.remove-move-btn').forEach(btn => {
@@ -202,6 +253,34 @@ function updateMovesDisplay(pokemon) {
             const moveElement = btn.closest('.section-card');
             const moveName = moveElement.getAttribute('data-move-name');
             removeMove(pokemon, moveName);
+        });
+    });
+
+    // Custom move field listeners
+    document.querySelectorAll('.custom-move-name-input').forEach(input => {
+        input.addEventListener('change', function () {
+            const moveCard = this.closest('.section-card');
+            const oldName = moveCard.getAttribute('data-move-name');
+            const move = pokemon.moves.find(m => m.name === oldName);
+            if (move) {
+                move.name = this.value.trim() || oldName;
+                moveCard.setAttribute('data-move-name', move.name);
+                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+                updateMovesDisplay(pokemon);
+            }
+        });
+    });
+
+    document.querySelectorAll('.custom-move-field-input').forEach(input => {
+        input.addEventListener('change', function () {
+            const moveCard = this.closest('.section-card');
+            const moveName = moveCard.getAttribute('data-move-name');
+            const field = this.getAttribute('data-field');
+            const move = pokemon.moves.find(m => m.name === moveName);
+            if (move) {
+                move[field] = this.value.trim();
+                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            }
         });
     });
 
@@ -539,4 +618,4 @@ function filterAllMoves(grid, searchTerm, allMoves) {
         'no-results', 'No moves match your search');
 }
 
-// Setup skills editor
+// Setup skills editor
