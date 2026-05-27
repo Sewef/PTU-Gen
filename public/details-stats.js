@@ -311,9 +311,13 @@ function setupLevelEditor(pokemon) {
             const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
             pokemon.hitPoints = calculateHPValue(newLevel, pokemon.stats.HP, hpFormula);
 
-            // Update HP display
-            const hpDisplay = document.getElementById('hpDisplay');
-            if (hpDisplay) hpDisplay.textContent = pokemon.hitPoints;
+            // Update HP current display
+            const hpCurrentInput = document.getElementById('hpCurrentInput');
+            if (hpCurrentInput) hpCurrentInput.value = pokemon.hitPoints;
+
+            // Update HP max display
+            const hpMaxDisplay = document.getElementById('hpMaxDisplay');
+            if (hpMaxDisplay) hpMaxDisplay.textContent = pokemon.hitPoints;
 
             // Update header level
             const headerLevel = document.getElementById('headerLevel');
@@ -347,8 +351,10 @@ function setupHPFormulaEditor(pokemon) {
         const newHP = calculateHPValue(pokemon.level, pokemon.stats.HP, newFormula);
         if (newHP > 0) {
             pokemon.hitPoints = newHP;
-            const hpDisplay = document.getElementById('hpDisplay');
-            if (hpDisplay) hpDisplay.textContent = newHP;
+            const hpCurrentInput = document.getElementById('hpCurrentInput');
+            if (hpCurrentInput) hpCurrentInput.value = newHP;
+            const hpMaxDisplay = document.getElementById('hpMaxDisplay');
+            if (hpMaxDisplay) hpMaxDisplay.textContent = newHP;
             hpFormulaInput.style.borderColor = '#28a745';
             hpFormulaInput.style.backgroundColor = '#f0fff4';
         } else {
@@ -368,8 +374,10 @@ function setupHPFormulaEditor(pokemon) {
         if (newHP > 0) {
             pokemon.hpFormula = newFormula;
             pokemon.hitPoints = newHP;
-            const hpDisplay = document.getElementById('hpDisplay');
-            if (hpDisplay) hpDisplay.textContent = newHP;
+            const hpCurrentInput = document.getElementById('hpCurrentInput');
+            if (hpCurrentInput) hpCurrentInput.value = newHP;
+            const hpMaxDisplay = document.getElementById('hpMaxDisplay');
+            if (hpMaxDisplay) hpMaxDisplay.textContent = newHP;
             localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
             hpFormulaInput.style.borderColor = '#28a745';
             hpFormulaInput.style.backgroundColor = '#f0fff4';

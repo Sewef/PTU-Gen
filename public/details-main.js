@@ -153,7 +153,11 @@ function loadPokemonDetails() {
                             </div>
                             <div class="level-input-group">
                                 <span class="text-secondary">HP:</span>
-                                <div id="hpDisplay" class="hp-display">${pokemon.hitPoints}</div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="number" id="hpCurrentInput" class="level-number-input" min="0" value="${pokemon.hitPoints}" style="flex: 1;" />
+                                    <span class="text-secondary">/</span>
+                                    <div id="hpMaxDisplay" style="min-width: 50px; text-align: center;">${pokemon.hitPoints}</div>
+                                </div>
                             </div>
                         </div>
                         <div class="margin-top-8">
@@ -577,6 +581,25 @@ function loadPokemonDetails() {
     // Setup HP formula editor
     setupHPFormulaEditor(pokemon);
 
+    // Setup HP current value editor
+    const hpCurrentInput = document.getElementById('hpCurrentInput');
+    const hpMaxDisplay = document.getElementById('hpMaxDisplay');
+    
+    function updateHPMax() {
+        const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
+        const hpMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+        if (hpMaxDisplay) hpMaxDisplay.textContent = hpMax;
+    }
+    
+    updateHPMax();
+    
+    if (hpCurrentInput) {
+        hpCurrentInput.addEventListener('change', function () {
+            pokemon.hitPoints = parseInt(this.value) || 0;
+            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        });
+    }
+
     // Display type effectiveness
     currentPokemon = pokemon;
     displayTypeEffectiveness(pokemon);
@@ -626,9 +649,15 @@ function loadPokemonDetails() {
             const levelPts = parseInt(levelInput?.value) || 0;
             pokemon.stats[statName] = effectiveBase + levelPts;
         });
-        // Re-sync HP display value
+        // Sync current HP from input (don't overwrite with calculated max)
+        const hpCurrentInput = document.getElementById('hpCurrentInput');
+        if (hpCurrentInput) {
+            pokemon.hitPoints = parseInt(hpCurrentInput.value) || 0;
+        }
+        
+        // Calculate and store HP max
         const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
-        pokemon.hitPoints = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+        pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
 
         // Sync skill inputs
         document.querySelectorAll('.skill-input').forEach(input => {
@@ -705,6 +734,7 @@ function loadPokemonDetails() {
         if (exportOwlbearBtn) {
             exportOwlbearBtn.onclick = async (e) => {
                 e.stopPropagation();
+                syncPokemonBeforeExport();
                 exportDropdown.style.display = 'none';
                 const originalText = exportOwlbearBtn.textContent;
                 exportOwlbearBtn.textContent = '⏳ Generating...';

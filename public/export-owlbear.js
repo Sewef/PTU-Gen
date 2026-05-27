@@ -29,12 +29,13 @@ function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
     const uuid = generateTokenUUID();
     const W = OWLBEAR_TOKEN_SIZE;
 
+
     const filled = templateText
         .split('PLACEHOLDER_TOKEN_UUID').join(uuid)
         .split('PLACEHOLDER_TRACKER_UUID_HP').join(generateOwlTrackersUUID())
         .split('PLACEHOLDER_TRACKER_UUID_INJURIES').join(generateOwlTrackersUUID())
         .split('"PLACEHOLDER_HP_VALUE"').join(pokemon.hitPoints)
-        .split('"PLACEHOLDER_HP_MAX"').join(pokemon.hitPoints)
+        .split('"PLACEHOLDER_HP_MAX"').join(pokemon.hitPointsMax)
         .split('PLACEHOLDER_POKEMON_NAME').join(pokemonName.replace(/"/g, '\\"'))
         .split('PLACEHOLDER_IMAGE_URL').join(imageUrl);
 
