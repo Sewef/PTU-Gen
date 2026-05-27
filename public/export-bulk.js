@@ -119,22 +119,10 @@ async function exportBulkOwlbear(pokemons) {
         item.scale.x = scale;
         item.scale.y = scale;
 
-        // Resolve image dimensions
-        await new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = function () {
-                applyTokenDimensions(item, img.width, img.height);
-                resolve();
-            };
-            img.onerror = function () {
-                applyTokenDimensions(item, 475, 475);
-                resolve();
-            };
-            img.src = imageUrl;
-        });
+        // Fixed token dimensions
+        applyTokenDimensions(item, 96, 96);
 
-        currentX += item.image.width;
+        currentX += 96;
 
         mergedShared[uuid] = item;
     }

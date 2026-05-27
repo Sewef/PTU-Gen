@@ -57,20 +57,7 @@ async function exportPokemonOwlbear(pokemon) {
         result.bounds.max.y = pos.y + h / 2;
     }
 
-    await new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = function () {
-            applyDimensions(img.width, img.height);
-            resolve();
-        };
-        img.onerror = function () {
-            // Fallback: standard sprite size
-            applyDimensions(475, 475);
-            resolve();
-        };
-        img.src = imageUrl;
-    });
+    applyDimensions(96, 96);
 
     const jsonStr = JSON.stringify(result, null, 2);
     await navigator.clipboard.writeText(jsonStr);
