@@ -854,15 +854,21 @@ function loadPokemonDetails() {
     };
 
     if (exportBtn && exportDropdown) {
+        // Initialize dropdown display state
+        exportDropdown.style.display = 'none';
+        
         // Toggle dropdown
         exportBtn.onclick = (e) => {
             e.stopPropagation();
-            exportDropdown.style.display = exportDropdown.style.display === 'none' ? 'block' : 'none';
+            const isHidden = getComputedStyle(exportDropdown).display === 'none';
+            exportDropdown.style.display = isHidden ? 'block' : 'none';
         };
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', () => {
-            exportDropdown.style.display = 'none';
+        // Close dropdown when clicking outside button or dropdown
+        document.addEventListener('click', (e) => {
+            if (!exportBtn.contains(e.target) && !exportDropdown.contains(e.target)) {
+                exportDropdown.style.display = 'none';
+            }
         });
 
         // Export JSON
