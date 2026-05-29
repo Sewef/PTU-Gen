@@ -202,7 +202,7 @@ function updateMovesDisplay(pokemon) {
             return `
                 <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
                     <div class="section-card-header">
-                        <div class="section-card-name">${move.name}${move.class ? `<span class="move-class-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
+                        <div class="section-card-name">${move.name}${move.type ? `<span class="move-badge type-${move.type.toLowerCase().replace(' ', '-')}">${move.type}</span>` : ''}${move.class ? `<span class="move-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
                         <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
                     </div>
                     <div class="section-card-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>

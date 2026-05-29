@@ -945,7 +945,7 @@ button {
 .section-card.move.type-fairy { border-left-color: #EE99AC; }
 
 /* Move class indicators */
-.move-class-badge {
+.move-badge {
     display: inline-block;
     padding: 3px 8px;
     border-radius: 3px;
@@ -954,26 +954,23 @@ button {
     text-transform: uppercase;
     margin-left: 10px;
     vertical-align: middle;
+    color: white;
 }
 
 .move-class-physical {
     background-color: #d4a574;
-    color: white;
 }
 
 .move-class-special {
     background-color: #7777dd;
-    color: white;
 }
 
 .move-class-status {
     background-color: #A8A878;
-    color: white;
 }
 
 .move-class-versatile {
     background-color: #b366cc;
-    color: white;
 }
 
 /* Move usage tracker */
