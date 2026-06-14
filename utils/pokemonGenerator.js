@@ -80,6 +80,13 @@ const DATASETS = {
 
 // FanDex definitions
 const FANDEX_DATASETS = {
+  variant: {
+    name: 'Variant',
+    pokedex: 'pokedex/fandex/pokedex_variant.min.json',
+    abilities: 'abilities/fandex/abilities_variant.min.json',
+    moves: 'moves/fandex/moves_variant.min.json',
+    capabilities: 'capabilities/fandex/capabilities_variant.min.json'
+  },
   insurgence: {
     name: 'Insurgence',
     pokedex: 'pokedex/fandex/pokedex_insurgence.min.json',
