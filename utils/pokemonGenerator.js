@@ -82,10 +82,7 @@ const DATASETS = {
 const FANDEX_DATASETS = {
   variant: {
     name: 'Variant',
-    pokedex: 'pokedex/fandex/pokedex_variant.min.json',
-    abilities: 'abilities/fandex/abilities_variant.min.json',
-    moves: 'moves/fandex/moves_variant.min.json',
-    capabilities: 'capabilities/fandex/capabilities_variant.min.json'
+    pokedex: 'pokedex/fandex/pokedex_variant.min.json'
   },
   insurgence: {
     name: 'Insurgence',
@@ -107,6 +104,10 @@ const FANDEX_DATASETS = {
     abilities: 'abilities/fandex/abilities_uranium.min.json',
     moves: 'moves/fandex/moves_uranium.min.json',
     capabilities: 'capabilities/fandex/capabilities_uranium.min.json'
+  },
+  slimerancher: {
+    name: 'Slime Rancher',
+    pokedex: 'pokedex/fandex/pokedex_slimerancher.min.json'
   }
 };
 
@@ -253,25 +254,74 @@ async function loadFandexDataset(fandexKey) {
   const fandex = FANDEX_DATASETS[fandexKey];
   
   try {
-    const promises = [
-      fetchDataFromURL(DATASETS_BASE_URL + fandex.pokedex),
-      fetchDataFromURL(DATASETS_BASE_URL + fandex.abilities),
-      fetchDataFromURL(DATASETS_BASE_URL + fandex.moves)
-    ];
+    const promises = [];
+    const result = {};
 
-    // Some FanDexes might not have capabilities
-    if (fandex.capabilities) {
-      promises.push(fetchDataFromURL(DATASETS_BASE_URL + fandex.capabilities));
+    // Load Pokedex (required)
+    if (fandex.pokedex) {
+      promises.push(
+        fetchDataFromURL(DATASETS_BASE_URL + fandex.pokedex).then(data => {
+          result.pokedex = Array.isArray(data) ? data : Object.values(data);
+          // Normalize Pokemon data: move top-level Habitat/Diet/Capabilities/Skills into Other Information
+          result.pokedex = result.pokedex.map(p => {
+            const normalized = { ...p };
+            const otherInfo = normalized['Other Information'] || {};
+            
+            if (p.Habitat) otherInfo.Habitat = p.Habitat;
+            if (p.Diet) otherInfo.Diet = p.Diet;
+            if (p.Capabilities) normalized.Capabilities = p.Capabilities;
+            if (p.Skills) normalized.Skills = p.Skills;
+            if (p['Size Information']) otherInfo['Size Information'] = p['Size Information'];
+            if (p['Breeding Information']) otherInfo['Breeding Information'] = p['Breeding Information'];
+
+            normalized['Other Information'] = otherInfo;
+            
+            // Clean up top-level keys that are now in Other Information
+            delete normalized.Habitat;
+            delete normalized.Diet;
+            
+            return normalized;
+          });
+        })
+      );
     }
 
-    const [pokedex, abilities, moves, capabilities] = await Promise.all(promises);
+    // Load Abilities (optional)
+    if (fandex.abilities) {
+      promises.push(
+        fetchDataFromURL(DATASETS_BASE_URL + fandex.abilities).then(data => {
+          result.abilities = data;
+        })
+      );
+    } else {
+      result.abilities = {};
+    }
 
-    dataCache[cacheKey] = { 
-      pokedex: Array.isArray(pokedex) ? pokedex : Object.values(pokedex), 
-      abilities, 
-      moves,
-      capabilities: capabilities || {}
-    };
+    // Load Moves (optional)
+    if (fandex.moves) {
+      promises.push(
+        fetchDataFromURL(DATASETS_BASE_URL + fandex.moves).then(data => {
+          result.moves = data;
+        })
+      );
+    } else {
+      result.moves = {};
+    }
+
+    // Load Capabilities (optional)
+    if (fandex.capabilities) {
+      promises.push(
+        fetchDataFromURL(DATASETS_BASE_URL + fandex.capabilities).then(data => {
+          result.capabilities = data;
+        })
+      );
+    } else {
+      result.capabilities = {};
+    }
+
+    await Promise.all(promises);
+
+    dataCache[cacheKey] = result;
     console.log(`✓ ${FANDEX_DATASETS[fandexKey].name} FanDex loaded successfully`);
     return dataCache[cacheKey];
   } catch (error) {
