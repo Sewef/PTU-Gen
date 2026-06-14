@@ -129,7 +129,7 @@ function loadPokemonDetails() {
                         ${pokemon.statVariant ? `<div class="variant-badge-inline">${pokemon.statVariant.selectedVariant}</div>` : ''}
                     </div>
                     <input type="text" id="nicknameInput" placeholder="Nickname" value="${pokemon.nickname || ''}" class="nickname-field" maxlength="20" />
-                    <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level} • ${pokemon.dataset ? pokemon.dataset.charAt(0).toUpperCase() + pokemon.dataset.slice(1) : 'Core'} Dataset</div>
+                    <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level} • ${pokemon.dataset ? pokemon.dataset.charAt(0).toUpperCase() + pokemon.dataset.slice(1) : 'Core'} Dataset • ${pokemon._fandex ? `${pokemon._fandex.charAt(0).toUpperCase() + pokemon._fandex.slice(1)}` : ''}</div>
                 </div>
                 <div class="export-button-wrapper">
                     <button id="exportOwlbearBtn" class="export-btn-main">🐻 Copy Owlbear Token</button>
