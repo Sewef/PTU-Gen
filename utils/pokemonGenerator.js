@@ -82,10 +82,7 @@ const DATASETS = {
 const FANDEX_DATASETS = {
   variant: {
     name: 'Variant',
-    pokedex: 'pokedex/fandex/pokedex_variant.min.json',
-    abilities: 'abilities/fandex/abilities_variant.min.json',
-    moves: 'moves/fandex/moves_variant.min.json',
-    capabilities: 'capabilities/fandex/capabilities_variant.min.json'
+    pokedex: 'pokedex/fandex/pokedex_variant.min.json'
   },
   insurgence: {
     name: 'Insurgence',
@@ -107,6 +104,10 @@ const FANDEX_DATASETS = {
     abilities: 'abilities/fandex/abilities_uranium.min.json',
     moves: 'moves/fandex/moves_uranium.min.json',
     capabilities: 'capabilities/fandex/capabilities_uranium.min.json'
+  },
+  slimerancher: {
+    name: 'Slime Rancher',
+    pokedex: 'pokedex/fandex/pokedex_slimerancher.min.json'
   }
 };
 
@@ -253,18 +254,41 @@ async function loadFandexDataset(fandexKey) {
   const fandex = FANDEX_DATASETS[fandexKey];
   
   try {
-    const promises = [
-      fetchDataFromURL(DATASETS_BASE_URL + fandex.pokedex),
-      fetchDataFromURL(DATASETS_BASE_URL + fandex.abilities),
-      fetchDataFromURL(DATASETS_BASE_URL + fandex.moves)
-    ];
-
-    // Some FanDexes might not have capabilities
+    const promises = [];
+    const promiseIndices = {
+      pokedex: null,
+      abilities: null,
+      moves: null,
+      capabilities: null
+    };
+    
+    // Always fetch pokedex
+    promiseIndices.pokedex = promises.length;
+    promises.push(fetchDataFromURL(DATASETS_BASE_URL + fandex.pokedex));
+    
+    // Fetch abilities only if defined
+    if (fandex.abilities) {
+      promiseIndices.abilities = promises.length;
+      promises.push(fetchDataFromURL(DATASETS_BASE_URL + fandex.abilities));
+    }
+    
+    // Fetch moves only if defined
+    if (fandex.moves) {
+      promiseIndices.moves = promises.length;
+      promises.push(fetchDataFromURL(DATASETS_BASE_URL + fandex.moves));
+    }
+    
+    // Fetch capabilities only if defined
     if (fandex.capabilities) {
+      promiseIndices.capabilities = promises.length;
       promises.push(fetchDataFromURL(DATASETS_BASE_URL + fandex.capabilities));
     }
 
-    const [pokedex, abilities, moves, capabilities] = await Promise.all(promises);
+    const results = await Promise.all(promises);
+    const pokedex = results[promiseIndices.pokedex];
+    const abilities = promiseIndices.abilities !== null ? results[promiseIndices.abilities] : {};
+    const moves = promiseIndices.moves !== null ? results[promiseIndices.moves] : {};
+    const capabilities = promiseIndices.capabilities !== null ? results[promiseIndices.capabilities] : {};
 
     dataCache[cacheKey] = { 
       pokedex: Array.isArray(pokedex) ? pokedex : Object.values(pokedex), 
@@ -297,14 +321,16 @@ async function switchDataset(datasetKey, fandexKeys = []) {
   const fandexSuffix = fandexKeys.length > 0 ? `+${fandexKeys.sort().join(',')}` : '';
   const configKey = `${datasetKey}${fandexSuffix}`;
   
-  // If current config is same, skip
+  // If current config is same AND we have pokemon in database, skip
   if (currentDataset === datasetKey && 
       currentFandexes.length === fandexKeys.length && 
-      currentFandexes.every(f => fandexKeys.includes(f))) {
+      currentFandexes.every(f => fandexKeys.includes(f)) && 
+      pokemonDatabase.length > 0) {
     return;
   }
 
   const baseData = await loadDataset(datasetKey);
+  
   const fandexDataResults = await Promise.all(fandexKeys.map(key => loadFandexDataset(key)));
   
   currentDataset = datasetKey;

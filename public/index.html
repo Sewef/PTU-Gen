@@ -858,7 +858,9 @@
                         addLog(`🌐 Pokémon ${i + 1}/${count}: Sending API request...`);
                         const response = await fetch(`/api/pokemon/generate?${params}`);
                         if (!response.ok) {
-                            throw new Error('Failed to generate');
+                            const errorData = await response.json();
+                            console.error('Server error details:', errorData);
+                            throw new Error(`Failed to generate: ${errorData.error || response.statusText}`);
                         }
 
                         addLog(`✓ Pokémon ${i + 1}/${count}: Received response, processing...`);
@@ -903,7 +905,7 @@
                     <div class="pokemon-card" onclick="openPokemonDetail(${index})">
                         <div class="pokemon-card-header">
                             <img src="${imageUrl}" alt="${pokemon.name}" class="pokemon-card-icon" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Crect fill=%22%23eee%22 width=%2232%22 height=%2232%22/%3E%3C/svg%3E'" />
-                            <div class="pokemon-card-number">#${pokemon.id}</div>
+                            <div class="pokemon-card-number">#${pokemon.id | 0}</div>
                         </div>
                         <div class="pokemon-card-name">${pokemon.name}</div>
                         <div class="pokemon-card-info">
