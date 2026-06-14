@@ -86,6 +86,20 @@ const FANDEX_DATASETS = {
     abilities: 'abilities/fandex/abilities_insurgence.min.json',
     moves: 'moves/fandex/moves_insurgence.min.json',
     capabilities: 'capabilities/fandex/capabilities_insurgence.min.json'
+  },
+  sage: {
+    name: 'Sage',
+    pokedex: 'pokedex/fandex/pokedex_sage.min.json',
+    abilities: 'abilities/fandex/abilities_sage.min.json',
+    moves: 'moves/fandex/moves_sage.min.json',
+    capabilities: 'capabilities/fandex/capabilities_sage.min.json'
+  },
+  uranium: {
+    name: 'Uranium',
+    pokedex: 'pokedex/fandex/pokedex_uranium.min.json',
+    abilities: 'abilities/fandex/abilities_uranium.min.json',
+    moves: 'moves/fandex/moves_uranium.min.json',
+    capabilities: 'capabilities/fandex/capabilities_uranium.min.json'
   }
 };
 
