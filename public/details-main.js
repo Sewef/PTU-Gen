@@ -35,9 +35,12 @@ function loadPokemonDetails() {
     const pageTitle = `${pokemon.name} - Lvl ${pokemon.level} - Pokémon Details`;
     document.getElementById('pageTitle').textContent = pageTitle;
     const iconNumber = pokemon.Icon || pokemon.id;
-
-    // Load and crop favicon to remove transparency padding
-    const faviconUrl = `https://sewef.github.io/ptu/img/pokemon/icons/${iconNumber}.png`;
+    let faviconUrl;
+    if (pokemon._fandex) {
+        faviconUrl = `https://sewef.github.io/ptu/img/pokemon/icons/${pokemon._fandex}/${iconNumber}.png`;
+    } else {
+        faviconUrl = `https://sewef.github.io/ptu/img/pokemon/icons/${iconNumber}.png`;
+    }
     const faviconImg = new Image();
     faviconImg.crossOrigin = 'anonymous';
     faviconImg.onload = function () {
@@ -107,7 +110,12 @@ function loadPokemonDetails() {
     const maxStat = Math.max(...statsEntries.map(([_, v]) => v));
 
     const imageNumber = pokemon.Icon || pokemon.id;
-    const imageUrl = `https://sewef.github.io/ptu/img/pokemon/full/${imageNumber}.png`;
+    let imageUrl;
+    if (pokemon._fandex) {
+        imageUrl = `https://sewef.github.io/ptu/img/pokemon/full/${pokemon._fandex}/${imageNumber}.png`;
+    } else {
+        imageUrl = `https://sewef.github.io/ptu/img/pokemon/full/${imageNumber}.png`;
+    }
 
     let html = `
         <div class="pokemon-header">

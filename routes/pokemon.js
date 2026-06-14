@@ -85,7 +85,8 @@ router.get('/generate', async (req, res) => {
       dataset: (req.query.dataset || 'core').toLowerCase(),
       nature: req.query.nature,
       includelegendaries: req.query.includelegendaries,
-      forceevolution: req.query.forceevolution
+      forceevolution: req.query.forceevolution,
+      fandex: req.query.fandex ? req.query.fandex.split(',') : []
     };
 
     const pokemon = await PokemonGenerator.generatePokemon(options);
@@ -133,11 +134,17 @@ router.get('/generateWild/:level', async (req, res) => {
 
     const level = parseInt(req.params.level);
     const dataset = (req.query.dataset || 'core').toLowerCase();
+    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+
     if (isNaN(level) || level < 1 || level > 100) {
       return res.status(400).json({ error: 'Level must be between 1 and 100' });
     }
 
-    const pokemon = await PokemonGenerator.generateWildPokemon(level, dataset);
+    const pokemon = await PokemonGenerator.generatePokemon({
+      level,
+      dataset,
+      fandex
+    });
     res.json(pokemon);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -215,6 +222,7 @@ router.get('/team', async (req, res) => {
       level: level,
       size: size,
       dataset: (req.query.dataset || 'core').toLowerCase(),
+      fandex: req.query.fandex ? req.query.fandex.split(',') : [],
       includelegendaries: req.query.includelegendaries
     };
 
@@ -238,11 +246,13 @@ router.get('/team', async (req, res) => {
 router.get('/list', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const pokemon = await PokemonGenerator.listAvailablePokemon(dataset);
+    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const pokemon = await PokemonGenerator.listAvailablePokemon(dataset, fandex);
     const speciesNames = pokemon.map(p => p.name);
     res.json({
       count: speciesNames.length,
       dataset: dataset,
+      fandex: fandex,
       species: speciesNames
     });
   } catch (error) {
@@ -267,21 +277,39 @@ router.get('/datasets', (req, res) => {
 });
 
 /**
+ * GET /api/pokemon/fandexes
+ * List all available FanDexes
+ */
+router.get('/fandexes', (req, res) => {
+  try {
+    const fandexes = PokemonGenerator.getAvailableFandexes();
+    res.json({
+      current: PokemonGenerator.getCurrentFandexes(),
+      fandexes: fandexes
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/pokemon/habitats
  * List all available habitats
  */
 router.get('/habitats', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
+    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
     
-    // Trigger dataset switch by calling any method that does it
-    await PokemonGenerator.listAvailablePokemon(dataset);
+    // Trigger dataset switch
+    await PokemonGenerator.listAvailablePokemon(dataset, fandex);
     
     const habitats = PokemonGenerator.getAvailableHabitats();
     res.json({
       habitats: habitats,
       count: habitats.length,
-      dataset: dataset
+      dataset: dataset,
+      fandex: fandex
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -295,15 +323,17 @@ router.get('/habitats', async (req, res) => {
 router.get('/types', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
+    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
     
-    // Trigger dataset switch by calling any method that does it
-    await PokemonGenerator.listAvailablePokemon(dataset);
+    // Trigger dataset switch
+    await PokemonGenerator.listAvailablePokemon(dataset, fandex);
     
     const types = PokemonGenerator.getAvailableTypes();
     res.json({
       types: types,
       count: types.length,
-      dataset: dataset
+      dataset: dataset,
+      fandex: fandex
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -320,9 +350,10 @@ router.get('/habitat/:habitatName', async (req, res) => {
   try {
     const habitat = req.params.habitatName;
     const dataset = (req.query.dataset || 'core').toLowerCase();
+    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
     
     // Trigger dataset switch
-    await PokemonGenerator.listAvailablePokemon(dataset);
+    await PokemonGenerator.listAvailablePokemon(dataset, fandex);
     
     const pokemonList = PokemonGenerator.getPokemonByHabitat(habitat);
     if (pokemonList.length === 0) {
@@ -337,7 +368,8 @@ router.get('/habitat/:habitatName', async (req, res) => {
         types: p['Basic Information']?.Type || []
       })),
       count: pokemonList.length,
-      dataset: dataset
+      dataset: dataset,
+      fandex: fandex
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -371,7 +403,8 @@ router.get('/moves/:species', async (req, res) => {
   try {
     const species = req.params.species;
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const moves = await PokemonGenerator.getAvailableMovesForSpecies(species, dataset);
+    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const moves = await PokemonGenerator.getAvailableMovesForSpecies(species, dataset, fandex);
     res.json(moves);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -389,7 +422,8 @@ router.get('/abilities/:species', async (req, res) => {
   try {
     const species = req.params.species;
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const abilities = await PokemonGenerator.getAvailableAbilitiesForSpecies(species, dataset);
+    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const abilities = await PokemonGenerator.getAvailableAbilitiesForSpecies(species, dataset, fandex);
     res.json(abilities);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -401,12 +435,14 @@ router.get('/abilities/:species', async (req, res) => {
  * Get all moves from the database
  * Query params:
  *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ *   - fandex: string - Comma-separated list of fandex names to apply
  * Returns all moves organized by type
  */
 router.get('/all-moves', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const moves = await PokemonGenerator.getAllMovesFromDatabase(dataset);
+    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const moves = await PokemonGenerator.getAllMovesFromDatabase(dataset, fandex);
     res.json(moves);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -416,11 +452,15 @@ router.get('/all-moves', async (req, res) => {
 /**
  * GET /api/pokemon/all-abilities
  * Get all abilities from the database, organized by category
+ * Query params:
+ *   - dataset: string - 'core' (default), 'community', or 'homebrew'
+ *   - fandex: string - Comma-separated list of fandex names to apply
  */
 router.get('/all-abilities', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const abilities = await PokemonGenerator.getAllAbilitiesFromDatabase(dataset);
+    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const abilities = await PokemonGenerator.getAllAbilitiesFromDatabase(dataset, fandex);
     res.json(abilities);
   } catch (error) {
     res.status(400).json({ error: error.message });

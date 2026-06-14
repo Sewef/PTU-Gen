@@ -78,9 +78,21 @@ const DATASETS = {
   },
 };
 
+// FanDex definitions
+const FANDEX_DATASETS = {
+  insurgence: {
+    name: 'Insurgence',
+    pokedex: 'pokedex/fandex/pokedex_insurgence.min.json',
+    abilities: 'abilities/fandex/abilities_insurgence.min.json',
+    moves: 'moves/fandex/moves_insurgence.min.json',
+    capabilities: 'capabilities/fandex/capabilities_insurgence.min.json'
+  }
+};
+
 // Cache for loaded datasets
 const dataCache = {};
 let currentDataset = 'core';
+let currentFandexes = [];
 let pokemonDatabase = [];
 let abilitiesDatabase = {};
 let movesDatabase = {};
@@ -202,30 +214,135 @@ async function loadDataset(datasetKey) {
 }
 
 /**
- * Switch to a different dataset
+ * Load FanDex dataset from external URLs
  */
-async function switchDataset(datasetKey) {
+async function loadFandexDataset(fandexKey) {
+  if (!FANDEX_DATASETS[fandexKey]) {
+    throw new Error(`Unknown FanDex: ${fandexKey}`);
+  }
+
+  // Check cache
+  const cacheKey = `fandex_${fandexKey}`;
+  if (dataCache[cacheKey]) {
+    return dataCache[cacheKey];
+  }
+
+  console.log(`Loading ${FANDEX_DATASETS[fandexKey].name} FanDex...`);
+
+  const fandex = FANDEX_DATASETS[fandexKey];
+  
+  try {
+    const promises = [
+      fetchDataFromURL(DATASETS_BASE_URL + fandex.pokedex),
+      fetchDataFromURL(DATASETS_BASE_URL + fandex.abilities),
+      fetchDataFromURL(DATASETS_BASE_URL + fandex.moves)
+    ];
+
+    // Some FanDexes might not have capabilities
+    if (fandex.capabilities) {
+      promises.push(fetchDataFromURL(DATASETS_BASE_URL + fandex.capabilities));
+    }
+
+    const [pokedex, abilities, moves, capabilities] = await Promise.all(promises);
+
+    dataCache[cacheKey] = { 
+      pokedex: Array.isArray(pokedex) ? pokedex : Object.values(pokedex), 
+      abilities, 
+      moves,
+      capabilities: capabilities || {}
+    };
+    console.log(`✓ ${FANDEX_DATASETS[fandexKey].name} FanDex loaded successfully`);
+    return dataCache[cacheKey];
+  } catch (error) {
+    console.error(`Failed to load ${FANDEX_DATASETS[fandexKey].name} FanDex:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Switch to a different dataset and optionally apply FanDex overrides
+ */
+async function switchDataset(datasetKey, fandexKeys = []) {
   if (!DATASETS[datasetKey]) {
     throw new Error(`Unknown dataset: ${datasetKey}`);
   }
 
-  const data = await loadDataset(datasetKey);
-  currentDataset = datasetKey;
-  
-  pokemonDatabase = data.pokedex;
-  movesDatabase = data.moves;
+  // Ensure fandexKeys is an array
+  if (!Array.isArray(fandexKeys)) {
+    fandexKeys = typeof fandexKeys === 'string' ? fandexKeys.split(',').filter(Boolean) : [];
+  }
 
-  // Convert abilities array to object indexed by name
-  if (Array.isArray(data.abilities)) {
+  // Check if we already have this configuration loaded
+  const fandexSuffix = fandexKeys.length > 0 ? `+${fandexKeys.sort().join(',')}` : '';
+  const configKey = `${datasetKey}${fandexSuffix}`;
+  
+  // If current config is same, skip
+  if (currentDataset === datasetKey && 
+      currentFandexes.length === fandexKeys.length && 
+      currentFandexes.every(f => fandexKeys.includes(f))) {
+    return;
+  }
+
+  const baseData = await loadDataset(datasetKey);
+  const fandexDataResults = await Promise.all(fandexKeys.map(key => loadFandexDataset(key)));
+  
+  currentDataset = datasetKey;
+  currentFandexes = [...fandexKeys];
+  
+  // Start with base data
+  pokemonDatabase = [...baseData.pokedex];
+  movesDatabase = { ...baseData.moves };
+  
+  // Handle abilities (can be array or object)
+  if (Array.isArray(baseData.abilities)) {
     const abilitiesObj = {};
-    data.abilities.forEach(ability => {
-      if (ability.Name) {
-        abilitiesObj[ability.Name] = ability;
-      }
+    baseData.abilities.forEach(ability => {
+      if (ability.Name) abilitiesObj[ability.Name] = ability;
     });
     abilitiesDatabase = abilitiesObj;
   } else {
-    abilitiesDatabase = data.abilities;
+    abilitiesDatabase = { ...baseData.abilities };
+  }
+
+  // Apply FanDex overrides/additions
+  for (let fandexIndex = 0; fandexIndex < fandexDataResults.length; fandexIndex++) {
+    const fandexData = fandexDataResults[fandexIndex];
+    const fandexKey = fandexKeys[fandexIndex];
+    // Merge Pokedex with de-dup
+    const pokedexMap = new Map();
+    // First, add existing pokemon to map
+    pokemonDatabase.forEach(p => {
+      const key = p.Form 
+        ? `${p.Species.toLowerCase()}|${p.Form.toLowerCase()}`
+        : p.Species.toLowerCase();
+      pokedexMap.set(key, p);
+    });
+    
+    // Then, override with fandex pokemon, tagging with the fandex source
+    fandexData.pokedex.forEach(p => {
+      const key = p.Form 
+        ? `${p.Species.toLowerCase()}|${p.Form.toLowerCase()}`
+        : p.Species.toLowerCase();
+      const fandexInfo = { ...p, _fandex: fandexKey };
+      pokedexMap.set(key, fandexInfo);
+    });
+    pokemonDatabase = Array.from(pokedexMap.values());
+
+    // Merge Moves
+    Object.assign(movesDatabase, fandexData.moves);
+
+    // Merge Abilities
+    if (Array.isArray(fandexData.abilities)) {
+      fandexData.abilities.forEach(ability => {
+        if (ability.Name) abilitiesDatabase[ability.Name] = ability;
+      });
+    } else {
+      Object.assign(abilitiesDatabase, fandexData.abilities);
+    }
+    
+    // Note: Capabilities are currently handled per-pokemon in PTU-Gen, 
+    // but some fandexes might have global capability overrides.
+    // For now, we rely on the pokemon data itself having the correct capabilities.
   }
 
   // Rebuild lookup objects
@@ -236,25 +353,20 @@ async function switchDataset(datasetKey) {
   pokemonDatabase.forEach(pokemon => {
     const speciesLower = pokemon.Species.toLowerCase();
     
-    // Only index base form (without Form field) for species name lookups
-    // This prevents form variants from overwriting the base form
     if (!pokemon.Form) {
       pokemonByName[speciesLower] = pokemon;
     }
     
-    // Always index form variants with full name (e.g., "ratata|alola form")
     if (pokemon.Form) {
       const formKey = `${speciesLower}|${pokemon.Form.toLowerCase()}`;
       pokemonByName[formKey] = pokemon;
     }
   });
 
-  // Build lowercase indexed map for fast case-insensitive lookups
   Object.keys(movesDatabase).forEach(moveName => {
     movesMapLower[moveName.toLowerCase()] = movesDatabase[moveName];
   });
   
-  // Build lowercase indexed map for abilities
   Object.keys(abilitiesDatabase).forEach(abilityName => {
     if (typeof abilityName === 'string') {
       abilitiesMapLower[abilityName.toLowerCase()] = abilitiesDatabase[abilityName];
@@ -401,14 +513,22 @@ class PokemonGenerator {
    * @param {string} options.ignoreBaseRelation - 'IGNORE' (all stats) or comma-separated list (e.g., 'HP,ATK,DEF')
    * @param {string} options.hpFormula - Custom HP formula. Default: 'LEVEL + (HP * 3) + 10'
    * @param {string} options.dataset - Dataset to use: 'core', 'community', 'homebrew'. Default: 'core'
+   * @param {string|string[]} options.fandex - FanDexes to apply as overrides. Comma-separated or array.
    * @param {string} options.nature - Specific nature name to use. If not specified, a random nature is chosen
    * @returns {Object} Generated Pokemon
    */
   static async generatePokemon(options = {}) {
-    // Switch dataset if specified
+    // Switch dataset and apply FanDex if specified
     const dataset = (options.dataset || 'core').toLowerCase();
-    if (dataset !== currentDataset) {
-      await switchDataset(dataset);
+    const fandex = options.fandex || [];
+    
+    // Check if we need to switch dataset or apply different fandexes
+    const fandexArray = Array.isArray(fandex) ? fandex : (typeof fandex === 'string' ? fandex.split(',').filter(Boolean) : []);
+    
+    if (dataset !== currentDataset || 
+        fandexArray.length !== currentFandexes.length || 
+        !fandexArray.every(f => currentFandexes.includes(f))) {
+      await switchDataset(dataset, fandexArray);
     }
     let level;
     
@@ -573,6 +693,9 @@ class PokemonGenerator {
       },
       capabilities: species.Capabilities || [],
       legendary: species.Legendary || false,
+      _fandex: species._fandex,
+      dataset: dataset,
+      fandex: fandexArray,
       learnsets: {
         moveLearns: species.Moves || {},
         abilityLearns: {
@@ -827,11 +950,13 @@ class PokemonGenerator {
    */
   static getMoveDefinition(moveName) {
     if (!moveName) return null;
-    const lowerName = moveName.toLowerCase();
+    // Remove trailing asterisks are just markers, not part of the move name
+    const cleanName = moveName.replace(/\*+$/, '');
+    const lowerName = cleanName.toLowerCase();
     
     // Check custom moves first (exact then lowercase)
-    if (customMoves[moveName]) {
-      return customMoves[moveName];
+    if (customMoves[cleanName]) {
+      return customMoves[cleanName];
     }
     const customLower = Object.keys(customMoves).find(key => key.toLowerCase() === lowerName);
     if (customLower) {
@@ -839,8 +964,8 @@ class PokemonGenerator {
     }
     
     // Try database (exact then lowercase indexed map)
-    if (movesDatabase[moveName]) {
-      return movesDatabase[moveName];
+    if (movesDatabase[cleanName]) {
+      return movesDatabase[cleanName];
     }
     if (movesMapLower[lowerName]) {
       return movesMapLower[lowerName];
@@ -950,14 +1075,15 @@ class PokemonGenerator {
     // Take the most recent moves up to the count, or fill with earlier moves
     for (let i = 0; i < Math.min(count, sortedMoves.length); i++) {
       const move = sortedMoves[i];
-      if (!selected.some(m => m.name === move.Move)) {
+      const cleanMoveName = move.Move.replace(/\*+$/, '');
+      if (!selected.some(m => m.name === cleanMoveName)) {
         const moveDefinition = this.getMoveDefinition(move.Move);
         if (moveDefinition) {
           // Add name property and include move definition with camelCase fields
-          const normalizedMove = this.normalizeMoveFields(moveDefinition, move.Move, pokemonTypes);
+          const normalizedMove = this.normalizeMoveFields(moveDefinition, cleanMoveName, pokemonTypes);
           selected.push(normalizedMove);
         } else {
-          selected.push({ name: move.Move });
+          selected.push({ name: cleanMoveName });
         }
       }
     }
@@ -1336,10 +1462,16 @@ class PokemonGenerator {
   /**
    * List available Pokemon (includes custom Pokemon)
    */
-  static async listAvailablePokemon(dataset = 'core') {
-    if (dataset !== currentDataset) {
-      await switchDataset(dataset);
+  static async listAvailablePokemon(dataset = 'core', fandex = []) {
+    // Switch dataset and apply FanDex if specified
+    const fandexArray = Array.isArray(fandex) ? fandex : (typeof fandex === 'string' ? fandex.split(',').filter(Boolean) : []);
+    
+    if (dataset !== currentDataset || 
+        fandexArray.length !== currentFandexes.length || 
+        !fandexArray.every(f => currentFandexes.includes(f))) {
+      await switchDataset(dataset, fandexArray);
     }
+
     const allPokemon = [...customPokemon, ...pokemonDatabase];
     return allPokemon.map(species => {
       // Include Form in the display name if present
@@ -1375,6 +1507,16 @@ class PokemonGenerator {
   }
 
   /**
+   * Get all available FanDexes
+   */
+  static getAvailableFandexes() {
+    return Object.keys(FANDEX_DATASETS).map(key => ({
+      key: key,
+      name: FANDEX_DATASETS[key].name
+    }));
+  }
+
+  /**
    * Get current dataset
    */
   static getCurrentDataset() {
@@ -1382,20 +1524,31 @@ class PokemonGenerator {
   }
 
   /**
+   * Get current FanDexes
+   */
+  static getCurrentFandexes() {
+    return currentFandexes;
+  }
+
+  /**
    * Switch to a different dataset
    */
-  static async switchDataset(datasetKey) {
-    return switchDataset(datasetKey);
+  static async switchDataset(datasetKey, fandexKeys = []) {
+    return switchDataset(datasetKey, fandexKeys);
   }
 
   /**
    * Get available moves for a Pokemon species
    * Returns moves organized by category (levelUp, tm, tutor)
    */
-  static async getAvailableMovesForSpecies(speciesName, dataset = 'core') {
+  static async getAvailableMovesForSpecies(speciesName, dataset = 'core', fandex = []) {
     try {
-      if (dataset !== currentDataset) {
-        await switchDataset(dataset);
+      const fandexArray = Array.isArray(fandex) ? fandex : (typeof fandex === 'string' ? fandex.split(',').filter(Boolean) : []);
+      
+      if (dataset !== currentDataset || 
+          fandexArray.length !== currentFandexes.length || 
+          !fandexArray.every(f => currentFandexes.includes(f))) {
+        await switchDataset(dataset, fandexArray);
       }
 
       // Use getSpeciesByName to properly handle form variants like "Rattata (Alola)"
@@ -1431,17 +1584,19 @@ class PokemonGenerator {
           // Level Up Moves
           if (Array.isArray(movesData['Level Up Move List'])) {
             result.levelUp = movesData['Level Up Move List'].map(move => {
+              const cleanMoveName = move.Move.replace(/\*+$/, '');
               const hasStab = pokemonTypes.some(type => type.toLowerCase() === move.Type?.toLowerCase());
+              const moveDef = this.getMoveDefinition(cleanMoveName);
               return {
-                name: move.Move,
-                type: move.Type,
+                name: cleanMoveName,
+                type: moveDef?.['Type'] || move.Type,
                 level: move.Level,
-                frequency: movesDatabase[move.Move]?.['Frequency'] || 'N/A',
-                class: movesDatabase[move.Move]?.['Class'] || 'N/A',
-                range: movesDatabase[move.Move]?.['Range'] || 'N/A',
-                damageBase: convertDamageBase(movesDatabase[move.Move]?.['Damage Base'], hasStab),
-                ac: movesDatabase[move.Move]?.['Accuracy'],
-                effect: movesDatabase[move.Move]?.['Effect']
+                frequency: moveDef?.['Frequency'] || 'N/A',
+                class: moveDef?.['Class'] || 'N/A',
+                range: moveDef?.['Range'] || 'N/A',
+                damageBase: moveDef ? convertDamageBase(moveDef['Damage Base'], hasStab) : null,
+                ac: moveDef?.['AC'] || moveDef?.['Accuracy'],
+                effect: moveDef?.['Effect']
               };
             });
           }
@@ -1449,16 +1604,18 @@ class PokemonGenerator {
           // TM/HM Moves
           if (Array.isArray(movesData['TM/HM Move List'])) {
             result.tm = movesData['TM/HM Move List'].map(move => {
+              const cleanMoveName = move.Move.replace(/\*+$/, '');
               const hasStab = pokemonTypes.some(type => type.toLowerCase() === move.Type?.toLowerCase());
+              const moveDef = this.getMoveDefinition(cleanMoveName);
               return {
-                name: move.Move,
-                type: move.Type,
-                frequency: movesDatabase[move.Move]?.['Frequency'] || 'N/A',
-                class: movesDatabase[move.Move]?.['Class'] || 'N/A',
-                range: movesDatabase[move.Move]?.['Range'] || 'N/A',
-                damageBase: convertDamageBase(movesDatabase[move.Move]?.['Damage Base'], hasStab),
-                ac: movesDatabase[move.Move]?.['Accuracy'],
-                effect: movesDatabase[move.Move]?.['Effect']
+                name: cleanMoveName,
+                type: moveDef?.['Type'] || move.Type,
+                frequency: moveDef?.['Frequency'] || 'N/A',
+                class: moveDef?.['Class'] || 'N/A',
+                range: moveDef?.['Range'] || 'N/A',
+                damageBase: moveDef ? convertDamageBase(moveDef['Damage Base'], hasStab) : null,
+                ac: moveDef?.['AC'] || moveDef?.['Accuracy'],
+                effect: moveDef?.['Effect']
               };
             });
           }
@@ -1466,16 +1623,18 @@ class PokemonGenerator {
           // Tutor Moves
           if (Array.isArray(movesData['Tutor Move List'])) {
             result.tutor = movesData['Tutor Move List'].map(move => {
+              const cleanMoveName = move.Move.replace(/\*+$/, '');
               const hasStab = pokemonTypes.some(type => type.toLowerCase() === move.Type?.toLowerCase());
+              const moveDef = this.getMoveDefinition(cleanMoveName);
               return {
-                name: move.Move,
-                type: move.Type,
-                frequency: movesDatabase[move.Move]?.['Frequency'] || 'N/A',
-                class: movesDatabase[move.Move]?.['Class'] || 'N/A',
-                range: movesDatabase[move.Move]?.['Range'] || 'N/A',
-                damageBase: convertDamageBase(movesDatabase[move.Move]?.['Damage Base'], hasStab),
-                ac: movesDatabase[move.Move]?.['Accuracy'],
-                effect: movesDatabase[move.Move]?.['Effect']
+                name: cleanMoveName,
+                type: moveDef?.['Type'] || move.Type,
+                frequency: moveDef?.['Frequency'] || 'N/A',
+                class: moveDef?.['Class'] || 'N/A',
+                range: moveDef?.['Range'] || 'N/A',
+                damageBase: moveDef ? convertDamageBase(moveDef['Damage Base'], hasStab) : null,
+                ac: moveDef?.['AC'] || moveDef?.['Accuracy'],
+                effect: moveDef?.['Effect']
               };
             });
           }
@@ -1496,10 +1655,14 @@ class PokemonGenerator {
    * Get available abilities for a Pokemon species
    * Returns abilities organized by category (basic, advanced, high)
    */
-  static async getAvailableAbilitiesForSpecies(speciesName, dataset = 'core') {
+  static async getAvailableAbilitiesForSpecies(speciesName, dataset = 'core', fandex = []) {
     try {
-      if (dataset !== currentDataset) {
-        await switchDataset(dataset);
+      const fandexArray = Array.isArray(fandex) ? fandex : (typeof fandex === 'string' ? fandex.split(',').filter(Boolean) : []);
+      
+      if (dataset !== currentDataset || 
+          fandexArray.length !== currentFandexes.length || 
+          !fandexArray.every(f => currentFandexes.includes(f))) {
+        await switchDataset(dataset, fandexArray);
       }
 
       // Use getSpeciesByName to properly handle form variants like "Rattata (Alola)"
@@ -1599,11 +1762,21 @@ class PokemonGenerator {
     }
   }
 
-  static async getAllMovesFromDatabase(dataset = 'core') {
+  static async getAllMovesFromDatabase(dataset = 'core', fandex = []) {
     try {
       // Load moves database
       const movesUrl = DATASETS_BASE_URL + DATASETS[dataset].moves;
-      const movesDatabase = await fetchDataFromURL(movesUrl);
+      let movesDatabase = await fetchDataFromURL(movesUrl);
+      
+      // Load and merge fandex moves
+      const fandexArray = Array.isArray(fandex) ? fandex : (typeof fandex === 'string' ? fandex.split(',').filter(Boolean) : []);
+      for (const fandexKey of fandexArray) {
+        if (FANDEX_DATASETS[fandexKey]) {
+          const fandexMovesUrl = DATASETS_BASE_URL + FANDEX_DATASETS[fandexKey].moves;
+          const fandexMoves = await fetchDataFromURL(fandexMovesUrl);
+          movesDatabase = { ...movesDatabase, ...fandexMoves };
+        }
+      }
 
       // Organize all moves by type
       const result = {
@@ -1633,11 +1806,57 @@ class PokemonGenerator {
     }
   }
 
-  static async getAllAbilitiesFromDatabase(dataset = 'core') {
+  static async getAllAbilitiesFromDatabase(dataset = 'core', fandex = []) {
     try {
       // Load abilities database
       const abilitiesUrl = DATASETS_BASE_URL + DATASETS[dataset].abilities;
-      const abilitiesData = await fetchDataFromURL(abilitiesUrl);
+      let abilitiesData = await fetchDataFromURL(abilitiesUrl);
+      
+      // Load and merge fandex abilities
+      const fandexArray = Array.isArray(fandex) ? fandex : (typeof fandex === 'string' ? fandex.split(',').filter(Boolean) : []);
+      for (const fandexKey of fandexArray) {
+        if (FANDEX_DATASETS[fandexKey]) {
+          const fandexAbilitiesUrl = DATASETS_BASE_URL + FANDEX_DATASETS[fandexKey].abilities;
+          let fandexAbilities = await fetchDataFromURL(fandexAbilitiesUrl);
+          
+          // Handle both object and array formats for fandex abilities
+          if (Array.isArray(fandexAbilities)) {
+            // Convert array to object to merge
+            const fandexAbilitiesObj = {};
+            fandexAbilities.forEach(ability => {
+              if (ability.Name) {
+                fandexAbilitiesObj[ability.Name] = ability;
+              }
+            });
+            if (Array.isArray(abilitiesData)) {
+              // Base is array, merge both arrays
+              const existingNames = new Set(abilitiesData.map(a => a.Name));
+              abilitiesData = [
+                ...abilitiesData, 
+                ...Object.values(fandexAbilitiesObj).filter(a => !existingNames.has(a.Name))
+              ];
+            } else {
+              // Base is object, merge with fandex object
+              abilitiesData = { ...abilitiesData, ...fandexAbilitiesObj };
+            }
+          } else {
+            // Fandex is object, merge
+            if (Array.isArray(abilitiesData)) {
+              // Base is array, convert to object first, merge, then convert back
+              const baseObj = {};
+              abilitiesData.forEach(ability => {
+                if (ability.Name) {
+                  baseObj[ability.Name] = ability;
+                }
+              });
+              const mergedObj = { ...baseObj, ...fandexAbilities };
+              abilitiesData = Object.values(mergedObj);
+            } else {
+              abilitiesData = { ...abilitiesData, ...fandexAbilities };
+            }
+          }
+        }
+      }
 
       // Handle two different formats: array or object
       let abilitiesList = [];

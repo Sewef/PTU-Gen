@@ -293,7 +293,7 @@ async function showAddMoveModal(pokemon) {
             if (showingAllMoves) {
                 // Load all moves from database
                 if (!allMovesData) {
-                    allMovesData = await getAllMovesFromDatabase();
+                    allMovesData = await getAllMovesFromDatabase(pokemon.dataset || 'core', pokemon.fandex || []);
                 }
                 displayAllMovesInGrid(moveGrid, allMovesData, pokemon);
                 toggleBtn.textContent = 'Show Available Moves';
@@ -329,7 +329,11 @@ async function showAddMoveModal(pokemon) {
 async function getAvailableMovesForPokemon(pokemon) {
     try {
         const dataset = pokemon.dataset || 'core';
-        const response = await fetch(`/api/pokemon/moves/${encodeURIComponent(pokemon.name)}?dataset=${dataset}`);
+        const fandex = pokemon.fandex ? pokemon.fandex.join(',') : '';
+        let url = `/api/pokemon/moves/${encodeURIComponent(pokemon.name)}?dataset=${dataset}`;
+        if (fandex) url += `&fandex=${encodeURIComponent(fandex)}`;
+        
+        const response = await fetch(url);
         if (!response.ok) {
             console.error('Failed to fetch moves:', response.statusText);
             return { levelUp: [], tm: [], tutor: [] };
@@ -342,9 +346,12 @@ async function getAvailableMovesForPokemon(pokemon) {
 }
 
 // Get all moves from database
-async function getAllMovesFromDatabase() {
+async function getAllMovesFromDatabase(dataset = 'core', fandex = []) {
     try {
-        const response = await fetch('/api/pokemon/all-moves');
+        let url = `/api/pokemon/all-moves?dataset=${dataset}`;
+        if (fandex.length > 0) url += `&fandex=${encodeURIComponent(fandex.join(','))}`;
+        
+        const response = await fetch(url);
         if (!response.ok) {
             console.error('Failed to fetch all moves:', response.statusText);
             return { all: [] };

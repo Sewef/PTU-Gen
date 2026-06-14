@@ -42,6 +42,17 @@
                         </select>
                     </div>
 
+                    <!-- FanDex -->
+                    <div class="form-group" id="fandexContainer" style="display: none;">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
+                            FanDex Overrides
+                            <span class="help-icon" title="Add and override data with selected FanDexes.">ℹ️</span>
+                        </label>
+                        <div id="fandexCheckboxes" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-main);">
+                            <!-- Will be populated via JS -->
+                        </div>
+                    </div>
+
                     <!-- Count -->
                     <div class="form-group">
                         <label style="font-size: 0.85em;">Pokémon Count</label>
@@ -356,11 +367,52 @@
         const suggestionsList = document.getElementById('speciesSuggestions');
         const habitatSuggestionsList = document.getElementById('habitatSuggestions');
         const datasetSelect = document.getElementById('dataset');
+        const fandexContainer = document.getElementById('fandexContainer');
+        const fandexCheckboxes = document.getElementById('fandexCheckboxes');
+
+        // Load FanDex list
+        async function loadFandexList() {
+            try {
+                const response = await fetch('/api/pokemon/fandexes');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.fandexes && data.fandexes.length > 0) {
+                        fandexContainer.style.display = 'block';
+                        fandexCheckboxes.innerHTML = data.fandexes.map(f => `
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" class="fandex-checkbox" value="${f.key}" style="width: auto;">
+                                <span style="font-size: 0.85em;">${f.name}</span>
+                            </label>
+                        `).join('');
+                        
+                        // Add event listeners to checkboxes
+                        document.querySelectorAll('.fandex-checkbox').forEach(cb => {
+                            cb.addEventListener('change', () => {
+                                const dataset = datasetSelect.value;
+                                loadPokemonList(dataset);
+                                loadHabitatList(dataset);
+                                loadTypeList(dataset);
+                            });
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load FanDex list:', error);
+            }
+        }
+
+        // Helper to get selected fandexes
+        function getSelectedFandexes() {
+            return Array.from(document.querySelectorAll('.fandex-checkbox:checked'))
+                .map(cb => cb.value)
+                .join(',');
+        }
 
         // Load Pokémon list for a specific dataset
         async function loadPokemonList(dataset = 'core') {
             try {
-                const response = await fetch(`/api/pokemon/list?dataset=${dataset}`);
+                const fandex = getSelectedFandexes();
+                const response = await fetch(`/api/pokemon/list?dataset=${dataset}&fandex=${fandex}`);
                 if (response.ok) {
                     const data = await response.json();
                     allPokemon = data.species.map(name => ({
@@ -388,7 +440,8 @@
         // Load Habitats for a specific dataset
         async function loadHabitatList(dataset = 'core') {
             try {
-                const response = await fetch(`/api/pokemon/habitats?dataset=${dataset}`);
+                const fandex = getSelectedFandexes();
+                const response = await fetch(`/api/pokemon/habitats?dataset=${dataset}&fandex=${fandex}`);
                 if (response.ok) {
                     const data = await response.json();
                     allHabitats = data.habitats.map(name => ({
@@ -415,7 +468,8 @@
         // Load Types for a specific dataset
         async function loadTypeList(dataset = 'core') {
             try {
-                const response = await fetch(`/api/pokemon/types?dataset=${dataset}`);
+                const fandex = getSelectedFandexes();
+                const response = await fetch(`/api/pokemon/types?dataset=${dataset}&fandex=${fandex}`);
                 if (response.ok) {
                     const data = await response.json();
                     const allTypes = data.types;
@@ -776,6 +830,11 @@
                         params.append('distribution', document.getElementById('distribution').value);
                         params.append('dataset', document.getElementById('dataset').value);
 
+                        const fandex = getSelectedFandexes();
+                        if (fandex) {
+                            params.append('fandex', fandex);
+                        }
+
                         if (document.getElementById('includeLegendaries').checked) {
                             params.append('includeLegendaries', 'true');
                         }
@@ -833,7 +892,12 @@
                 ).join('');
 
                 const imageNumber = pokemon.Icon || pokemon.id;
-                const imageUrl = `https://sewef.github.io/ptu/img/pokemon/icons/${imageNumber}.png`;
+                let imageUrl;
+                if (pokemon._fandex) {
+                    imageUrl = `https://sewef.github.io/ptu/img/pokemon/icons/${pokemon._fandex}/${imageNumber}.png`;
+                } else {
+                    imageUrl = `https://sewef.github.io/ptu/img/pokemon/icons/${imageNumber}.png`;
+                }
 
                 html += `
                     <div class="pokemon-card" onclick="openPokemonDetail(${index})">
@@ -1222,6 +1286,7 @@
             loadHabitatList();
             loadTypeList();
             loadNatures();
+            loadFandexList();
             // Optional: auto-generate
             // generatePokemon();
         });
