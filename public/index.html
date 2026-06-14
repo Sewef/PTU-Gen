@@ -31,7 +31,7 @@
                 <form id="generatorForm" autocomplete="off">
                     <!-- Dataset -->
                     <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 6px;">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
                             Dataset
                             <span class="help-icon" title="Core: Base manual + official Pokédex&#10;Community: Same + Gen 9 community Pokédex + modifications&#10;Homebrew: Auto-updated Pokédex + unchanged Gen 9 community Pokédex">ℹ️</span>
                         </label>
@@ -42,150 +42,122 @@
                         </select>
                     </div>
 
-                    <!-- Number of Pokémons -->
+                    <!-- Count -->
                     <div class="form-group">
-                        <label>Generate Multiple Pokémons</label>
-                        <div class="form-row">
-                            <div>
-                                <label style="font-size: 0.85em; margin-bottom: 3px;">Specific Count</label>
-                                <input type="number" id="pokemonCount" min="1" max="50" value="1" autocomplete="off">
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85em; margin-bottom: 3px;">Random Range</label>
-                                <input type="checkbox" id="useCountRange" style="width: auto; margin-top: 10px;">
-                                <span style="font-size: 0.85em; margin-left: 5px;">Range?</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-row" id="countRangeInputs" style="display: none;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Min Count</label>
-                            <input type="number" id="minPokemonCount" min="1" max="50" value="1" autocomplete="off">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Max Count</label>
-                            <input type="number" id="maxPokemonCount" min="1" max="50" value="6" autocomplete="off">
+                        <label style="font-size: 0.85em;">Pokémon Count</label>
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="countMode" id="countModeFixed" value="fixed" checked style="width: auto;">
+                                <span style="font-size: 0.85em;">Fixed:</span>
+                                <input type="number" id="pokemonCount" min="1" max="50" value="1" autocomplete="off" style="width: 70px;">
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="countMode" id="countModeRange" value="range" style="width: auto;">
+                                <span style="font-size: 0.85em;">Range:</span>
+                                <input type="number" id="minPokemonCount" min="1" max="50" value="1" autocomplete="off" style="width: 60px; opacity: 0.5;" disabled>
+                                <span style="font-size: 0.85em;">to</span>
+                                <input type="number" id="maxPokemonCount" min="1" max="50" value="6" autocomplete="off" style="width: 60px; opacity: 0.5;" disabled>
+                            </label>
                         </div>
                     </div>
 
                     <!-- Level -->
                     <div class="form-group">
-                        <label>Level</label>
-                        <div class="form-row">
-                            <div>
-                                <label style="font-size: 0.85em; margin-bottom: 3px;">Specific Level</label>
-                                <input type="number" id="level" min="1" max="100" value="50"
-                                    placeholder="or leave empty" autocomplete="off">
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85em; margin-bottom: 3px;">Random Range</label>
-                                <input type="checkbox" id="useRange" style="width: auto; margin-top: 10px;">
-                                <span style="font-size: 0.85em; margin-left: 5px;">Range?</span>
-                            </div>
+                        <label style="font-size: 0.85em;">Level</label>
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="levelMode" id="levelModeFixed" value="fixed" checked style="width: auto;">
+                                <span style="font-size: 0.85em;">Fixed:</span>
+                                <input type="number" id="level" min="1" max="100" value="50" autocomplete="off" style="width: 70px;">
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="levelMode" id="levelModeRange" value="range" style="width: auto;">
+                                <span style="font-size: 0.85em;">Range:</span>
+                                <input type="number" id="minLevel" min="1" max="100" value="30" autocomplete="off" style="width: 60px; opacity: 0.5;" disabled>
+                                <span style="font-size: 0.85em;">to</span>
+                                <input type="number" id="maxLevel" min="1" max="100" value="70" autocomplete="off" style="width: 60px; opacity: 0.5;" disabled>
+                            </label>
                         </div>
                     </div>
 
-                    <div class="form-row" id="rangeInputs" style="display: none;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Min Level</label>
-                            <input type="number" id="minLevel" min="1" max="100" value="30" autocomplete="off">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Max Level</label>
-                            <input type="number" id="maxLevel" min="1" max="100" value="70" autocomplete="off">
-                        </div>
-                    </div>
-
-                    <!-- Species -->
+                    <!-- Species & Random Form -->
                     <div class="form-group form-group-autocomplete">
-                        <label>Species (Pokémon)</label>
-                        <input type="text" id="species" placeholder="ex: Pikachu, Charizard, Dragonite..." value=""
-                            autocomplete="off">
+                        <label style="font-size: 0.85em;">Species (Pokémon)</label>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="species" placeholder="ex: Pikachu, Charizard..." value=""
+                                autocomplete="off" style="flex: 1; min-width: 200px;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;" title="Randomly select form variants (e.g., Rotom forms)">
+                                <input type="checkbox" id="randomForm" style="width: auto;">
+                                <span style="font-size: 0.85em;">Random Form Variant</span>
+                            </label>
+                        </div>
                         <div class="autocomplete-suggestions" id="speciesSuggestions"></div>
                     </div>
 
-                    <!-- Form Variant -->
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="randomForm" style="width: auto;">
-                            <span>Random Form Variant</span>
-                        </label>
-                        <small class="small-block-text">When enabled, if the species has form variants (like Rotom), randomly select one. Leave unchecked to always use the selected form.</small>
+                    <!-- Habitat & Type -->
+                    <div class="form-row">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 0.85em;">Habitat</label>
+                            <select id="habitat">
+                                <option value="">Random</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 0.85em;">Type</label>
+                            <select id="type">
+                                <option value="">Random</option>
+                            </select>
+                        </div>
                     </div>
-
-                    <!-- Habitat -->
-                    <div class="form-group">
-                        <label>Habitat (Optional)</label>
-                        <select id="habitat">
-                            <option value="">Random Habitat</option>
-                        </select>
-                                                        <small class="small-block-text">Leave empty for any habitat. Overridden if species is specified.</small>
-                    </div>
-
-                    <!-- Type -->
-                    <div class="form-group">
-                        <label>Type (Optional)</label>
-                        <select id="type">
-                            <option value="">Random Type</option>
-                        </select>
-                        <small class="small-block-text">Leave empty for any type. Overridden if species is specified.</small>
-                    </div>
+                    <small class="small-block-text">No effect if species is specified</small>
 
                     <!-- Shiny -->
                     <div class="form-group">
-                        <div style="display: flex; gap: 20px; align-items: center;">
-                            <label style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                                <input type="checkbox" id="shiny" style="width: auto;">
-                                <span>Force Shiny</span>
+                        <label style="font-size: 0.85em;">Shiny</label>
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="shinyMode" id="shinyModeForce" value="force" style="width: auto;">
+                                <span style="font-size: 0.85em;">Force</span>
                             </label>
-                            <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
-                                <label style="min-width: 100px;">Shiny Odds (%):</label>
-                                <input type="number" id="shinyOdds" min="0" max="100" value="1" step="0.1"
-                                    autocomplete="off" style="flex: 1; max-width: 100px;">
-                            </div>
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="shinyMode" id="shinyModeOdds" value="odds" checked style="width: auto;">
+                                <span style="font-size: 0.85em;">Odds (%):</span>
+                                <input type="number" id="shinyOdds" min="0" max="100" value="1" step="0.1" autocomplete="off" style="width: 70px;">
+                            </label>
                         </div>
-                        <small class="small-block-text">Check to always generate shiny.
-                            Uncheck to use Shiny Odds percentage (1% = 1 in 100).</small>
                     </div>
 
-                    <!-- Exclude Legendary -->
+                    <!-- Options -->
                     <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 8px;">
+                        <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
                             <input type="checkbox" id="includeLegendaries" style="width: auto;">
-                            <span>Include Legendary Pokémon</span>
+                            <span style="font-size: 0.85em;">Include Legendary</span>
                         </label>
-                        <small class="small-block-text">Allow legendary species in generation (disabled by default).</small>
-                    </div>
-
-                    <!-- Force Evolution -->
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="forceEvolution" style="width: auto;">
-                            <span>Force Evolution</span>
-                        </label>
-                        <small class="small-block-text">Automatically evolve Pokémon based on level and evolution conditions.</small>
-                    </div>
-
-                    <!-- Distribution -->
-                    <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 6px;">
-                            Stat Distribution
-                            <span class="help-icon" title="Random: Completely unpredictable distribution&#10;Balanced: Equal distribution across all stats&#10;Minmaxed: Specializes - high stats get higher, low stats get lower">ℹ️</span>
+                            <input type="checkbox" id="forceEvolution" style="width: auto;">
+                            <span style="font-size: 0.85em;">Force Evolution (based on level)</span>
                         </label>
-                        <select id="distribution">
-                            <option value="RANDOM">Random (RANDOM)</option>
-                            <option value="BALANCED">Balanced (BALANCED)</option>
-                            <option value="MINMAXED">Extremes (MINMAXED)</option>
-                        </select>
                     </div>
 
-                    <!-- Nature -->
-                    <div class="form-group">
-                        <label>Nature</label>
-                        <select id="nature">
-                            <option value="">Random Nature</option>
-                        </select>
+                    <!-- Distribution & Nature -->
+                    <div class="form-row">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
+                                Stat Distribution
+                                <span class="help-icon" title="Random: Completely unpredictable distribution&#10;Balanced: Equal distribution across all stats&#10;Minmaxed: Specializes - high stats get higher, low stats get lower">ℹ️</span>
+                            </label>
+                            <select id="distribution">
+                                <option value="RANDOM">Random</option>
+                                <option value="BALANCED">Balanced</option>
+                                <option value="MINMAXED">Extremes</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 0.85em;">Nature</label>
+                            <select id="nature">
+                                <option value="">Random Nature</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Advanced Section -->
@@ -198,18 +170,17 @@
                         <div class="advanced-content">
                             <!-- Ignore Base Relation -->
                             <div class="form-group">
-                                <label>Ignore Base Relation</label>
+                                <label style="font-size: 0.85em;">Ignore Base Relation</label>
                                 <input type="text" id="ignoreBaseRelation" placeholder="ex: IGNORE or HP,ATK,DEF"
                                     autocomplete="off">
                             </div>
 
                             <!-- HP Formula -->
                             <div class="form-group">
-                                <label>Hit Points Formula</label>
+                                <label style="font-size: 0.85em;">Hit Points Formula</label>
                                 <input type="text" id="hpFormula" placeholder="ex: LEVEL + (HP * 3) + 10"
                                     value="LEVEL + (HP * 3) + 10" autocomplete="off">
-                                <small class="small-block-text">Use LEVEL and HP as
-                                    placeholders</small>
+                                <small class="small-block-text">Use LEVEL and HP placeholders</small>
                             </div>
                         </div>
                     </div>
@@ -222,89 +193,51 @@
 
                     <div class="advanced-section" id="customizationSection">
                         <div class="advanced-content">
-                            <p class="text-secondary" style="font-size: 0.9em; margin-bottom: 15px;">Load custom Pokémon, Abilities, or Moves from JSON files or URLs. Custom data will override the selected dataset.</p>
+                            <p class="text-secondary" style="font-size: 0.8em; margin-bottom: 8px;">Load custom Pokémon, Abilities, or Moves from JSON/URLs.</p>
                             
                             <!-- Custom Pokémon -->
                             <div class="form-group">
-                                <label style="display: flex; align-items: center; gap: 6px;">
+                                <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
                                     Custom Pokémon
                                     <span class="help-icon" title="Load custom Pokémon definitions. Duplicates will be overwritten.">ℹ️</span>
                                 </label>
-                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <div style="display: flex; gap: 6px; margin-bottom: 4px;">
                                     <input type="text" id="customPokemonInput" placeholder="Paste JSON or URL" autocomplete="off" style="flex: 1;">
-                                    <button type="button" onclick="loadCustomData('pokemon')" style="
-                                        padding: 8px 16px;
-                                        background: var(--primary-color);
-                                        color: white;
-                                        border: none;
-                                        border-radius: 4px;
-                                        cursor: pointer;
-                                        font-weight: 600;
-                                        transition: all 0.2s ease;
-                                    " onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary-color)'">Load</button>
+                                    <button type="button" onclick="loadCustomData('pokemon')" style="padding: 6px 10px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;" onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary-color)'">Load</button>
                                 </div>
                                 <div id="customPokemonStatus" class="custom-status-text"></div>
                             </div>
 
                             <!-- Custom Abilities -->
                             <div class="form-group">
-                                <label style="display: flex; align-items: center; gap: 6px;">
+                                <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
                                     Custom Abilities
                                     <span class="help-icon" title="Load custom Ability definitions. Duplicates will be overwritten.">ℹ️</span>
                                 </label>
-                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <div style="display: flex; gap: 6px; margin-bottom: 4px;">
                                     <input type="text" id="customAbilitiesInput" placeholder="Paste JSON or URL" autocomplete="off" style="flex: 1;">
-                                    <button type="button" onclick="loadCustomData('abilities')" style="
-                                        padding: 8px 16px;
-                                        background: var(--primary-color);
-                                        color: white;
-                                        border: none;
-                                        border-radius: 4px;
-                                        cursor: pointer;
-                                        font-weight: 600;
-                                        transition: all 0.2s ease;
-                                    " onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary-color)'">Load</button>
+                                    <button type="button" onclick="loadCustomData('abilities')" style="padding: 6px 10px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;" onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary-color)'">Load</button>
                                 </div>
                                 <div id="customAbilitiesStatus" class="custom-status-text"></div>
                             </div>
 
                             <!-- Custom Moves -->
                             <div class="form-group">
-                                <label style="display: flex; align-items: center; gap: 6px;">
+                                <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
                                     Custom Moves
                                     <span class="help-icon" title="Load custom Move definitions. Duplicates will be overwritten.">ℹ️</span>
                                 </label>
-                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <div style="display: flex; gap: 6px; margin-bottom: 4px;">
                                     <input type="text" id="customMovesInput" placeholder="Paste JSON or URL" autocomplete="off" style="flex: 1;">
-                                    <button type="button" onclick="loadCustomData('moves')" style="
-                                        padding: 8px 16px;
-                                        background: var(--primary-color);
-                                        color: white;
-                                        border: none;
-                                        border-radius: 4px;
-                                        cursor: pointer;
-                                        font-weight: 600;
-                                        transition: all 0.2s ease;
-                                    " onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary-color)'">Load</button>
+                                    <button type="button" onclick="loadCustomData('moves')" style="padding: 6px 10px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;" onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary-color)'">Load</button>
                                 </div>
                                 <div id="customMovesStatus" class="custom-status-text"></div>
                             </div>
 
                             <!-- Custom Data Status -->
-                            <div class="info-box">
-                                <button type="button" onclick="checkCustomStatus()" style="
-                                    width: 100%;
-                                    padding: 8px 12px;
-                                    background: #28a745;
-                                    color: white;
-                                    border: none;
-                                    border-radius: 4px;
-                                    cursor: pointer;
-                                    font-weight: 600;
-                                    margin-bottom: 8px;
-                                    transition: all 0.2s ease;
-                                " onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">Check Status</button>
-                                <div id="customStatusDisplay" class="small-text" style="color: var(--text-primary); white-space: pre-wrap; word-wrap: break-word; margin-top: 10px;"></div>
+                            <div class="info-box" style="padding: 8px;">
+                                <button type="button" onclick="checkCustomStatus()" style="width: 100%; padding: 6px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; margin-bottom: 6px;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">Check Status</button>
+                                <div id="customStatusDisplay" class="small-text" style="color: var(--text-primary); white-space: pre-wrap; word-wrap: break-word; margin-top: 6px;"></div>
                             </div>
                         </div>
                     </div>
@@ -417,9 +350,6 @@
         let selectedSuggestionIndex = -1;
 
         const form = document.getElementById('generatorForm');
-        const useRangeCheckbox = document.getElementById('useRange');
-        const rangeInputs = document.getElementById('rangeInputs');
-        const levelInput = document.getElementById('level');
         const pokemonDisplay = document.getElementById('pokemonDisplay');
         const speciesInput = document.getElementById('species');
         const habitatInput = document.getElementById('habitat');
@@ -693,33 +623,80 @@
             input.setAttribute('autocomplete', 'off');
         });
 
-        // Toggle level range
-        useRangeCheckbox.addEventListener('change', function () {
+        // Toggle count mode (Fixed vs Range)
+        const countModeFixed = document.getElementById('countModeFixed');
+        const countModeRange = document.getElementById('countModeRange');
+        const pokemonCountInput = document.getElementById('pokemonCount');
+        const minPokemonCountInput = document.getElementById('minPokemonCount');
+        const maxPokemonCountInput = document.getElementById('maxPokemonCount');
+
+        countModeFixed.addEventListener('change', function () {
             if (this.checked) {
-                rangeInputs.style.display = 'grid';
-                levelInput.disabled = true;
-                levelInput.style.opacity = '0.5';
-            } else {
-                rangeInputs.style.display = 'none';
-                levelInput.disabled = false;
-                levelInput.style.opacity = '1';
+                pokemonCountInput.disabled = false;
+                pokemonCountInput.style.opacity = '1';
+                minPokemonCountInput.disabled = true;
+                minPokemonCountInput.style.opacity = '0.5';
+                maxPokemonCountInput.disabled = true;
+                maxPokemonCountInput.style.opacity = '0.5';
             }
         });
 
-        // Toggle count range
-        const useCountRangeCheckbox = document.getElementById('useCountRange');
-        const countRangeInputs = document.getElementById('countRangeInputs');
-        const pokemonCountInput = document.getElementById('pokemonCount');
-
-        useCountRangeCheckbox.addEventListener('change', function () {
+        countModeRange.addEventListener('change', function () {
             if (this.checked) {
-                countRangeInputs.style.display = 'grid';
                 pokemonCountInput.disabled = true;
                 pokemonCountInput.style.opacity = '0.5';
-            } else {
-                countRangeInputs.style.display = 'none';
-                pokemonCountInput.disabled = false;
-                pokemonCountInput.style.opacity = '1';
+                minPokemonCountInput.disabled = false;
+                minPokemonCountInput.style.opacity = '1';
+                maxPokemonCountInput.disabled = false;
+                maxPokemonCountInput.style.opacity = '1';
+            }
+        });
+
+        // Toggle level mode (Fixed vs Range)
+        const levelModeFixed = document.getElementById('levelModeFixed');
+        const levelModeRange = document.getElementById('levelModeRange');
+        const levelInput = document.getElementById('level');
+        const minLevelInput = document.getElementById('minLevel');
+        const maxLevelInput = document.getElementById('maxLevel');
+
+        levelModeFixed.addEventListener('change', function () {
+            if (this.checked) {
+                levelInput.disabled = false;
+                levelInput.style.opacity = '1';
+                minLevelInput.disabled = true;
+                minLevelInput.style.opacity = '0.5';
+                maxLevelInput.disabled = true;
+                maxLevelInput.style.opacity = '0.5';
+            }
+        });
+
+        levelModeRange.addEventListener('change', function () {
+            if (this.checked) {
+                levelInput.disabled = true;
+                levelInput.style.opacity = '0.5';
+                minLevelInput.disabled = false;
+                minLevelInput.style.opacity = '1';
+                maxLevelInput.disabled = false;
+                maxLevelInput.style.opacity = '1';
+            }
+        });
+
+        // Toggle shiny mode (Force vs Odds)
+        const shinyModeForce = document.getElementById('shinyModeForce');
+        const shinyModeOdds = document.getElementById('shinyModeOdds');
+        const shinyOddsInput = document.getElementById('shinyOdds');
+
+        shinyModeForce.addEventListener('change', function () {
+            if (this.checked) {
+                shinyOddsInput.disabled = true;
+                shinyOddsInput.style.opacity = '0.5';
+            }
+        });
+
+        shinyModeOdds.addEventListener('change', function () {
+            if (this.checked) {
+                shinyOddsInput.disabled = false;
+                shinyOddsInput.style.opacity = '1';
             }
         });
 
@@ -727,9 +704,9 @@
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
             let count;
-            if (useCountRangeCheckbox.checked) {
-                const min = Math.max(1, parseInt(document.getElementById('minPokemonCount').value) || 1);
-                const max = Math.min(50, parseInt(document.getElementById('maxPokemonCount').value) || 6);
+            if (countModeRange.checked) {
+                const min = Math.max(1, parseInt(minPokemonCountInput.value) || 1);
+                const max = Math.min(50, parseInt(maxPokemonCountInput.value) || 6);
                 count = Math.floor(Math.random() * (max - min + 1)) + min;
             } else {
                 count = parseInt(pokemonCountInput.value) || 1;
@@ -756,12 +733,12 @@
                         // Build URL
                         const params = new URLSearchParams();
 
-                        if (useRangeCheckbox.checked) {
-                            if (document.getElementById('minLevel').value) {
-                                params.append('minLevel', document.getElementById('minLevel').value);
+                        if (levelModeRange.checked) {
+                            if (minLevelInput.value) {
+                                params.append('minLevel', minLevelInput.value);
                             }
-                            if (document.getElementById('maxLevel').value) {
-                                params.append('maxLevel', document.getElementById('maxLevel').value);
+                            if (maxLevelInput.value) {
+                                params.append('maxLevel', maxLevelInput.value);
                             }
                         } else {
                             if (levelInput.value) {
@@ -785,8 +762,8 @@
                             params.append('type', document.getElementById('type').value);
                         }
 
-                        if (document.getElementById('shiny').checked) {
-                            // Force shiny if checkbox is checked
+                        if (document.getElementById('shinyModeForce').checked) {
+                            // Force shiny if Force radio is checked
                             params.append('shiny', 'true');
                         } else {
                             // Otherwise, use the shiny odds percentage
