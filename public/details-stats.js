@@ -156,98 +156,152 @@ function getStatGroups(baseWithNature, ignoreBaseRelation) {
     }).flat();
 }
 
-function distributePointsRandom(totalPoints, groups) {
+function initDistributedPoints() {
     const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
     const distributedPoints = {};
-    const groupPoints = new Array(groups.length).fill(0);
 
     shortNames.forEach(stat => {
         distributedPoints[stat] = 0;
     });
 
-    for (let index = 0; index < totalPoints; index++) {
-        const groupIndex = Math.floor(Math.random() * groups.length);
-        groupPoints[groupIndex]++;
-    }
-
-    groups.forEach((group, groupIndex) => {
-        const pointsForGroup = groupPoints[groupIndex];
-        if (pointsForGroup === 0) return;
-
-        const pointsPerStat = Math.floor(pointsForGroup / group.stats.length);
-        const remainderPoints = pointsForGroup % group.stats.length;
-        const remainderIndices = new Set();
-
-        while (remainderIndices.size < remainderPoints) {
-            remainderIndices.add(Math.floor(Math.random() * group.stats.length));
-        }
-
-        group.stats.forEach((stat, statIndex) => {
-            distributedPoints[stat] = pointsPerStat + (remainderIndices.has(statIndex) ? 1 : 0);
-        });
-    });
-
     return distributedPoints;
 }
 
-function distributePointsBalanced(totalPoints, groups) {
-    const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
-    const distributedPoints = {};
-    const basePointsPerStat = Math.floor(totalPoints / shortNames.length);
-    const remainderPoints = totalPoints % shortNames.length;
+function getSortedRelationGroups(groups) {
+    return [...groups].sort((a, b) => b.baseValue - a.baseValue);
+}
 
-    shortNames.forEach((stat, index) => {
-        distributedPoints[stat] = basePointsPerStat + (index < remainderPoints ? 1 : 0);
-    });
+function buildStatToGroupMap(groups) {
+    const statToGroup = {};
 
     groups.forEach(group => {
-        if (group.stats.length <= 1) return;
-
-        let totalGroupPoints = 0;
         group.stats.forEach(stat => {
-            totalGroupPoints += distributedPoints[stat];
-        });
-
-        const pointsPerStat = Math.floor(totalGroupPoints / group.stats.length);
-        const groupRemainder = totalGroupPoints % group.stats.length;
-
-        group.stats.forEach((stat, index) => {
-            distributedPoints[stat] = pointsPerStat + (index < groupRemainder ? 1 : 0);
+            statToGroup[stat] = group;
         });
     });
+
+    return statToGroup;
+}
+
+function getGroupDistributedPoints(distributedPoints, group) {
+    return group.stats.reduce((sum, stat) => sum + (distributedPoints[stat] || 0), 0);
+}
+
+function getGroupFinalValues(distributedPoints, group) {
+    return group.stats.map(stat => group.baseValue + (distributedPoints[stat] || 0));
+}
+
+function wouldKeepBaseRelation(distributedPoints, statToIncrement, relationGroups, enforceBaseRelation = true) {
+    if (!enforceBaseRelation) return true;
+
+    const nextPoints = {
+        ...distributedPoints,
+        [statToIncrement]: (distributedPoints[statToIncrement] || 0) + 1
+    };
+
+    // Stats that share the same non-ignored base relation must stay as close as possible.
+    // A spread of 1 is allowed because totalPoints is not always divisible by the group size.
+    for (const group of relationGroups) {
+        if (group.stats.length <= 1) continue;
+
+        const finalValues = getGroupFinalValues(nextPoints, group);
+        const minFinal = Math.min(...finalValues);
+        const maxFinal = Math.max(...finalValues);
+
+        if (maxFinal - minFinal > 1) {
+            return false;
+        }
+    }
+
+    // Preserve strict "higher base > lower base" ordering between relation groups.
+    for (let index = 0; index < relationGroups.length - 1; index++) {
+        const higherGroup = relationGroups[index];
+        const lowerGroup = relationGroups[index + 1];
+
+        // Equal base values can appear as separate groups when that relation was ignored.
+        if (higherGroup.baseValue === lowerGroup.baseValue) continue;
+
+        const higherFinalMin = Math.min(...getGroupFinalValues(nextPoints, higherGroup));
+        const lowerFinalMax = Math.max(...getGroupFinalValues(nextPoints, lowerGroup));
+
+        if (higherFinalMin <= lowerFinalMax) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function getValidDistributionCandidates(distributedPoints, groups, enforceBaseRelation = true) {
+    const relationGroups = getSortedRelationGroups(groups);
+
+    return relationGroups
+        .flatMap(group => group.stats)
+        .filter(stat => wouldKeepBaseRelation(distributedPoints, stat, relationGroups, enforceBaseRelation));
+}
+
+function distributePointsConstrained(totalPoints, groups, mode, enforceBaseRelation = true) {
+    const statOrder = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+    const sortedGroups = getSortedRelationGroups(groups);
+    const statToGroup = buildStatToGroupMap(sortedGroups);
+    const distributedPoints = initDistributedPoints();
+    const totalWeight = sortedGroups.reduce((sum, group) => sum + Math.max(1, group.baseValue), 0);
+
+    for (let pointIndex = 0; pointIndex < totalPoints; pointIndex++) {
+        const candidates = getValidDistributionCandidates(distributedPoints, sortedGroups, enforceBaseRelation);
+
+        if (candidates.length === 0) {
+            console.warn('No valid stat candidate while preserving base relation; distribution stopped early.');
+            break;
+        }
+
+        let selectedStat;
+
+        if (mode === 'RANDOM') {
+            selectedStat = candidates[Math.floor(Math.random() * candidates.length)];
+        } else if (mode === 'MINMAXED') {
+            selectedStat = [...candidates].sort((a, b) => {
+                const groupA = statToGroup[a];
+                const groupB = statToGroup[b];
+                const targetA = (Math.max(1, groupA.baseValue) / totalWeight) * (pointIndex + 1);
+                const targetB = (Math.max(1, groupB.baseValue) / totalWeight) * (pointIndex + 1);
+                const deficitA = targetA - getGroupDistributedPoints(distributedPoints, groupA);
+                const deficitB = targetB - getGroupDistributedPoints(distributedPoints, groupB);
+
+                return (deficitB - deficitA)
+                    || (groupB.baseValue - groupA.baseValue)
+                    || ((distributedPoints[a] || 0) - (distributedPoints[b] || 0))
+                    || (statOrder.indexOf(a) - statOrder.indexOf(b));
+            })[0];
+        } else {
+            selectedStat = [...candidates].sort((a, b) => {
+                const groupA = statToGroup[a];
+                const groupB = statToGroup[b];
+                const finalA = groupA.baseValue + (distributedPoints[a] || 0);
+                const finalB = groupB.baseValue + (distributedPoints[b] || 0);
+
+                return ((distributedPoints[a] || 0) - (distributedPoints[b] || 0))
+                    || (finalA - finalB)
+                    || (statOrder.indexOf(a) - statOrder.indexOf(b));
+            })[0];
+        }
+
+        distributedPoints[selectedStat] = (distributedPoints[selectedStat] || 0) + 1;
+    }
 
     return distributedPoints;
 }
 
-function distributePointsMinmaxed(totalPoints, groups) {
-    const shortNames = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
-    const distributedPoints = {};
-    const sortedGroups = [...groups].sort((a, b) => b.baseValue - a.baseValue);
-    const weights = sortedGroups.map(group => group.baseValue);
-    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-    let totalPointsDistributed = 0;
+function distributePointsRandom(totalPoints, groups, enforceBaseRelation = true) {
+    return distributePointsConstrained(totalPoints, groups, 'RANDOM', enforceBaseRelation);
+}
 
-    shortNames.forEach(stat => {
-        distributedPoints[stat] = 0;
-    });
+function distributePointsBalanced(totalPoints, groups, enforceBaseRelation = true) {
+    return distributePointsConstrained(totalPoints, groups, 'BALANCED', enforceBaseRelation);
+}
 
-    sortedGroups.forEach((group, index) => {
-        const weight = weights[index];
-        const groupPoints = index === sortedGroups.length - 1
-            ? totalPoints - totalPointsDistributed
-            : Math.round((weight / totalWeight) * totalPoints);
-
-        totalPointsDistributed += groupPoints;
-
-        const pointsPerStat = Math.floor(groupPoints / group.stats.length);
-        const remainderStats = groupPoints % group.stats.length;
-
-        group.stats.forEach((stat, statIndex) => {
-            distributedPoints[stat] = pointsPerStat + (statIndex < remainderStats ? 1 : 0);
-        });
-    });
-
-    return distributedPoints;
+function distributePointsMinmaxed(totalPoints, groups, enforceBaseRelation = true) {
+    return distributePointsConstrained(totalPoints, groups, 'MINMAXED', enforceBaseRelation);
 }
 
 // Setup type editor
@@ -426,11 +480,11 @@ function recalculateStatsWithDistribution(pokemon, distribution) {
     let distributedPoints = {};
 
     if (distribution === 'BALANCED') {
-        distributedPoints = distributePointsBalanced(totalPoints, groups);
+        distributedPoints = distributePointsBalanced(totalPoints, groups, pokemon.ignoreBaseRelation !== 'IGNORE');
     } else if (distribution === 'MINMAXED') {
-        distributedPoints = distributePointsMinmaxed(totalPoints, groups);
+        distributedPoints = distributePointsMinmaxed(totalPoints, groups, pokemon.ignoreBaseRelation !== 'IGNORE');
     } else {
-        distributedPoints = distributePointsRandom(totalPoints, groups);
+        distributedPoints = distributePointsRandom(totalPoints, groups, pokemon.ignoreBaseRelation !== 'IGNORE');
     }
 
     pokemon.baseWithNature = baseWithNature;
