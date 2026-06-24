@@ -12,6 +12,40 @@ router.use((req, res, next) => {
   next();
 });
 
+async function loadCustomDataFromQuery(query) {
+  const customLoaders = [
+    {
+      url: query.custompokemonurl,
+      label: 'custom Pokemon',
+      load: PokemonGenerator.loadCustomPokemon
+    },
+    {
+      url: query.customabilitiesurl,
+      label: 'custom Abilities',
+      load: PokemonGenerator.loadCustomAbilities
+    },
+    {
+      url: query.custommovesurl,
+      label: 'custom Moves',
+      load: PokemonGenerator.loadCustomMoves
+    }
+  ];
+
+  for (const customLoader of customLoaders) {
+    if (!customLoader.url) continue;
+
+    try {
+      await customLoader.load.call(PokemonGenerator, customLoader.url);
+    } catch (error) {
+      console.warn(`Failed to load ${customLoader.label} from URL:`, error.message);
+    }
+  }
+}
+
+function splitFandex(query) {
+  return query.fandex ? query.fandex.split(',') : [];
+}
+
 /**
  * GET /api/pokemon/generate
  * Generate a random Pokemon with PTU 1.05 stats
@@ -44,49 +78,26 @@ router.use((req, res, next) => {
  */
 router.get('/generate', async (req, res) => {
   try {
-    // Load custom data if provided
-    if (req.query.custompokemonurl || req.query.customPokemonUrl) {
-      try {
-        await PokemonGenerator.loadCustomPokemon(req.query.custompokemonurl || req.query.customPokemonUrl);
-      } catch (error) {
-        console.warn('Failed to load custom Pokemon from URL:', error.message);
-      }
-    }
-    
-    if (req.query.customabilitiesurl || req.query.customAbilitiesUrl) {
-      try {
-        await PokemonGenerator.loadCustomAbilities(req.query.customabilitiesurl || req.query.customAbilitiesUrl);
-      } catch (error) {
-        console.warn('Failed to load custom Abilities from URL:', error.message);
-      }
-    }
-    
-    if (req.query.custommovesurl || req.query.customMovesUrl) {
-      try {
-        await PokemonGenerator.loadCustomMoves(req.query.custommovesurl || req.query.customMovesUrl);
-      } catch (error) {
-        console.warn('Failed to load custom Moves from URL:', error.message);
-      }
-    }
+    await loadCustomDataFromQuery(req.query);
 
     const options = {
       level: req.query.level ? parseInt(req.query.level) : undefined,
-      minlevel: (req.query.minlevel || req.query.minLevel) ? parseInt(req.query.minlevel || req.query.minLevel) : undefined,
-      maxlevel: (req.query.maxlevel || req.query.maxLevel) ? parseInt(req.query.maxlevel || req.query.maxLevel) : undefined,
+      minlevel: req.query.minlevel ? parseInt(req.query.minlevel) : undefined,
+      maxlevel: req.query.maxlevel ? parseInt(req.query.maxlevel) : undefined,
       species: req.query.species,
       type: req.query.type,
       habitat: req.query.habitat,
-      randomform: (req.query.randomform === 'true' || req.query.randomForm === 'true'),
+      randomform: req.query.randomform === 'true',
       shiny: req.query.shiny === 'true',
-      shinyodds: (req.query.shinyodds || req.query.shinyOdds) ? parseFloat(req.query.shinyodds || req.query.shinyOdds) : undefined,
+      shinyodds: req.query.shinyodds ? parseFloat(req.query.shinyodds) : undefined,
       distribution: (req.query.distribution || 'RANDOM').toUpperCase(),
-      ignorebaserelation: (req.query.ignorebaserelation || req.query.ignoreBaseRelation)?.toUpperCase(),
-      hpformula: req.query.hpformula || req.query.hpFormula,
+      ignorebaserelation: req.query.ignorebaserelation?.toUpperCase(),
+      hpformula: req.query.hpformula,
       dataset: (req.query.dataset || 'core').toLowerCase(),
       nature: req.query.nature,
-      includelegendaries: req.query.includelegendaries || req.query.includeLegendaries,
-      forceevolution: req.query.forceevolution || req.query.forceEvolution,
-      fandex: req.query.fandex ? req.query.fandex.split(',') : []
+      includelegendaries: req.query.includelegendaries,
+      forceevolution: req.query.forceevolution,
+      fandex: splitFandex(req.query)
     };
 
     const pokemon = await PokemonGenerator.generatePokemon(options);
@@ -108,34 +119,11 @@ router.get('/generate', async (req, res) => {
  */
 router.get('/generateWild/:level', async (req, res) => {
   try {
-    // Load custom data if provided
-    if (req.query.custompokemonurl || req.query.customPokemonUrl) {
-      try {
-        await PokemonGenerator.loadCustomPokemon(req.query.custompokemonurl || req.query.customPokemonUrl);
-      } catch (error) {
-        console.warn('Failed to load custom Pokemon from URL:', error.message);
-      }
-    }
-    
-    if (req.query.customabilitiesurl || req.query.customAbilitiesUrl) {
-      try {
-        await PokemonGenerator.loadCustomAbilities(req.query.customabilitiesurl || req.query.customAbilitiesUrl);
-      } catch (error) {
-        console.warn('Failed to load custom Abilities from URL:', error.message);
-      }
-    }
-    
-    if (req.query.custommovesurl || req.query.customMovesUrl) {
-      try {
-        await PokemonGenerator.loadCustomMoves(req.query.custommovesurl || req.query.customMovesUrl);
-      } catch (error) {
-        console.warn('Failed to load custom Moves from URL:', error.message);
-      }
-    }
+    await loadCustomDataFromQuery(req.query);
 
     const level = parseInt(req.params.level);
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const fandex = splitFandex(req.query);
 
     if (isNaN(level) || level < 1 || level > 100) {
       return res.status(400).json({ error: 'Level must be between 1 and 100' });
@@ -170,37 +158,13 @@ router.get('/generateWild/:level', async (req, res) => {
  */
 router.get('/team', async (req, res) => {
   try {
-    // Load custom data if provided
-    if (req.query.custompokemonurl || req.query.customPokemonUrl) {
-      try {
-        await PokemonGenerator.loadCustomPokemon(req.query.custompokemonurl || req.query.customPokemonUrl);
-      } catch (error) {
-        console.warn('Failed to load custom Pokemon from URL:', error.message);
-      }
-    }
-    
-    if (req.query.customabilitiesurl || req.query.customAbilitiesUrl) {
-      try {
-        await PokemonGenerator.loadCustomAbilities(req.query.customabilitiesurl || req.query.customAbilitiesUrl);
-      } catch (error) {
-        console.warn('Failed to load custom Abilities from URL:', error.message);
-      }
-    }
-    
-    if (req.query.custommovesurl || req.query.customMovesUrl) {
-      try {
-        await PokemonGenerator.loadCustomMoves(req.query.custommovesurl || req.query.customMovesUrl);
-      } catch (error) {
-        console.warn('Failed to load custom Moves from URL:', error.message);
-      }
-    }
+    await loadCustomDataFromQuery(req.query);
 
     // Determine level
     let level;
-    if ((req.query.minlevel !== undefined || req.query.minLevel !== undefined) && 
-        (req.query.maxlevel !== undefined || req.query.maxLevel !== undefined)) {
-      const min = Math.max(1, parseInt(req.query.minlevel || req.query.minLevel));
-      const max = Math.min(100, parseInt(req.query.maxlevel || req.query.maxLevel));
+    if (req.query.minlevel !== undefined && req.query.maxlevel !== undefined) {
+      const min = Math.max(1, parseInt(req.query.minlevel));
+      const max = Math.min(100, parseInt(req.query.maxlevel));
       level = Math.floor(Math.random() * (max - min + 1)) + min;
     } else if (req.query.level) {
       level = parseInt(req.query.level);
@@ -210,10 +174,9 @@ router.get('/team', async (req, res) => {
 
     // Determine team size
     let size;
-    if ((req.query.minsize !== undefined || req.query.minSize !== undefined) && 
-        (req.query.maxsize !== undefined || req.query.maxSize !== undefined)) {
-      const min = Math.max(1, parseInt(req.query.minsize || req.query.minSize));
-      const max = Math.min(50, parseInt(req.query.maxsize || req.query.maxSize));
+    if (req.query.minsize !== undefined && req.query.maxsize !== undefined) {
+      const min = Math.max(1, parseInt(req.query.minsize));
+      const max = Math.min(50, parseInt(req.query.maxsize));
       size = Math.floor(Math.random() * (max - min + 1)) + min;
     } else if (req.query.size) {
       size = Math.min(parseInt(req.query.size), 50);
@@ -225,8 +188,8 @@ router.get('/team', async (req, res) => {
       level: level,
       size: size,
       dataset: (req.query.dataset || 'core').toLowerCase(),
-      fandex: req.query.fandex ? req.query.fandex.split(',') : [],
-      includelegendaries: req.query.includelegendaries || req.query.includeLegendaries
+      fandex: splitFandex(req.query),
+      includelegendaries: req.query.includelegendaries
     };
 
     if (options.level < 1 || options.level > 100) {
@@ -249,7 +212,7 @@ router.get('/team', async (req, res) => {
 router.get('/list', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const fandex = splitFandex(req.query);
     const pokemon = await PokemonGenerator.listAvailablePokemon(dataset, fandex);
     const speciesNames = pokemon.map(p => p.name);
     res.json({
@@ -302,7 +265,7 @@ router.get('/fandexes', (req, res) => {
 router.get('/habitats', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const fandex = splitFandex(req.query);
     
     // Trigger dataset switch
     await PokemonGenerator.listAvailablePokemon(dataset, fandex);
@@ -326,7 +289,7 @@ router.get('/habitats', async (req, res) => {
 router.get('/types', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const fandex = splitFandex(req.query);
     
     // Trigger dataset switch
     await PokemonGenerator.listAvailablePokemon(dataset, fandex);
@@ -353,7 +316,7 @@ router.get('/habitat/:habitatName', async (req, res) => {
   try {
     const habitat = req.params.habitatName;
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const fandex = splitFandex(req.query);
     
     // Trigger dataset switch
     await PokemonGenerator.listAvailablePokemon(dataset, fandex);
@@ -406,7 +369,7 @@ router.get('/moves/:species', async (req, res) => {
   try {
     const species = req.params.species;
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const fandex = splitFandex(req.query);
     const moves = await PokemonGenerator.getAvailableMovesForSpecies(species, dataset, fandex);
     res.json(moves);
   } catch (error) {
@@ -425,7 +388,7 @@ router.get('/abilities/:species', async (req, res) => {
   try {
     const species = req.params.species;
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const fandex = splitFandex(req.query);
     const abilities = await PokemonGenerator.getAvailableAbilitiesForSpecies(species, dataset, fandex);
     res.json(abilities);
   } catch (error) {
@@ -444,7 +407,7 @@ router.get('/abilities/:species', async (req, res) => {
 router.get('/all-moves', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const fandex = splitFandex(req.query);
     const moves = await PokemonGenerator.getAllMovesFromDatabase(dataset, fandex);
     res.json(moves);
   } catch (error) {
@@ -462,7 +425,7 @@ router.get('/all-moves', async (req, res) => {
 router.get('/all-abilities', async (req, res) => {
   try {
     const dataset = (req.query.dataset || 'core').toLowerCase();
-    const fandex = req.query.fandex ? req.query.fandex.split(',') : [];
+    const fandex = splitFandex(req.query);
     const abilities = await PokemonGenerator.getAllAbilitiesFromDatabase(dataset, fandex);
     res.json(abilities);
   } catch (error) {
