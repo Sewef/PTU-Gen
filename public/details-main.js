@@ -12,6 +12,14 @@ function loadPokemonDetails() {
         pokemon.capabilities = [];
     }
 
+    if (!pokemon.pokeEdges) {
+        pokemon.pokeEdges = [];
+    }
+
+    if (pokemon.tutorPoints === undefined || pokemon.tutorPoints === null) {
+        pokemon.tutorPoints = calculateDefaultTutorPoints(pokemon.level);
+    }
+
     // Ensure hpFormula is present if exists in original object (from API or localStorage)
     if (!pokemon.hpFormula && pokemon.hp_formula) {
         pokemon.hpFormula = pokemon.hp_formula;
@@ -545,6 +553,23 @@ function loadPokemonDetails() {
                         `).join('')}
                     </div>
                 </div>
+
+                <div class="section">
+                    <div class="flex-between-center-15">
+                        <h3 class="section-title">Poké Edges</h3>
+                        <div class="button-group poke-edges-toolbar">
+                            <label class="tutor-points-control">
+                                <span>Tutor Points</span>
+                                <input type="number" id="tutorPointsInput" min="0" value="${pokemon.tutorPoints}" />
+                            </label>
+                            <button id="addPokeEdgeBtn" title="Add Poké Edge from list" class="edit-bn">✎ Add</button>
+                            <button id="addBlankPokeEdgeBtn" title="Add blank Poké Edge" class="edit-bn">+ Blank</button>
+                        </div>
+                    </div>
+                    <div class="section-list" id="pokeEdgesList">
+                        ${pokemon.pokeEdges.length === 0 ? '<div class="empty-state compact">No Poké Edges yet.</div>' : ''}
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -800,6 +825,9 @@ function loadPokemonDetails() {
     // Setup moves editor
     setupMovesEditor(pokemon);
 
+    // Setup Poké Edges editor
+    setupPokeEdgesEditor(pokemon);
+
     // Setup skills editor
     setupSkillsEditor(pokemon);
 
@@ -848,6 +876,11 @@ function loadPokemonDetails() {
         // Calculate and store HP max
         const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
         pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+
+        const tutorPointsInput = document.getElementById('tutorPointsInput');
+        if (tutorPointsInput) {
+            pokemon.tutorPoints = parseInt(tutorPointsInput.value, 10) || 0;
+        }
 
         // Sync skill inputs
         document.querySelectorAll('.skill-input').forEach(input => {

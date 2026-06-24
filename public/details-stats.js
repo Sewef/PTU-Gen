@@ -138,6 +138,14 @@ function setupLevelEditor(pokemon) {
             // Update remaining points display
             updateRemainingPoints(pokemon);
 
+            if (!pokemon.tutorPointsManual && typeof calculateDefaultTutorPoints === 'function') {
+                pokemon.tutorPoints = calculateDefaultTutorPoints(newLevel);
+                const tutorPointsInput = document.getElementById('tutorPointsInput');
+                if (tutorPointsInput) {
+                    tutorPointsInput.value = pokemon.tutorPoints;
+                }
+            }
+
             // Save to localStorage
             localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
         } else {

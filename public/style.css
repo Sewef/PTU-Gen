@@ -956,6 +956,53 @@ button {
 .section-card.move.type-steel { border-left-color: #B8B8D0; }
 .section-card.move.type-fairy { border-left-color: #EE99AC; }
 
+.section-card.poke-edge {
+    border-left-color: var(--primary-color);
+}
+
+.poke-edges-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.tutor-points-control {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.tutor-points-control input {
+    width: 56px;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    text-align: center;
+    font-weight: 600;
+}
+
+.custom-poke-edge-name-input,
+.custom-poke-edge-field-input {
+    width: 100%;
+    min-width: 0;
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-main);
+    color: var(--text-primary);
+}
+
+.custom-poke-edge-field-input.short {
+    max-width: 120px;
+}
+
 /* Move class indicators */
 .move-badge {
     display: inline-block;
