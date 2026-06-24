@@ -189,6 +189,7 @@ function setupTypeMultiplierButtons(pokemon) {
         if (currentPokemon) {
             displayTypeEffectiveness(currentPokemon);
         }
+        document.dispatchEvent(new Event('typeMultiplierChange'));
     });
 
     multiplyBtn2.addEventListener('click', function () {
@@ -201,6 +202,7 @@ function setupTypeMultiplierButtons(pokemon) {
         if (currentPokemon) {
             displayTypeEffectiveness(currentPokemon);
         }
+        document.dispatchEvent(new Event('typeMultiplierChange'));
     });
 }
 

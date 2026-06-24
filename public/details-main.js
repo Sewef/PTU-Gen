@@ -23,7 +23,7 @@ function loadPokemonDetails() {
         if (!pokemon.hitPointsMax) {
             pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
         }
-        if (!pokemon.hitPoints) {
+        if (pokemon.hitPoints === undefined || pokemon.hitPoints === null) {
             pokemon.hitPoints = pokemon.hitPointsMax;
         }
     }
@@ -173,7 +173,7 @@ function loadPokemonDetails() {
                             <div class="level-input-group">
                                 <span class="text-secondary">HP:</span>
                                 <div style="display: flex; gap: 8px; align-items: center;">
-                                    <input type="number" id="hpCurrentInput" class="level-number-input" min="0" value="${pokemon.hitPoints}" style="flex: 1;" />
+                                    <input type="number" id="hpCurrentInput" class="level-number-input" value="${pokemon.hitPoints}" style="flex: 1;" />
                                     <span class="text-secondary">/</span>
                                     <div id="hpMaxDisplay" style="min-width: 50px; text-align: center;">${pokemon.hitPoints}</div>
                                 </div>
@@ -182,6 +182,21 @@ function loadPokemonDetails() {
                         <div class="margin-top-8">
                             <input type="text" id="hpFormulaInput" value="${pokemon.hpFormula || 'LEVEL + (HP * 3) + 10'}" class="skill-input" placeholder="e.g., LEVEL + (HP * 3) + 10" />
                         </div>
+                        <div class="hp-damage-controls">
+                            <input type="number" id="damageAmountInput" class="hp-damage-input" min="0" placeholder="Damage" />
+                            <select id="damageTypeSelect" class="hp-damage-select">
+                                <option value="typeless">Typeless</option>
+                                ${['Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy']
+                                    .map(type => `<option value="${type.toLowerCase()}">${type}</option>`)
+                                    .join('')}
+                            </select>
+                            <select id="damageCategorySelect" class="hp-damage-select">
+                                <option value="physical">Physical</option>
+                                <option value="special">Special</option>
+                            </select>
+                            <button id="applyDamageBtn" class="hp-damage-btn" type="button">Apply</button>
+                        </div>
+                        <div id="damagePreview" class="hp-damage-preview"></div>
                     </div>
 
                     <div class="info-box">
@@ -765,10 +780,12 @@ function loadPokemonDetails() {
 
     if (hpCurrentInput) {
         hpCurrentInput.addEventListener('change', function () {
-            pokemon.hitPoints = parseInt(this.value) || 0;
+            pokemon.hitPoints = parseIntegerInputValue(this.value, 0);
             localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
         });
     }
+
+    setupDamageControls(pokemon);
 
     // Display type effectiveness
     currentPokemon = pokemon;
@@ -825,7 +842,7 @@ function loadPokemonDetails() {
         // Sync current HP from input (don't overwrite with calculated max)
         const hpCurrentInput = document.getElementById('hpCurrentInput');
         if (hpCurrentInput) {
-            pokemon.hitPoints = parseInt(hpCurrentInput.value) || 0;
+            pokemon.hitPoints = parseIntegerInputValue(hpCurrentInput.value, 0);
         }
 
         // Calculate and store HP max
@@ -931,6 +948,125 @@ function loadPokemonDetails() {
             };
         }
     }
+}
+
+function getPokemonDefendingTypes(pokemon) {
+    let typesToUse = pokemon.actualTypes || pokemon.types || [];
+
+    if (typesToUse.isFormeVariant) {
+        typesToUse = typesToUse.formes[typesToUse.selectedForme] || [];
+    }
+
+    return Array.isArray(typesToUse) ? typesToUse : [];
+}
+
+function getDamageTypeMultiplier(pokemon, attackingType) {
+    if (!attackingType || attackingType === 'typeless') {
+        return 1;
+    }
+
+    const effectiveness = calculateTypeEffectiveness(getPokemonDefendingTypes(pokemon));
+    let multiplier = effectiveness[attackingType] ?? 1;
+
+    if (currentTypeMultiplier === 1.5 && multiplier > 1) {
+        let weaknessCount = 0;
+        let tempMultiplier = multiplier;
+        while (tempMultiplier > 1) {
+            weaknessCount++;
+            tempMultiplier = tempMultiplier / 2;
+        }
+        multiplier = 1 + (0.5 * weaknessCount);
+    }
+
+    return multiplier;
+}
+
+function formatDamageMultiplier(multiplier) {
+    if (multiplier === 0) return '0x';
+    if (multiplier === 1) return '1x';
+    if (Number.isInteger(multiplier)) return `${multiplier}x`;
+    return `${parseFloat(multiplier.toFixed(2))}x`;
+}
+
+function parseIntegerInputValue(value, fallbackValue = 0) {
+    const parsedValue = parseInt(value, 10);
+    return Number.isFinite(parsedValue) ? parsedValue : fallbackValue;
+}
+
+function getCurrentDisplayedStat(statName, fallbackValue = 0) {
+    const statTotal = document.querySelector(`.stat-breakdown-row[data-stat="${statName}"] .stat-total`);
+    const displayedValue = parseInt(statTotal?.textContent, 10);
+    return Number.isFinite(displayedValue) ? displayedValue : fallbackValue;
+}
+
+function calculateIncomingDamage(pokemon) {
+    const amountInput = document.getElementById('damageAmountInput');
+    const typeSelect = document.getElementById('damageTypeSelect');
+    const categorySelect = document.getElementById('damageCategorySelect');
+    const rawDamage = Math.max(0, parseInt(amountInput?.value, 10) || 0);
+    const category = categorySelect?.value || 'physical';
+    const defenseStatName = category === 'special' ? 'spD' : 'def';
+    const defenseStat = getCurrentDisplayedStat(defenseStatName, pokemon.stats?.[defenseStatName] || 0);
+    const afterDefense = rawDamage > 0 ? Math.max(1, rawDamage - defenseStat) : 0;
+    const multiplier = getDamageTypeMultiplier(pokemon, typeSelect?.value || 'typeless');
+    const finalDamage = multiplier === 0 ? 0 : Math.max(1, Math.floor(afterDefense * multiplier));
+
+    return {
+        rawDamage,
+        defenseStat,
+        multiplier,
+        finalDamage: rawDamage > 0 ? finalDamage : 0
+    };
+}
+
+function setupDamageControls(pokemon) {
+    const amountInput = document.getElementById('damageAmountInput');
+    const typeSelect = document.getElementById('damageTypeSelect');
+    const categorySelect = document.getElementById('damageCategorySelect');
+    const applyButton = document.getElementById('applyDamageBtn');
+    const preview = document.getElementById('damagePreview');
+    const hpCurrentInput = document.getElementById('hpCurrentInput');
+
+    if (!amountInput || !typeSelect || !categorySelect || !applyButton || !hpCurrentInput) return;
+
+    const updatePreview = () => {
+        const damage = calculateIncomingDamage(pokemon);
+        if (!preview) return;
+
+        if (damage.rawDamage <= 0) {
+            preview.textContent = '';
+            return;
+        }
+
+        preview.textContent = `Final: ${damage.finalDamage} (${damage.rawDamage} - ${damage.defenseStat}, ${formatDamageMultiplier(damage.multiplier)})`;
+    };
+
+    const applyDamage = () => {
+        const damage = calculateIncomingDamage(pokemon);
+        if (damage.rawDamage <= 0) return;
+
+        const currentHp = parseIntegerInputValue(hpCurrentInput.value, 0);
+        pokemon.hitPoints = currentHp - damage.finalDamage;
+        hpCurrentInput.value = pokemon.hitPoints;
+        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        hpCurrentInput.dispatchEvent(new Event('input', { bubbles: true }));
+        hpCurrentInput.dispatchEvent(new Event('change', { bubbles: true }));
+        updatePreview();
+    };
+
+    amountInput.addEventListener('input', updatePreview);
+    typeSelect.addEventListener('change', updatePreview);
+    categorySelect.addEventListener('change', updatePreview);
+    applyButton.addEventListener('click', applyDamage);
+    document.addEventListener('typeMultiplierChange', updatePreview);
+    amountInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            applyDamage();
+        }
+    });
+
+    updatePreview();
 }
 
 // Setup capture rate calculator
@@ -1060,7 +1196,18 @@ async function setupCaptureRateCalculator(pokemon) {
 
         const baseValue = 100 - (pokemon.level * 2);
         document.getElementById('baseCapture').textContent = baseValue;
-        document.getElementById('currentCapture').textContent = typeof captureRate === 'string' ? captureRate : Math.max(0, captureRate);
+        const currentCaptureDisplay = document.getElementById('currentCapture');
+        if (currentCaptureDisplay) {
+            if (typeof captureRate === 'string') {
+                currentCaptureDisplay.textContent = '0 HP';
+                currentCaptureDisplay.title = captureRate;
+                currentCaptureDisplay.classList.add('capture-rate-warning');
+            } else {
+                currentCaptureDisplay.textContent = Math.max(0, captureRate);
+                currentCaptureDisplay.title = '';
+                currentCaptureDisplay.classList.remove('capture-rate-warning');
+            }
+        }
     };
 
     // Errata 2015 system capture rate calculation
@@ -1122,7 +1269,12 @@ async function setupCaptureRateCalculator(pokemon) {
 
         const baseValue = 10 + Math.floor(pokemon.level / 10);
         document.getElementById('baseCapture').textContent = baseValue;
-        document.getElementById('currentCapture').textContent = Math.max(0, captureRate);
+        const currentCaptureDisplay = document.getElementById('currentCapture');
+        if (currentCaptureDisplay) {
+            currentCaptureDisplay.textContent = Math.max(0, captureRate);
+            currentCaptureDisplay.title = '';
+            currentCaptureDisplay.classList.remove('capture-rate-warning');
+        }
     };
 
     // Toggle between systems
@@ -1168,12 +1320,12 @@ async function setupCaptureRateCalculator(pokemon) {
     const hpCurrentInput = document.getElementById('hpCurrentInput');
     if (hpCurrentInput) {
         hpCurrentInput.addEventListener('input', function () {
-            pokemon.hitPoints = parseInt(this.value) || 0;
+            pokemon.hitPoints = parseIntegerInputValue(this.value, 0);
             const updateFn = errata2015Toggle.checked ? updateCaptureRateErrata2015 : updateCaptureRateStandard;
             updateFn();
         });
         hpCurrentInput.addEventListener('change', function () {
-            pokemon.hitPoints = parseInt(this.value) || 0;
+            pokemon.hitPoints = parseIntegerInputValue(this.value, 0);
             const updateFn = errata2015Toggle.checked ? updateCaptureRateErrata2015 : updateCaptureRateStandard;
             updateFn();
         });

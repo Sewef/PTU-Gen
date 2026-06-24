@@ -429,6 +429,17 @@ button {
     font-size: 1.2em;
 }
 
+.capture-rate-value span.capture-rate-warning {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--error-bg);
+    color: var(--error-text);
+    font-size: 0.82em;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
 .capture-rate-modifiers {
     text-align: left;
     width: 100%;
@@ -2574,6 +2585,66 @@ pre {
 .hp-formula-input {
     width: 100%;
     margin-top: 8px;
+}
+
+.hp-damage-controls {
+    display: grid;
+    grid-template-columns: 68px 88px 82px auto;
+    gap: 4px;
+    margin-top: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.hp-damage-input,
+.hp-damage-select {
+    min-width: 0;
+    padding: 5px 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font-size: 0.78em;
+}
+
+.hp-damage-input:focus,
+.hp-damage-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.hp-damage-btn {
+    padding: 5px 8px;
+    border: 1px solid var(--primary-color);
+    border-radius: 4px;
+    background: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    font-size: 0.78em;
+    font-weight: 600;
+}
+
+.hp-damage-btn:hover {
+    background: var(--primary-dark);
+}
+
+.hp-damage-preview {
+    min-height: 18px;
+    margin-top: 5px;
+    color: var(--text-secondary);
+    font-size: 0.78em;
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    .hp-damage-controls {
+        grid-template-columns: 68px 88px;
+    }
+
+    .hp-damage-btn {
+        grid-column: 1 / -1;
+    }
 }
 
 .type-effectiveness-container {
