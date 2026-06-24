@@ -681,16 +681,8 @@ class PokemonGenerator {
       gender = Math.random() * 100 < malePercent ? 'Male' : 'Female';
     }
     
-    // Calculate baseWithNature for proper level points calculation on frontend
-    // baseStatsData already extracted above with variant handling
-    const baseWithNature = {
-      HP: Math.max(1, (baseStatsData.HP || 0) + (nature.raise === 'HP' ? 1 : 0) + (nature.lower === 'HP' ? -1 : 0)),
-      atk: Math.max(1, (baseStatsData.Attack || 0) + (nature.raise === 'atk' ? 2 : 0) + (nature.lower === 'atk' ? -2 : 0)),
-      def: Math.max(1, (baseStatsData.Defense || 0) + (nature.raise === 'def' ? 2 : 0) + (nature.lower === 'def' ? -2 : 0)),
-      spA: Math.max(1, (baseStatsData['Special Attack'] || 0) + (nature.raise === 'spA' ? 2 : 0) + (nature.lower === 'spA' ? -2 : 0)),
-      spD: Math.max(1, (baseStatsData['Special Defense'] || 0) + (nature.raise === 'spD' ? 2 : 0) + (nature.lower === 'spD' ? -2 : 0)),
-      spe: Math.max(1, (baseStatsData.Speed || 0) + (nature.raise === 'spe' ? 2 : 0) + (nature.lower === 'spe' ? -2 : 0))
-    };
+    // Calculate baseWithNature for proper level points calculation on frontend.
+    const baseWithNature = statCalc.getBaseStatsWithNature(baseStatsData, nature);
     
     // Extract types, handling forme variants like Oricorio
     const extractedTypes = extractPokemonTypes(species['Basic Information'].Type);
@@ -837,190 +829,43 @@ class PokemonGenerator {
    * do not match the generated stat groups.
    */
   static normalizeIgnoreBaseRelation(ignoreBaseRelation) {
-    if (ignoreBaseRelation === undefined || ignoreBaseRelation === null) {
-      return undefined;
-    }
-
-    const rawValue = String(ignoreBaseRelation).trim();
-    if (!rawValue) {
-      return undefined;
-    }
-
-    if (rawValue.toUpperCase() === 'IGNORE') {
-      return 'IGNORE';
-    }
-
-    const statAliases = {
-      HP: 'HP',
-      H: 'HP',
-      ATK: 'atk',
-      ATTACK: 'atk',
-      DEF: 'def',
-      DEFENSE: 'def',
-      SPA: 'spA',
-      SPATK: 'spA',
-      SPECIALATTACK: 'spA',
-      SPD: 'spD',
-      SPDEF: 'spD',
-      SPECIALDEFENSE: 'spD',
-      SPE: 'spe',
-      SPEED: 'spe'
-    };
-
-    const normalizedStats = rawValue
-      .split(',')
-      .map(stat => stat.trim())
-      .filter(Boolean)
-      .map(stat => statAliases[stat.replace(/[\s._-]+/g, '').toUpperCase()] || stat)
-      .filter((stat, index, stats) => stats.indexOf(stat) === index);
-
-    return normalizedStats.length > 0 ? normalizedStats.join(',') : undefined;
+    return statCalc.normalizeIgnoreBaseRelation(ignoreBaseRelation);
   }
 
   static getStatOrder() {
-    return statCalc.STAT_SHORT_NAMES || ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+    return statCalc.STAT_SHORT_NAMES;
   }
 
   static initDistributedPoints() {
-    const distributedPoints = {};
-
-    this.getStatOrder().forEach(stat => {
-      distributedPoints[stat] = 0;
-    });
-
-    return distributedPoints;
+    return statCalc.initDistributedPoints();
   }
 
   static getSortedRelationGroups(groups) {
-    return [...groups].sort((a, b) => b.baseValue - a.baseValue);
+    return statCalc.getSortedRelationGroups(groups);
   }
 
   static buildStatToGroupMap(groups) {
-    const statToGroup = {};
-
-    groups.forEach(group => {
-      group.stats.forEach(stat => {
-        statToGroup[stat] = group;
-      });
-    });
-
-    return statToGroup;
+    return statCalc.buildStatToGroupMap(groups);
   }
 
   static getGroupDistributedPoints(distributedPoints, group) {
-    return group.stats.reduce((sum, stat) => sum + (distributedPoints[stat] || 0), 0);
+    return statCalc.getGroupDistributedPoints(distributedPoints, group);
   }
 
   static getGroupFinalValues(distributedPoints, group) {
-    return group.stats.map(stat => group.baseValue + (distributedPoints[stat] || 0));
+    return statCalc.getGroupFinalValues(distributedPoints, group);
   }
 
   static wouldKeepBaseRelation(distributedPoints, statToIncrement, relationGroups, enforceBaseRelation = true) {
-    if (!enforceBaseRelation) {
-      return true;
-    }
-
-    const nextPoints = {
-      ...distributedPoints,
-      [statToIncrement]: (distributedPoints[statToIncrement] || 0) + 1
-    };
-
-    // Equal-base stats are distributed as evenly as possible. A spread of 1
-    // is allowed because level + 10 is not always divisible by the group size.
-    for (const group of relationGroups) {
-      if (group.stats.length <= 1) continue;
-
-      const finalValues = this.getGroupFinalValues(nextPoints, group);
-      const minFinal = Math.min(...finalValues);
-      const maxFinal = Math.max(...finalValues);
-
-      if (maxFinal - minFinal > 1) {
-        return false;
-      }
-    }
-
-    // Preserve strict ordering between adjacent base-relation groups.
-    for (let index = 0; index < relationGroups.length - 1; index++) {
-      const higherGroup = relationGroups[index];
-      const lowerGroup = relationGroups[index + 1];
-
-      // Equal base values may appear as separate groups when a partial ignore
-      // is requested. Those groups are intentionally not tied together.
-      if (higherGroup.baseValue === lowerGroup.baseValue) {
-        continue;
-      }
-
-      const higherFinalMin = Math.min(...this.getGroupFinalValues(nextPoints, higherGroup));
-      const lowerFinalMax = Math.max(...this.getGroupFinalValues(nextPoints, lowerGroup));
-
-      if (higherFinalMin <= lowerFinalMax) {
-        return false;
-      }
-    }
-
-    return true;
+    return statCalc.wouldKeepBaseRelation(distributedPoints, statToIncrement, relationGroups, enforceBaseRelation);
   }
 
   static getValidDistributionCandidates(distributedPoints, groups, enforceBaseRelation = true) {
-    const relationGroups = this.getSortedRelationGroups(groups);
-
-    return relationGroups
-      .flatMap(group => group.stats)
-      .filter(stat => this.wouldKeepBaseRelation(distributedPoints, stat, relationGroups, enforceBaseRelation));
+    return statCalc.getValidDistributionCandidates(distributedPoints, groups, enforceBaseRelation);
   }
 
   static distributePointsWithBaseRelation(totalPoints, groups, distribution = 'RANDOM', enforceBaseRelation = true) {
-    const statOrder = this.getStatOrder();
-    const sortedGroups = this.getSortedRelationGroups(groups);
-    const statToGroup = this.buildStatToGroupMap(sortedGroups);
-    const distributedPoints = this.initDistributedPoints();
-    const totalWeight = sortedGroups.reduce((sum, group) => sum + Math.max(1, group.baseValue), 0);
-
-    for (let pointIndex = 0; pointIndex < totalPoints; pointIndex++) {
-      const candidates = this.getValidDistributionCandidates(distributedPoints, sortedGroups, enforceBaseRelation);
-
-      if (candidates.length === 0) {
-        console.warn('No valid stat candidate while preserving Base Relation; distribution stopped early.');
-        break;
-      }
-
-      let selectedStat;
-
-      if (distribution === 'RANDOM') {
-        selectedStat = candidates[Math.floor(Math.random() * candidates.length)];
-      } else if (distribution === 'MINMAXED') {
-        selectedStat = [...candidates].sort((a, b) => {
-          const groupA = statToGroup[a];
-          const groupB = statToGroup[b];
-          const targetA = (Math.max(1, groupA.baseValue) / totalWeight) * (pointIndex + 1);
-          const targetB = (Math.max(1, groupB.baseValue) / totalWeight) * (pointIndex + 1);
-          const deficitA = targetA - this.getGroupDistributedPoints(distributedPoints, groupA);
-          const deficitB = targetB - this.getGroupDistributedPoints(distributedPoints, groupB);
-
-          return (deficitB - deficitA)
-            || (groupB.baseValue - groupA.baseValue)
-            || ((distributedPoints[a] || 0) - (distributedPoints[b] || 0))
-            || (statOrder.indexOf(a) - statOrder.indexOf(b));
-        })[0];
-      } else {
-        // BALANCED: favor the stat with the fewest added points while still
-        // respecting Base Relation constraints.
-        selectedStat = [...candidates].sort((a, b) => {
-          const groupA = statToGroup[a];
-          const groupB = statToGroup[b];
-          const finalA = groupA.baseValue + (distributedPoints[a] || 0);
-          const finalB = groupB.baseValue + (distributedPoints[b] || 0);
-
-          return ((distributedPoints[a] || 0) - (distributedPoints[b] || 0))
-            || (finalA - finalB)
-            || (statOrder.indexOf(a) - statOrder.indexOf(b));
-        })[0];
-      }
-
-      distributedPoints[selectedStat] = (distributedPoints[selectedStat] || 0) + 1;
-    }
-
-    return distributedPoints;
+    return statCalc.distributePointsWithBaseRelation(totalPoints, groups, distribution, enforceBaseRelation);
   }
 
   /**
@@ -1034,36 +879,7 @@ class PokemonGenerator {
    * - ignoreBaseRelation: 'IGNORE' to disable Base Relation, or comma-separated stats to exclude from grouping
    */
   static calculateStats(baseStats, level, nature, distribution = 'RANDOM', ignoreBaseRelation = undefined) {
-    const stats = {};
-    const shortNames = this.getStatOrder();
-    const normalizedIgnoreBaseRelation = this.normalizeIgnoreBaseRelation(ignoreBaseRelation);
-
-    // Total stat points available: level + 10
-    const totalPoints = level + 10;
-
-    // Apply nature modifiers to base stats
-    const baseWithNature = statCalc.getBaseStatsWithNature(baseStats, nature);
-
-    // Build groups respecting ignoreBaseRelation
-    const groups = statCalc.getStatGroups(baseWithNature, normalizedIgnoreBaseRelation);
-
-    const normalizedDistribution = ['BALANCED', 'MINMAXED'].includes(distribution)
-      ? distribution
-      : 'RANDOM';
-
-    const distributedPoints = this.distributePointsWithBaseRelation(
-      totalPoints,
-      groups,
-      normalizedDistribution,
-      normalizedIgnoreBaseRelation !== 'IGNORE'
-    );
-
-    // Calculate final stats
-    shortNames.forEach(shortName => {
-      stats[shortName] = baseWithNature[shortName] + (distributedPoints[shortName] || 0);
-    });
-
-    return stats;
+    return statCalc.calculateStats(baseStats, level, nature, distribution, ignoreBaseRelation);
   }
 
   /**
