@@ -123,7 +123,7 @@ function loadPokemonDetails() {
                 <img src="${imageUrl}" alt="${pokemon.name}" class="pokemon-header-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23eee%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E'" />
                 <div class="pokemon-header-text">
                     <div class="flex-header">
-                        <div class="pokemon-title">#${pokemon.id} ${pokemon.name}</div>
+                        <div class="pokemon-title">#${pokemon.id | 0} ${pokemon.name}</div>
                         ${pokemon.shiny ? '<div class="shiny-badge">✨ SHINY</div>' : ''}
                         ${pokemon.types?.isFormeVariant ? `<div class="forme-badge-inline">${pokemon.types.selectedForme}</div>` : ''}
                         ${pokemon.statVariant ? `<div class="variant-badge-inline">${pokemon.statVariant.selectedVariant}</div>` : ''}
