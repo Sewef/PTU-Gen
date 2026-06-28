@@ -1,8 +1,8 @@
 // Pokemon Generator - Handles generating Pokemon stats and teams
 
-const fs = require('fs');
-const path = require('path');
-const statCalc = require('../public/stat-calculator');
+import '../public/stat-calculator.js';
+
+const statCalc = globalThis.PTUStatCalc;
 
 // Base URL for external datasets
 const DATASETS_BASE_URL = 'https://sewef.github.io/ptu/data/';
@@ -751,7 +751,6 @@ class PokemonGenerator {
           ].filter(a => a != null && a !== '').map(a => this.getAbilityLearnsetEntry(a))
         }
       },
-      dataset: dataset,
       includedLegendary: includeLegendaries
     };
 
@@ -2156,5 +2155,5 @@ class PokemonGenerator {
   }
 }
 
-module.exports = PokemonGenerator;
-module.exports.initializeDatasets = initializeDatasets;
+export { initializeDatasets };
+export default PokemonGenerator;

@@ -1,5 +1,5 @@
-// PTU Stat Calculation Utilities - shared between server (Node.js) and client (browser).
-// In the browser these become global functions; in Node.js they are exported via module.exports.
+// PTU Stat Calculation Utilities - shared between the Worker and client browser.
+// Browser pages use the global functions; the Worker reads them from globalThis.PTUStatCalc.
 
 const STAT_SHORT_NAMES = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
 
@@ -335,27 +335,25 @@ function calculateStats(baseStats, level, nature, distribution = 'RANDOM', ignor
     return stats;
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        STAT_SHORT_NAMES,
-        BASE_STATS_KEY_MAP,
-        getNatureModifier,
-        getBaseStatsWithNature,
-        groupStatsByValue,
-        normalizeIgnoreBaseRelation,
-        getStatGroups,
-        initDistributedPoints,
-        getSortedRelationGroups,
-        buildStatToGroupMap,
-        getGroupDistributedPoints,
-        getGroupFinalValues,
-        wouldKeepBaseRelation,
-        getValidDistributionCandidates,
-        distributePointsWithBaseRelation,
-        distributePointsRandom,
-        distributePointsBalanced,
-        distributePointsMinmaxed,
-        getDistributedPoints,
-        calculateStats
-    };
-}
+globalThis.PTUStatCalc = {
+    STAT_SHORT_NAMES,
+    BASE_STATS_KEY_MAP,
+    getNatureModifier,
+    getBaseStatsWithNature,
+    groupStatsByValue,
+    normalizeIgnoreBaseRelation,
+    getStatGroups,
+    initDistributedPoints,
+    getSortedRelationGroups,
+    buildStatToGroupMap,
+    getGroupDistributedPoints,
+    getGroupFinalValues,
+    wouldKeepBaseRelation,
+    getValidDistributionCandidates,
+    distributePointsWithBaseRelation,
+    distributePointsRandom,
+    distributePointsBalanced,
+    distributePointsMinmaxed,
+    getDistributedPoints,
+    calculateStats
+};
