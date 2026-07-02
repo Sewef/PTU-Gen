@@ -1,78 +1,80 @@
 const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const TARGET_URL = 'https://ptu-gen.sewef.workers.dev';
+const REDIRECT_DELAY_MS = 5000;
 
-// Import generator
-const PokemonGenerator = require('./utils/pokemonGenerator');
-const { initializeDatasets } = require('./utils/pokemonGenerator');
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Static files FIRST (so index.html is served for root path)
-app.use(express.static('public'));
-
-// Import routes
-const pokemonRoutes = require('./routes/pokemon');
-
-// API Routes
-app.use('/api/pokemon', pokemonRoutes);
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-// API info endpoint
-app.get('/api/info', (req, res) => {
-  res.json({
-    name: 'PTU 1.05 Pokemon Generator API',
-    version: '1.1.0',
-    endpoints: {
-      health: '/health',
-      generate: '/api/pokemon/generate',
-      generateWild: '/api/pokemon/generateWild/:level',
-      team: '/api/pokemon/team',
-      list: '/api/pokemon/list',
-      datasets: '/api/pokemon/datasets',
-      natures: '/api/pokemon/natures',
-      types: '/api/pokemon/types',
-      habitats: '/api/pokemon/habitats',
-      moves: '/api/pokemon/moves/:species',
-      abilities: '/api/pokemon/abilities/:species',
-      allMoves: '/api/pokemon/all-moves',
-      allAbilities: '/api/pokemon/all-abilities',
-      customPokemon: 'POST /api/pokemon/custom/pokemon',
-      customAbilities: 'POST /api/pokemon/custom/abilities',
-      customMoves: 'POST /api/pokemon/custom/moves',
-      customStatus: 'GET /api/pokemon/custom',
-      customClear: 'DELETE /api/pokemon/custom'
-    },
-    documentation: 'See README.md and CUSTOMIZATION.md for full documentation'
-  });
-});
-
-// Error handling
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error', message: err.message });
-});
-
-// 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
+  const redirectDelayMs = Math.max(1000, REDIRECT_DELAY_MS);
+  const redirectDelaySec = Math.ceil(redirectDelayMs / 1000);
+
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
+  res.status(200).type('html').send(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Redirecting</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: radial-gradient(circle at 30% 20%, #f4fbff, #e8eef9 55%, #dde6f5 100%);
+        color: #0f172a;
+      }
+      .card {
+        width: min(92vw, 580px);
+        padding: 28px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
+        text-align: center;
+      }
+      h1 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 1.35rem;
+      }
+      p {
+        margin: 8px 0;
+        line-height: 1.5;
+      }
+      a {
+        color: #0057b8;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>Redirect in progress</h1>
+      <p>This service has moved to a new address.</p>
+      <p>You will be redirected automatically in a few moments.</p>
+      <p>If nothing happens, open this link:</p>
+      <p><a href="${TARGET_URL}">${TARGET_URL}</a></p>
+    </main>
+    <script>
+      setTimeout(function () {
+        window.location.replace(${JSON.stringify(TARGET_URL)});
+      }, ${redirectDelayMs});
+    </script>
+    <noscript>
+      <meta http-equiv="refresh" content="${redirectDelaySec};url=${TARGET_URL}">
+    </noscript>
+  </body>
+</html>`);
 });
 
-// Initialize datasets and start server
-initializeDatasets().then(() => {
-  app.listen(PORT, () => {
-    console.log(`✓ PTU Pokemon Generator running on port ${PORT}`);
-  });
-}).catch((error) => {
-  console.error('Failed to initialize datasets:', error);
-  process.exit(1);
+app.listen(PORT, () => {
+  console.log(`Redirect service running on port ${PORT}`);
 });
