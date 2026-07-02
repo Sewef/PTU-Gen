@@ -647,14 +647,24 @@ class PokemonGenerator {
     const stats = this.calculateStats(baseStatsData, level, nature, distribution, ignoreBaseRelation);
     
     // Get selected abilities with their definitions
-    const abilityNames = this.selectAbilities(species, level);
-    const abilitiesWithDefinitions = abilityNames.map(abilityName => {
+    const abilitySelections = this.selectAbilities(species, level);
+    const abilitiesWithDefinitions = abilitySelections.map(abilitySelection => {
+      const abilityName = typeof abilitySelection === 'string' ? abilitySelection : abilitySelection.name;
       const definition = this.getAbilityDefinition(abilityName);
       if (!definition) {
-        return { name: abilityName };
+        const fallbackAbility = { name: abilityName };
+        if (typeof abilitySelection === 'object') {
+          fallbackAbility.sourceTier = abilitySelection.tier;
+          fallbackAbility.sourceSlot = abilitySelection.label;
+        }
+        return fallbackAbility;
       }
       // Convert all fields to camelCase and ensure name is the first property
       const normalizedAbility = this.normalizeAbilityFields(abilityName, definition);
+      if (typeof abilitySelection === 'object') {
+        normalizedAbility.sourceTier = abilitySelection.tier;
+        normalizedAbility.sourceSlot = abilitySelection.label;
+      }
       return normalizedAbility;
     });
     
@@ -910,33 +920,37 @@ class PokemonGenerator {
       return options[Math.floor(Math.random() * options.length)];
     };
 
-    // Resolve each slot to ONE ability
-    const basic1 = resolveAbilitySlot(basicInfo['Basic Ability 1']);
-    const basic2 = resolveAbilitySlot(basicInfo['Basic Ability 2']);
-    const adv1 = resolveAbilitySlot(basicInfo['Adv Ability 1']);
-    const adv2 = resolveAbilitySlot(basicInfo['Adv Ability 2']);
-    const high = resolveAbilitySlot(basicInfo['High Ability']);
+    // Resolve each slot to ONE ability. Keep slot identity so the same ability
+    // appearing in multiple slots can be selected multiple times.
+    const slots = [
+      { id: 'basic1', tier: 'basic', label: 'Basic Ability 1', name: resolveAbilitySlot(basicInfo['Basic Ability 1']) },
+      { id: 'basic2', tier: 'basic', label: 'Basic Ability 2', name: resolveAbilitySlot(basicInfo['Basic Ability 2']) },
+      { id: 'adv1', tier: 'advanced', label: 'Adv Ability 1', name: resolveAbilitySlot(basicInfo['Adv Ability 1']) },
+      { id: 'adv2', tier: 'advanced', label: 'Adv Ability 2', name: resolveAbilitySlot(basicInfo['Adv Ability 2']) },
+      { id: 'adv3', tier: 'advanced', label: 'Adv Ability 3', name: resolveAbilitySlot(basicInfo['Adv Ability 3']) },
+      { id: 'high', tier: 'high', label: 'High Ability', name: resolveAbilitySlot(basicInfo['High Ability']) }
+    ].filter(slot => slot.name !== null);
+    const selectedSlotIds = new Set();
+
+    const pickSlot = (candidateSlots) => {
+      const available = candidateSlots.filter(slot => !selectedSlotIds.has(slot.id));
+      if (available.length === 0) return;
+      const selected = available[Math.floor(Math.random() * available.length)];
+      selectedSlotIds.add(selected.id);
+      abilities.push(selected);
+    };
 
     // Level 1: Pick one from basic abilities
-    const basicAbilities = [basic1, basic2].filter(a => a !== null);
-    if (basicAbilities.length > 0) {
-      abilities.push(basicAbilities[Math.floor(Math.random() * basicAbilities.length)]);
-    }
+    pickSlot(slots.filter(slot => slot.tier === 'basic'));
 
-    // Level 20+: Add one random from basic + advanced (not already selected)
+    // Level 20+: Add one random from basic + advanced (not already selected slot)
     if (level >= 20) {
-      const available = [basic1, basic2, adv1, adv2].filter(a => a !== null && !abilities.includes(a));
-      if (available.length > 0) {
-        abilities.push(available[Math.floor(Math.random() * available.length)]);
-      }
+      pickSlot(slots.filter(slot => slot.tier === 'basic' || slot.tier === 'advanced'));
     }
 
-    // Level 40+: Add one random from all (not already selected)
+    // Level 40+: Add one random from all (not already selected slot)
     if (level >= 40) {
-      const available = [basic1, basic2, adv1, adv2, high].filter(a => a !== null && !abilities.includes(a));
-      if (available.length > 0) {
-        abilities.push(available[Math.floor(Math.random() * available.length)]);
-      }
+      pickSlot(slots);
     }
 
     return abilities;
@@ -1162,7 +1176,8 @@ class PokemonGenerator {
       effect: definition.Effect,
       bonus: definition.Bonus,
       special: definition.Special,
-      note: definition.Note
+      note: definition.Note,
+      table: definition.table || definition.Table
     };
   }
 
@@ -1745,72 +1760,57 @@ class PokemonGenerator {
         high: []
       };
 
+      const pushAvailableAbility = (target, abilityName, tier, sourceSlot) => {
+        const abilityData = this.getAbilityDefinition(abilityName);
+        const ability = abilityData
+          ? this.normalizeAbilityFields(abilityName, abilityData)
+          : {
+              name: abilityName,
+              frequency: 'N/A',
+              effect: 'N/A'
+            };
+
+        ability.sourceTier = tier;
+        ability.sourceSlot = sourceSlot;
+        target.push(ability);
+      };
+
       if (species['Basic Information']) {
         const basicInfo = species['Basic Information'];
         
         // Basic Abilities
         if (basicInfo['Basic Ability 1']) {
           flattenAbility(basicInfo['Basic Ability 1']).forEach(abilityName => {
-            const abilityData = abilitiesDatabase[abilityName];
-            result.basic.push({
-              name: abilityName,
-              frequency: abilityData?.Frequency || 'N/A',
-              effect: abilityData?.Effect || 'N/A'
-            });
+            pushAvailableAbility(result.basic, abilityName, 'basic', 'Basic Ability 1');
           });
         }
         if (basicInfo['Basic Ability 2']) {
           flattenAbility(basicInfo['Basic Ability 2']).forEach(abilityName => {
-            const abilityData = abilitiesDatabase[abilityName];
-            result.basic.push({
-              name: abilityName,
-              frequency: abilityData?.Frequency || 'N/A',
-              effect: abilityData?.Effect || 'N/A'
-            });
+            pushAvailableAbility(result.basic, abilityName, 'basic', 'Basic Ability 2');
           });
         }
 
         // Advanced Abilities
         if (basicInfo['Adv Ability 1']) {
           flattenAbility(basicInfo['Adv Ability 1']).forEach(abilityName => {
-            const abilityData = abilitiesDatabase[abilityName];
-            result.advanced.push({
-              name: abilityName,
-              frequency: abilityData?.Frequency || 'N/A',
-              effect: abilityData?.Effect || 'N/A'
-            });
+            pushAvailableAbility(result.advanced, abilityName, 'advanced', 'Adv Ability 1');
           });
         }
         if (basicInfo['Adv Ability 2']) {
           flattenAbility(basicInfo['Adv Ability 2']).forEach(abilityName => {
-            const abilityData = abilitiesDatabase[abilityName];
-            result.advanced.push({
-              name: abilityName,
-              frequency: abilityData?.Frequency || 'N/A',
-              effect: abilityData?.Effect || 'N/A'
-            });
+            pushAvailableAbility(result.advanced, abilityName, 'advanced', 'Adv Ability 2');
           });
         }
         if (basicInfo['Adv Ability 3']) {
           flattenAbility(basicInfo['Adv Ability 3']).forEach(abilityName => {
-            const abilityData = abilitiesDatabase[abilityName];
-            result.advanced.push({
-              name: abilityName,
-              frequency: abilityData?.Frequency || 'N/A',
-              effect: abilityData?.Effect || 'N/A'
-            });
+            pushAvailableAbility(result.advanced, abilityName, 'advanced', 'Adv Ability 3');
           });
         }
 
         // High Ability
         if (basicInfo['High Ability']) {
           flattenAbility(basicInfo['High Ability']).forEach(abilityName => {
-            const abilityData = abilitiesDatabase[abilityName];
-            result.high.push({
-              name: abilityName,
-              frequency: abilityData?.Frequency || 'N/A',
-              effect: abilityData?.Effect || 'N/A'
-            });
+            pushAvailableAbility(result.high, abilityName, 'high', 'High Ability');
           });
         }
       }
@@ -1931,7 +1931,8 @@ class PokemonGenerator {
           .map(([name, data]) => ({
             Name: name,
             Frequency: data['Frequency'] || 'N/A',
-            Effect: data['Effect'] || 'N/A'
+            Effect: data['Effect'] || 'N/A',
+            table: data.table || data.Table
           }));
       }
 
@@ -1940,7 +1941,8 @@ class PokemonGenerator {
         all: abilitiesList.map(ability => ({
           name: ability.Name || ability.name,
           frequency: ability.Frequency || ability.frequency || 'N/A',
-          effect: ability.Effect || ability.effect || 'N/A'
+          effect: ability.Effect || ability.effect || 'N/A',
+          table: ability.table || ability.Table
         }))
       };
 

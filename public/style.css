@@ -932,6 +932,34 @@ button {
     font-style: italic;
 }
 
+.ability-table-wrap {
+    overflow-x: auto;
+    margin: 8px 0 10px;
+}
+
+.ability-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.ability-table th,
+.ability-table td {
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    text-align: left;
+    vertical-align: top;
+}
+
+.ability-table th {
+    background: var(--bg-tertiary);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
 /* Move type-specific border colors */
 .section-card.move {
     border-left-color: var(--primary-color);

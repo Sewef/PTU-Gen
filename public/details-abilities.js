@@ -41,8 +41,8 @@ function setupAbilitiesEditor(pokemon) {
 }
 
 // Toggle ability usage tracking
-function toggleAbilityUsage(pokemon, abilityName, usageIndex) {
-    const ability = pokemon.abilities.find(a => a.name === abilityName);
+function toggleAbilityUsage(pokemon, abilityIndex, usageIndex) {
+    const ability = pokemon.abilities[abilityIndex];
     if (!ability) return;
 
     // Initialize usageCount if not present
@@ -63,21 +63,16 @@ function toggleAbilityUsage(pokemon, abilityName, usageIndex) {
 }
 
 // Remove an ability from the pokemon
-function removeAbility(pokemon, abilityName) {
-    pokemon.abilities = pokemon.abilities.filter(a => a.name !== abilityName);
+function removeAbility(pokemon, abilityIndex) {
+    pokemon.abilities.splice(abilityIndex, 1);
     updateAbilitiesDisplay(pokemon);
 }
 
 // Add an ability to the pokemon
 function addAbility(pokemon, abilityData) {
-    // Check if ability already exists - if so, remove it instead
-    const exists = pokemon.abilities.some(a => a.name === abilityData.name);
-    if (exists) {
-        removeAbility(pokemon, abilityData.name);
-    } else {
-        pokemon.abilities.push(abilityData);
-        updateAbilitiesDisplay(pokemon);
-    }
+    pokemon.abilities.push({ ...abilityData, usageCount: 0 });
+    updateAbilitiesDisplay(pokemon);
+    updateAbilityButtonCounts(pokemon);
     
     // Update modal button state if modal is open
     const btn = document.querySelector(`button[data-ability-name="${abilityData.name.toLowerCase()}"]`);
@@ -100,6 +95,29 @@ function addAbility(pokemon, abilityData) {
             if (checkmark) checkmark.remove();
         }
     }
+    updateAbilityButtonCounts(pokemon);
+}
+
+function updateAbilityButtonCounts(pokemon) {
+    document.querySelectorAll('button[data-ability-name]').forEach(btn => {
+        const abilityName = btn.dataset.abilityName;
+        const count = pokemon.abilities.filter(ability => ability.name?.toLowerCase() === abilityName).length;
+        btn.classList.toggle('exists', count > 0);
+
+        let countSpan = btn.querySelector('.ability-btn-count');
+        if (count > 0) {
+            if (!countSpan) {
+                countSpan = document.createElement('span');
+                countSpan.className = 'ability-btn-count';
+                btn.querySelector('.ability-btn-title')?.appendChild(countSpan);
+            }
+            countSpan.textContent = ` x${count}`;
+        } else if (countSpan) {
+            countSpan.remove();
+        }
+
+        btn.querySelectorAll('.ability-btn-checkmark').forEach(checkmark => checkmark.remove());
+    });
 }
 
 // Add a blank ability
@@ -123,14 +141,50 @@ function addBlankAbility(pokemon) {
     updateAbilitiesDisplay(pokemon);
 }
 
+function escapeAbilityHTML(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderAbilityTable(tableData) {
+    const rows = tableData?.rows;
+    if (!Array.isArray(rows) || rows.length === 0) return '';
+
+    const [headers, ...bodyRows] = rows;
+    if (!Array.isArray(headers) || headers.length === 0) return '';
+
+    return `
+        <div class="ability-table-wrap">
+            <table class="ability-table">
+                <thead>
+                    <tr>
+                        ${headers.map(header => `<th>${escapeAbilityHTML(header)}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${bodyRows.map(row => `
+                        <tr>
+                            ${headers.map((_, index) => `<td>${escapeAbilityHTML(Array.isArray(row) ? row[index] : '')}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
 // Update abilities display
 function updateAbilitiesDisplay(pokemon) {
     const abilitiesList = document.getElementById('abilitiesList');
-    abilitiesList.innerHTML = pokemon.abilities.map(ability => {
+    abilitiesList.innerHTML = pokemon.abilities.map((ability, abilityIndex) => {
         const isCustom = ability.editable === true;
         if (isCustom) {
             return `
-                <div class="section-card" data-ability-name="${ability.name}">
+                <div class="section-card" data-ability-index="${abilityIndex}" data-ability-name="${escapeAbilityHTML(ability.name)}">
                     <div class="section-card-header">
                         <input type="text" class="custom-ability-name-input" value="${ability.name}" placeholder="Ability name" style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 4px;" />
                         <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
@@ -141,13 +195,14 @@ function updateAbilitiesDisplay(pokemon) {
             `;
         } else {
             return `
-                <div class="section-card" data-ability-name="${ability.name}">
+                <div class="section-card" data-ability-index="${abilityIndex}" data-ability-name="${escapeAbilityHTML(ability.name)}">
                     <div class="section-card-header">
                         <div class="section-card-name">${ability.name}</div>
                         <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
                     </div>
+                    ${ability.sourceSlot ? `<div class="section-card-field"><strong>Slot:</strong> ${escapeAbilityHTML(ability.sourceSlot)}</div>` : ''}
                     ${ability.frequency ? `<div class="section-card-field"><strong>Frequency:</strong> ${ability.frequency}
-                        <span class="usage-tracker" data-ability-name="${ability.name}">
+                        <span class="usage-tracker" data-ability-index="${abilityIndex}">
                             <span class="usage-label">Uses:</span>
                             <div class="usage-boxes">
                                 ${(() => {
@@ -160,6 +215,7 @@ function updateAbilitiesDisplay(pokemon) {
                     </div>` : ''}
                     ${ability.trigger ? `<div class="section-card-field"><strong>Trigger:</strong> ${ability.trigger}</div>` : ''}
                     ${ability.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${ability.effect}</div>` : ''}
+                    ${renderAbilityTable(ability.table)}
                     ${ability.bonus ? `<div class="section-card-field"><strong>Bonus:</strong> ${ability.bonus}</div>` : ''}
                     ${ability.special ? `<div class="section-card-field"><strong>Special:</strong> ${ability.special}</div>` : ''}
                     ${ability.note ? `<div class="section-card-field note"><strong>Note:</strong> ${ability.note}</div>` : ''}
@@ -172,8 +228,8 @@ function updateAbilitiesDisplay(pokemon) {
     document.querySelectorAll('.remove-ability-btn').forEach(btn => {
         btn.addEventListener('click', function () {
             const abilityElement = btn.closest('.section-card');
-            const abilityName = abilityElement.getAttribute('data-ability-name');
-            removeAbility(pokemon, abilityName);
+            const abilityIndex = parseInt(abilityElement.getAttribute('data-ability-index'), 10);
+            removeAbility(pokemon, abilityIndex);
         });
     });
 
@@ -182,9 +238,9 @@ function updateAbilitiesDisplay(pokemon) {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
             const tracker = btn.closest('.usage-tracker');
-            const abilityName = tracker.getAttribute('data-ability-name');
+            const abilityIndex = parseInt(tracker.getAttribute('data-ability-index'), 10);
             const index = parseInt(btn.getAttribute('data-index'));
-            toggleAbilityUsage(pokemon, abilityName, index);
+            toggleAbilityUsage(pokemon, abilityIndex, index);
         });
     });
 }
@@ -406,7 +462,9 @@ function createAbilityButton(ability, pokemon, category) {
 
     const detailsDiv = document.createElement('div');
     detailsDiv.className = 'ability-btn-details';
-    detailsDiv.textContent = ability.frequency || 'N/A';
+    detailsDiv.textContent = ability.sourceSlot
+        ? `${ability.sourceSlot} - ${ability.frequency || 'N/A'}`
+        : ability.frequency || 'N/A';
 
     btn.appendChild(titleDiv);
     btn.appendChild(detailsDiv);
@@ -452,6 +510,7 @@ function displayAllAbilitiesInGrid(grid, allAbilities, pokemon) {
     
     section.appendChild(abilitiesList);
     grid.appendChild(section);
+    updateAbilityButtonCounts(pokemon);
 }
 
 // Filter all abilities based on search
