@@ -284,6 +284,18 @@ input:focus, select:focus {
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.pref-changed-control {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.22);
+}
+
+.pref-changed-group {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.08), transparent 65%);
+    border-left: 3px solid #f59e0b;
+    padding-left: 8px;
+    border-radius: 4px;
+}
+
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1387,6 +1399,11 @@ button {
     font-size: 0.9em;
 }
 
+.advanced-toggle.has-hidden-changes {
+    border: 1px solid #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
+}
+
 .advanced-toggle:hover {
     background: var(--border-color);
 }
@@ -1495,8 +1512,21 @@ button {
 }
 
 .toggle-icon {
+    position: relative;
     font-size: 1.2em;
     transition: transform 0.3s;
+}
+
+.toggle-icon.has-hidden-changes::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    right: -7px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #f59e0b;
+    box-shadow: 0 0 0 2px var(--bg-secondary);
 }
 
 .toggle-icon.open {

@@ -368,6 +368,119 @@
         const datasetSelect = document.getElementById('dataset');
         const fandexContainer = document.getElementById('fandexContainer');
         const fandexCheckboxes = document.getElementById('fandexCheckboxes');
+        const SETTINGS_STORAGE_KEY = 'ptu-generator-preferences-v1';
+        const SETTINGS_DEFAULTS = {
+            dataset: 'core',
+            fandex: [],
+            randomForm: false,
+            shinyOdds: 1,
+            includeLegendaries: false,
+            forceEvolution: false,
+            distribution: 'RANDOM',
+            ignoreBaseRelation: '',
+            hpFormula: 'LEVEL + (HP * 3) + 10'
+        };
+
+        function readStoredSettings() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+                if (!raw) return { ...SETTINGS_DEFAULTS };
+                const parsed = JSON.parse(raw);
+                return {
+                    ...SETTINGS_DEFAULTS,
+                    ...parsed,
+                    fandex: Array.isArray(parsed?.fandex) ? parsed.fandex : []
+                };
+            } catch {
+                return { ...SETTINGS_DEFAULTS };
+            }
+        }
+
+        function writeStoredSettings() {
+            const settings = {
+                dataset: document.getElementById('dataset').value || SETTINGS_DEFAULTS.dataset,
+                randomForm: document.getElementById('randomForm').checked,  
+                fandex: Array.from(document.querySelectorAll('.fandex-checkbox:checked')).map(cb => cb.value),
+                shinyOdds: parseFloat(document.getElementById('shinyOdds').value || SETTINGS_DEFAULTS.shinyOdds),
+                includeLegendaries: document.getElementById('includeLegendaries').checked,
+                forceEvolution: document.getElementById('forceEvolution').checked,
+                distribution: document.getElementById('distribution').value || SETTINGS_DEFAULTS.distribution,
+                ignoreBaseRelation: (document.getElementById('ignoreBaseRelation').value || '').trim(),
+                hpFormula: (document.getElementById('hpFormula').value || '').trim()
+            };
+
+            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+        }
+
+        function setControlChangedState(control, changed) {
+            if (!control) return;
+            control.classList.toggle('pref-changed-control', Boolean(changed));
+            const group = control.closest('.form-group');
+            if (group) {
+                group.classList.toggle('pref-changed-group', Boolean(changed));
+            }
+        }
+
+        function updatePreferenceIndicators() {
+            const dataset = document.getElementById('dataset');
+            const randomForm = document.getElementById('randomForm');
+            const shinyOdds = document.getElementById('shinyOdds');
+            const includeLegendaries = document.getElementById('includeLegendaries');
+            const forceEvolution = document.getElementById('forceEvolution');
+            const distribution = document.getElementById('distribution');
+            const ignoreBaseRelation = document.getElementById('ignoreBaseRelation');
+            const hpFormula = document.getElementById('hpFormula');
+
+            const selectedFandex = Array.from(document.querySelectorAll('.fandex-checkbox:checked')).map(cb => cb.value);
+            const hasFandexChanges = selectedFandex.length > 0;
+            const hasIgnoreBaseRelationChanges = (ignoreBaseRelation.value || '').trim() !== SETTINGS_DEFAULTS.ignoreBaseRelation;
+            const hasHpFormulaChanges = (hpFormula.value || '').trim() !== SETTINGS_DEFAULTS.hpFormula;
+
+            setControlChangedState(dataset, dataset.value !== SETTINGS_DEFAULTS.dataset);
+            setControlChangedState(randomForm, randomForm.checked !== SETTINGS_DEFAULTS.randomForm);
+            setControlChangedState(shinyOdds, Number(shinyOdds.value || SETTINGS_DEFAULTS.shinyOdds) !== SETTINGS_DEFAULTS.shinyOdds);
+            setControlChangedState(distribution, distribution.value !== SETTINGS_DEFAULTS.distribution);
+            setControlChangedState(ignoreBaseRelation, hasIgnoreBaseRelationChanges);
+            setControlChangedState(hpFormula, hasHpFormulaChanges);
+
+            includeLegendaries.classList.toggle('pref-changed-control', includeLegendaries.checked !== SETTINGS_DEFAULTS.includeLegendaries);
+            forceEvolution.classList.toggle('pref-changed-control', forceEvolution.checked !== SETTINGS_DEFAULTS.forceEvolution);
+            const optionsGroup = includeLegendaries.closest('.form-group');
+            if (optionsGroup) {
+                optionsGroup.classList.toggle(
+                    'pref-changed-group',
+                    includeLegendaries.checked !== SETTINGS_DEFAULTS.includeLegendaries || forceEvolution.checked !== SETTINGS_DEFAULTS.forceEvolution
+                );
+            }
+
+            fandexContainer.classList.toggle('pref-changed-group', hasFandexChanges);
+
+            const advancedSection = document.getElementById('advancedSection');
+            const advancedToggle = document.querySelector('.advanced-toggle[onclick="toggleAdvanced()"]');
+            const toggleIcon = document.getElementById('toggleIcon');
+            const hasAdvancedChanges = hasIgnoreBaseRelationChanges || hasHpFormulaChanges;
+            const collapsed = !advancedSection.classList.contains('open');
+
+            if (advancedToggle) {
+                advancedToggle.classList.toggle('has-hidden-changes', hasAdvancedChanges && collapsed);
+            }
+            if (toggleIcon) {
+                toggleIcon.classList.toggle('has-hidden-changes', hasAdvancedChanges && collapsed);
+            }
+        }
+
+        function applyStoredSettingsToControls() {
+            const stored = readStoredSettings();
+
+            document.getElementById('dataset').value = stored.dataset || SETTINGS_DEFAULTS.dataset;
+            document.getElementById('randomForm').checked = Boolean(stored.randomForm);
+            document.getElementById('shinyOdds').value = String(stored.shinyOdds ?? SETTINGS_DEFAULTS.shinyOdds);
+            document.getElementById('includeLegendaries').checked = Boolean(stored.includeLegendaries);
+            document.getElementById('forceEvolution').checked = Boolean(stored.forceEvolution);
+            document.getElementById('distribution').value = stored.distribution || SETTINGS_DEFAULTS.distribution;
+            document.getElementById('ignoreBaseRelation').value = stored.ignoreBaseRelation || SETTINGS_DEFAULTS.ignoreBaseRelation;
+            document.getElementById('hpFormula').value = stored.hpFormula || SETTINGS_DEFAULTS.hpFormula;
+        }
 
         // Load FanDex list
         async function loadFandexList() {
@@ -386,13 +499,20 @@
                         
                         // Add event listeners to checkboxes
                         document.querySelectorAll('.fandex-checkbox').forEach(cb => {
+                            const stored = readStoredSettings();
+                            cb.checked = stored.fandex.includes(cb.value);
+
                             cb.addEventListener('change', () => {
                                 const dataset = datasetSelect.value;
                                 loadPokemonList(dataset);
                                 loadHabitatList(dataset);
                                 loadTypeList(dataset);
+                                writeStoredSettings();
+                                updatePreferenceIndicators();
                             });
                         });
+
+                        updatePreferenceIndicators();
                     }
                 }
             } catch (error) {
@@ -668,6 +788,8 @@
             loadPokemonList(this.value);
             loadHabitatList(this.value);
             loadTypeList(this.value);
+            writeStoredSettings();
+            updatePreferenceIndicators();
         });
 
         // Disable browser autocomplete on all inputs
@@ -751,6 +873,38 @@
                 shinyOddsInput.disabled = false;
                 shinyOddsInput.style.opacity = '1';
             }
+        });
+
+        // Persist and highlight selected preferences
+        [
+            document.getElementById('dataset'),
+            document.getElementById('randomForm'),
+            document.getElementById('shinyOdds'),
+            document.getElementById('includeLegendaries'),
+            document.getElementById('forceEvolution'),
+            document.getElementById('distribution'),
+            document.getElementById('ignoreBaseRelation'),
+            document.getElementById('hpFormula')
+        ].forEach(control => {
+            const eventName = control.tagName === 'INPUT' && control.type === 'text' ? 'input' : 'change';
+            control.addEventListener(eventName, () => {
+                writeStoredSettings();
+                updatePreferenceIndicators();
+            });
+
+            if (eventName !== 'change') {
+                control.addEventListener('change', () => {
+                    writeStoredSettings();
+                    updatePreferenceIndicators();
+                });
+            }
+        });
+
+        form.addEventListener('reset', function () {
+            setTimeout(() => {
+                writeStoredSettings();
+                updatePreferenceIndicators();
+            }, 0);
         });
 
         // Submit form
@@ -1023,6 +1177,7 @@
             const icon = document.getElementById('toggleIcon');
             section.classList.toggle('open');
             icon.classList.toggle('open');
+            updatePreferenceIndicators();
         }
 
         function toggleCustomization() {
@@ -1302,6 +1457,9 @@
         // Generate Pokémon on page load
         window.addEventListener('load', async function () {
             console.log('🔄 Page load event fired - clearing custom data');
+
+            applyStoredSettingsToControls();
+            updatePreferenceIndicators();
             
             // Clear custom data on page load to reset session
             try {
@@ -1313,9 +1471,10 @@
             }
             
             console.log('📋 Loading Pokemon list...');
-            loadPokemonList();
-            loadHabitatList();
-            loadTypeList();
+            const selectedDataset = document.getElementById('dataset').value || 'core';
+            loadPokemonList(selectedDataset);
+            loadHabitatList(selectedDataset);
+            loadTypeList(selectedDataset);
             loadNatures();
             loadFandexList();
             // Optional: auto-generate
