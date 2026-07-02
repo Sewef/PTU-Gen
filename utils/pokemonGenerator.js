@@ -931,25 +931,59 @@ class PokemonGenerator {
       { id: 'high', tier: 'high', label: 'High Ability', name: resolveAbilitySlot(basicInfo['High Ability']) }
     ].filter(slot => slot.name !== null);
     const selectedSlotIds = new Set();
+    const repeatedAbilityNames = new Set(
+      [...slots.reduce((counts, slot) => {
+        counts.set(slot.name, (counts.get(slot.name) || 0) + 1);
+        return counts;
+      }, new Map()).entries()]
+        .filter(([, count]) => count > 1)
+        .map(([name]) => name)
+    );
+
+    const selectSlot = (slot) => {
+      selectedSlotIds.add(slot.id);
+      abilities.push(slot);
+    };
 
     const pickSlot = (candidateSlots) => {
       const available = candidateSlots.filter(slot => !selectedSlotIds.has(slot.id));
       if (available.length === 0) return;
       const selected = available[Math.floor(Math.random() * available.length)];
-      selectedSlotIds.add(selected.id);
-      abilities.push(selected);
+      selectSlot(selected);
+    };
+
+    const pickRepeatedSlots = (candidateSlots, remainingCount) => {
+      const available = candidateSlots.filter(slot =>
+        repeatedAbilityNames.has(slot.name) && !selectedSlotIds.has(slot.id)
+      );
+
+      while (available.length > 0 && abilities.length < remainingCount) {
+        const selectedIndex = Math.floor(Math.random() * available.length);
+        const [selected] = available.splice(selectedIndex, 1);
+        selectSlot(selected);
+      }
     };
 
     // Level 1: Pick one from basic abilities
     pickSlot(slots.filter(slot => slot.tier === 'basic'));
 
-    // Level 20+: Add one random from basic + advanced (not already selected slot)
+    const targetAbilityCount = 1 + (level >= 20 ? 1 : 0) + (level >= 40 ? 1 : 0);
+    const level20Slots = slots.filter(slot => slot.tier === 'basic' || slot.tier === 'advanced');
+
+    // Prefer repeated ability slots so entries like Adv + High Quill & Rock can both appear.
     if (level >= 20) {
-      pickSlot(slots.filter(slot => slot.tier === 'basic' || slot.tier === 'advanced'));
+      pickRepeatedSlots(level20Slots, targetAbilityCount);
+    }
+    if (level >= 40) {
+      pickRepeatedSlots(slots, targetAbilityCount);
     }
 
-    // Level 40+: Add one random from all (not already selected slot)
-    if (level >= 40) {
+    // Fill remaining choices using the normal level gates.
+    if (level >= 20 && abilities.length < 2) {
+      pickSlot(level20Slots);
+    }
+
+    if (level >= 40 && abilities.length < 3) {
       pickSlot(slots);
     }
 
