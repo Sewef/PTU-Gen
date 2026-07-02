@@ -693,6 +693,8 @@ class PokemonGenerator {
       ? `${species.Species} (${species.Form})`
       : species.Species;
     
+    const hitPointsMax = this.calculateHitPoints(level, stats.HP, hpFormula);
+
     const pokemon = {
       id: species.Number,
       Icon: species.Icon,
@@ -717,7 +719,8 @@ class PokemonGenerator {
       statVariant: extractedStats.isStatVariant ? { selectedVariant: extractedStats.selectedVariant } : undefined,
       baseWithNature: baseWithNature,
       stats: stats,
-      hitPoints: this.calculateHitPoints(level, stats.HP, hpFormula),
+      hitPoints: hitPointsMax,
+      hitPointsMax: hitPointsMax,
       hpFormula: hpFormula,
       ignoreBaseRelation: ignoreBaseRelation,
       moves: this.selectMovesForPokemon(species, level, 6),
@@ -805,10 +808,11 @@ class PokemonGenerator {
     const count = options.size || 6;
     const level = options.level || 50;
     const dataset = options.dataset || 'core';
+    const hpFormula = options.hpformula;
     const includeLegendaries = options.includelegendaries === 'true' || options.includelegendaries === true;
 
     for (let i = 0; i < count; i++) {
-      team.push(await this.generatePokemon({ level, dataset, includelegendaries: includeLegendaries }));
+      team.push(await this.generatePokemon({ level, dataset, hpformula: hpFormula, includelegendaries: includeLegendaries }));
     }
 
     return {

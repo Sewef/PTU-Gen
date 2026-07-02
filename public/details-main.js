@@ -27,11 +27,15 @@ function loadPokemonDetails() {
 
     // Initialize hitPoints and hitPointsMax if not present
     if (pokemon.stats && pokemon.stats.HP) {
-        const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
-        if (!pokemon.hitPointsMax) {
+        const defaultHPFormula = 'LEVEL + (HP * 3) + 10';
+        const hpFormula = pokemon.hpFormula || defaultHPFormula;
+        const hadHitPointsMax = pokemon.hitPointsMax !== undefined && pokemon.hitPointsMax !== null;
+        if (!hadHitPointsMax) {
             pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
         }
-        if (pokemon.hitPoints === undefined || pokemon.hitPoints === null) {
+        const defaultFormulaHP = calculateHPValue(pokemon.level, pokemon.stats.HP, defaultHPFormula);
+        const hasStaleDefaultHP = hpFormula !== defaultHPFormula && pokemon.hitPoints === defaultFormulaHP;
+        if (!hadHitPointsMax || hasStaleDefaultHP || pokemon.hitPoints === undefined || pokemon.hitPoints === null) {
             pokemon.hitPoints = pokemon.hitPointsMax;
         }
     }
@@ -183,7 +187,7 @@ function loadPokemonDetails() {
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     <input type="number" id="hpCurrentInput" class="level-number-input" value="${pokemon.hitPoints}" style="flex: 1;" />
                                     <span class="text-secondary">/</span>
-                                    <div id="hpMaxDisplay" style="min-width: 50px; text-align: center;">${pokemon.hitPoints}</div>
+                                    <div id="hpMaxDisplay" style="min-width: 50px; text-align: center;">${pokemon.hitPointsMax}</div>
                                 </div>
                             </div>
                         </div>
@@ -798,6 +802,7 @@ function loadPokemonDetails() {
     function updateHPMax() {
         const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
         const hpMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+        pokemon.hitPointsMax = hpMax;
         if (hpMaxDisplay) hpMaxDisplay.textContent = hpMax;
     }
 

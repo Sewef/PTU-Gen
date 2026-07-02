@@ -43,7 +43,8 @@ async function setupNatureDropdown(pokemon) {
 // Recalculate and display HP
 function updateHPDisplay(pokemon) {
     const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
-    pokemon.hitPoints = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+    pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+    pokemon.hitPoints = pokemon.hitPointsMax;
     const hpDisplay = document.getElementById('hpDisplay');
     if (hpDisplay) hpDisplay.textContent = pokemon.hitPoints;
 }
@@ -117,7 +118,8 @@ function setupLevelEditor(pokemon) {
 
             // Recalculate HP with new level
             const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
-            pokemon.hitPoints = calculateHPValue(newLevel, pokemon.stats.HP, hpFormula);
+            pokemon.hitPointsMax = calculateHPValue(newLevel, pokemon.stats.HP, hpFormula);
+            pokemon.hitPoints = pokemon.hitPointsMax;
 
             // Update HP current display
             const hpCurrentInput = document.getElementById('hpCurrentInput');
@@ -125,7 +127,7 @@ function setupLevelEditor(pokemon) {
 
             // Update HP max display
             const hpMaxDisplay = document.getElementById('hpMaxDisplay');
-            if (hpMaxDisplay) hpMaxDisplay.textContent = pokemon.hitPoints;
+            if (hpMaxDisplay) hpMaxDisplay.textContent = pokemon.hitPointsMax;
 
             // Update header level
             const headerLevel = document.getElementById('headerLevel');
@@ -166,6 +168,7 @@ function setupHPFormulaEditor(pokemon) {
 
         const newHP = calculateHPValue(pokemon.level, pokemon.stats.HP, newFormula);
         if (newHP > 0) {
+            pokemon.hitPointsMax = newHP;
             pokemon.hitPoints = newHP;
             const hpCurrentInput = document.getElementById('hpCurrentInput');
             if (hpCurrentInput) hpCurrentInput.value = newHP;
@@ -189,6 +192,7 @@ function setupHPFormulaEditor(pokemon) {
         const newHP = calculateHPValue(pokemon.level, pokemon.stats.HP, newFormula);
         if (newHP > 0) {
             pokemon.hpFormula = newFormula;
+            pokemon.hitPointsMax = newHP;
             pokemon.hitPoints = newHP;
             const hpCurrentInput = document.getElementById('hpCurrentInput');
             if (hpCurrentInput) hpCurrentInput.value = newHP;

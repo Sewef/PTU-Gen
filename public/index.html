@@ -767,6 +767,33 @@
             await generateMultiplePokemon(count);
         });
 
+        function calculateGeneratedHPValue(level, hpStat, formula) {
+            try {
+                const formulaStr = String(formula || 'LEVEL + (HP * 3) + 10')
+                    .toUpperCase()
+                    .replace(/LEVEL/g, Number(level))
+                    .replace(/HP/g, Number(hpStat));
+                if (!/^[\d+\-*/(). ]+$/.test(formulaStr)) throw new Error('Invalid formula');
+                return Math.max(1, Math.floor(Function(`return ${formulaStr}`)()));
+            } catch (e) {
+                return Math.max(1, Math.floor(Number(level) + (Number(hpStat) * 3) + 10));
+            }
+        }
+
+        function normalizeGeneratedPokemonHP(pokemon) {
+            if (!pokemon?.stats || pokemon.stats.HP === undefined) return pokemon;
+
+            const hpMax = calculateGeneratedHPValue(
+                pokemon.level,
+                pokemon.stats.HP,
+                pokemon.hpFormula || 'LEVEL + (HP * 3) + 10'
+            );
+
+            pokemon.hitPointsMax = hpMax;
+            pokemon.hitPoints = hpMax;
+            return pokemon;
+        }
+
         async function generateMultiplePokemon(count) {
             try {
                 pokemonDisplay.innerHTML = '<div class="loading"><div class="spinner"></div>Generating ' + count + ' Pokémon...<div id="generationLogs" class="generation-logs"></div></div>';
@@ -864,6 +891,7 @@
 
                         addLog(`✓ Pokémon ${i + 1}/${count}: Received response, processing...`);
                         const pokemon = await response.json();
+                        normalizeGeneratedPokemonHP(pokemon);
                         addLog(`✅ Pokémon ${i + 1}/${count}: Complete`);
                         pokemons.push(pokemon);
                     } catch (err) {
@@ -882,6 +910,8 @@
             let html = '<div class="pokemon-cards-grid">';
 
             pokemons.forEach((pokemon, index) => {
+                normalizeGeneratedPokemonHP(pokemon);
+
                 // Get actual types, handling forme variants
                 let typesToShow = pokemon.actualTypes || pokemon.types || [];
                 if (typesToShow.isFormeVariant) {

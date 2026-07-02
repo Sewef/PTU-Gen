@@ -188,6 +188,7 @@ app.get('/api/pokemon/team', async c => {
       size,
       dataset: (query.dataset || 'core').toLowerCase(),
       fandex: splitFandex(query),
+      hpformula: query.hpformula,
       includelegendaries: query.includelegendaries
     };
 

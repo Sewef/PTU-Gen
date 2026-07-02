@@ -5,6 +5,7 @@
 
 const OWLBEAR_TOKEN_SIZE = 96;
 const OWLBEAR_SIZE_SCALES = { 'Large': 2, 'Huge': 3, 'Gigantic': 4 };
+const OWLBEAR_DEFAULT_HP_FORMULA = 'LEVEL + (HP * 3) + 10';
 
 function generateTokenUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -18,6 +19,29 @@ function generateOwlTrackersUUID() {
     return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
+function calculateOwlbearHPValue(level, hpStat, formula = OWLBEAR_DEFAULT_HP_FORMULA) {
+    const parsedLevel = Number(level);
+    const parsedHP = Number(hpStat);
+    const safeLevel = Number.isFinite(parsedLevel) ? parsedLevel : 1;
+    const safeHP = Number.isFinite(parsedHP) ? parsedHP : 0;
+
+    try {
+        const formulaText = String(formula);
+        const sanitized = formulaText
+            .toUpperCase()
+            .replace(/[^0-9+\-*/(). LEVEL HP]/g, '');
+
+        if (sanitized !== formulaText.toUpperCase() || sanitized.length === 0) {
+            throw new Error('Invalid formula');
+        }
+
+        const calcFunction = new Function('LEVEL', 'HP', `return ${sanitized}`);
+        return Math.max(1, Math.floor(calcFunction(safeLevel, safeHP)));
+    } catch (e) {
+        return Math.max(1, Math.floor(safeLevel + (safeHP * 3) + 10));
+    }
+}
+
 /**
  * Fill the template for a single Pokémon and return { uuid, item }.
  * position defaults to {x:0, y:0}.
@@ -28,19 +52,21 @@ function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
     const pokemonName = pokemon.nickname || pokemon.name;
     const uuid = generateTokenUUID();
     const W = OWLBEAR_TOKEN_SIZE;
+    const formulaMax = calculateOwlbearHPValue(pokemon.level, pokemon.stats?.HP, pokemon.hpFormula);
+    const hpMax = Number.isFinite(Number(pokemon.hitPointsMax)) ? Number(pokemon.hitPointsMax) : formulaMax;
+    const hpValue = Number.isFinite(Number(pokemon.hitPoints)) ? Number(pokemon.hitPoints) : hpMax;
 
+    const parsed = JSON.parse(templateText);
+    const item = parsed.items.shared.PLACEHOLDER_TOKEN_UUID;
 
-    const filled = templateText
-        .split('PLACEHOLDER_TOKEN_UUID').join(uuid)
-        .split('PLACEHOLDER_TRACKER_UUID_HP').join(generateOwlTrackersUUID())
-        .split('PLACEHOLDER_TRACKER_UUID_INJURIES').join(generateOwlTrackersUUID())
-        .split('"PLACEHOLDER_HP_VALUE"').join(pokemon.hitPoints)
-        .split('"PLACEHOLDER_HP_MAX"').join(pokemon.hitPointsMax)
-        .split('PLACEHOLDER_POKEMON_NAME').join(pokemonName.replace(/"/g, '\\"'))
-        .split('PLACEHOLDER_IMAGE_URL').join(imageUrl);
-
-    const parsed = JSON.parse(filled);
-    const item = parsed.items.shared[uuid];
+    item.id = uuid;
+    item.name = pokemonName;
+    item.metadata['com.owl-trackers/trackers'][0].id = generateOwlTrackersUUID();
+    item.metadata['com.owl-trackers/trackers'][0].value = hpValue;
+    item.metadata['com.owl-trackers/trackers'][0].max = hpMax;
+    item.metadata['com.owl-trackers/trackers'][1].id = generateOwlTrackersUUID();
+    item.image.url = imageUrl;
+    item.text.plainText = pokemonName;
 
     item.position.x = position.x;
     item.position.y = position.y;

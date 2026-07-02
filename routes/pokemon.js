@@ -189,6 +189,7 @@ router.get('/team', async (req, res) => {
       size: size,
       dataset: (req.query.dataset || 'core').toLowerCase(),
       fandex: splitFandex(req.query),
+      hpformula: req.query.hpformula,
       includelegendaries: req.query.includelegendaries
     };
 
