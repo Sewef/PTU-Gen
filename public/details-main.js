@@ -144,7 +144,7 @@ function loadPokemonDetails() {
                     <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level} • ${pokemon.dataset ? pokemon.dataset.charAt(0).toUpperCase() + pokemon.dataset.slice(1) : 'Core'} Dataset • ${pokemon._fandex ? `${pokemon._fandex.charAt(0).toUpperCase() + pokemon._fandex.slice(1)}` : ''}</div>
                 </div>
                 <div class="export-button-wrapper">
-                    <button id="exportOwlbearBtn" class="export-btn-main">🐻 Copy Owlbear Token</button>
+                    <button id="exportOwlbearBtn" class="export-btn-main"><img src="https://www.owlbear.rodeo/assets/logo-DZfycRP_.svg" alt="Owlbear" height="20" width="20" style="vertical-align: middle;" /> Copy Owlbear Token</button>
                     <button id="exportBtn" title="Export options" class="export-btn-main">📥 Export <span class="dropdown-arrow">▼</span></button>
                     <div id="exportDropdown" class="export-dropdown">
                         <button id="exportJsonBtn" class="export-dropdown-item">📄 Export PTU-Gen JSON</button>
