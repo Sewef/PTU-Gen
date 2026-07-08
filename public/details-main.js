@@ -25,6 +25,10 @@ function loadPokemonDetails() {
         pokemon.hpFormula = pokemon.hp_formula;
     }
 
+    if (pokemon.typeMultiplierMode !== 1.5 && pokemon.typeMultiplierMode !== 2) {
+        pokemon.typeMultiplierMode = 2;
+    }
+
     // Initialize hitPoints and hitPointsMax if not present
     if (pokemon.stats && pokemon.stats.HP) {
         const defaultHPFormula = 'LEVEL + (HP * 3) + 10';
@@ -820,6 +824,9 @@ function loadPokemonDetails() {
 
     // Display type effectiveness
     currentPokemon = pokemon;
+    if (typeof setCurrentTypeMultiplier === 'function') {
+        setCurrentTypeMultiplier(pokemon.typeMultiplierMode);
+    }
     displayTypeEffectiveness(pokemon);
 
     // Setup stat distribution buttons

@@ -1,6 +1,18 @@
 let currentTypeMultiplier = 2;
 let currentPokemon = null;
 
+function normalizeTypeMultiplierMode(mode) {
+    return String(mode) === '1.5' || Number(mode) === 1.5 ? 1.5 : 2;
+}
+
+function setCurrentTypeMultiplier(mode) {
+    currentTypeMultiplier = normalizeTypeMultiplierMode(mode);
+    updateMultiplierButtonStyles();
+    if (currentPokemon) {
+        displayTypeEffectiveness(currentPokemon);
+    }
+}
+
 // Type effectiveness chart - structured as [defendingType][attackingType]
 // Based on Vue.js reference (X=attacking type, Y=defending type)
 const typeEffectiveness = {"normal": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 2, "fire": 1, "flying": 1, "ghost": 0, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 1, "water": 1}, "fire": {"bug": 0.5, "dark": 1, "dragon": 1, "electric": 1, "fairy": 0.5, "fighting": 1, "fire": 0.5, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 2, "ice": 0.5, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 0.5, "water": 2}, "water": {"bug": 1, "dark": 1, "dragon": 1, "electric": 2, "fairy": 1, "fighting": 1, "fire": 0.5, "flying": 1, "ghost": 1, "grass": 2, "ground": 1, "ice": 0.5, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 0.5, "water": 0.5}, "grass": {"bug": 2, "dark": 1, "dragon": 1, "electric": 0.5, "fairy": 1, "fighting": 1, "fire": 2, "flying": 2, "ghost": 1, "grass": 0.5, "ground": 0.5, "ice": 2, "normal": 1, "poison": 2, "psychic": 1, "rock": 1, "steel": 1, "water": 0.5}, "flying": {"bug": 0.5, "dark": 1, "dragon": 1, "electric": 2, "fairy": 1, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 0, "ice": 2, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 1, "water": 1}, "fighting": {"bug": 0.5, "dark": 0.5, "dragon": 1, "electric": 1, "fairy": 2, "fighting": 1, "fire": 1, "flying": 2, "ghost": 1, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 2, "rock": 0.5, "steel": 1, "water": 1}, "poison": {"bug": 0.5, "dark": 1, "dragon": 1, "electric": 1, "fairy": 0.5, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 2, "ice": 1, "normal": 1, "poison": 0.5, "psychic": 2, "rock": 1, "steel": 1, "water": 1}, "ground": {"bug": 1, "dark": 1, "dragon": 1, "electric": 0, "fairy": 1, "fighting": 1, "fire": 1, "flying": 1, "ghost": 1, "grass": 2, "ground": 1, "ice": 2, "normal": 1, "poison": 0.5, "psychic": 1, "rock": 0.5, "steel": 1, "water": 2}, "rock": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 2, "fire": 0.5, "flying": 0.5, "ghost": 1, "grass": 2, "ground": 2, "ice": 1, "normal": 0.5, "poison": 0.5, "psychic": 1, "rock": 1, "steel": 2, "water": 2}, "psychic": {"bug": 2, "dark": 2, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 2, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 0.5, "rock": 1, "steel": 1, "water": 1}, "ice": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 2, "fire": 2, "flying": 1, "ghost": 1, "grass": 1, "ground": 1, "ice": 0.5, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 2, "water": 1}, "bug": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 0.5, "fire": 2, "flying": 2, "ghost": 1, "grass": 0.5, "ground": 0.5, "ice": 1, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 0.5, "water": 1}, "ghost": {"bug": 0.5, "dark": 2, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 0, "fire": 1, "flying": 1, "ghost": 2, "grass": 1, "ground": 1, "ice": 1, "normal": 0, "poison": 0.5, "psychic": 1, "rock": 1, "steel": 1, "water": 1}, "steel": {"bug": 0.5, "dark": 1, "dragon": 0.5, "electric": 1, "fairy": 0.5, "fighting": 2, "fire": 2, "flying": 0.5, "ghost": 1, "grass": 0.5, "ground": 2, "ice": 0.5, "normal": 0.5, "poison": 0, "psychic": 0.5, "rock": 0.5, "steel": 0.5, "water": 1}, "dragon": {"bug": 1, "dark": 1, "dragon": 2, "electric": 0.5, "fairy": 2, "fighting": 1, "fire": 0.5, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 1, "ice": 2, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 1, "water": 0.5}, "dark": {"bug": 2, "dark": 0.5, "dragon": 1, "electric": 1, "fairy": 2, "fighting": 2, "fire": 1, "flying": 1, "ghost": 0.5, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 0, "rock": 1, "steel": 1, "water": 1}, "fairy": {"bug": 0.5, "dark": 0.5, "dragon": 0, "electric": 1, "fairy": 1, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 1, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 2, "psychic": 1, "rock": 1, "steel": 2, "water": 1}, "electric": {"bug": 1, "dark": 1, "dragon": 1, "electric": 0.5, "fairy": 1, "fighting": 1, "fire": 1, "flying": 0.5, "ghost": 1, "grass": 1, "ground": 2, "ice": 1, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 0.5, "water": 1}};
@@ -175,33 +187,23 @@ function setupTypeMultiplierButtons(pokemon) {
     const multiplyBtn2 = document.getElementById('multiplyBtn2');
 
     if (!multiplyBtn15 || !multiplyBtn2) return;
+
+    currentPokemon = pokemon;
+    currentTypeMultiplier = normalizeTypeMultiplierMode(pokemon?.typeMultiplierMode);
     
-    // Initialize with x2 active
     updateMultiplierButtonStyles();
 
     multiplyBtn15.addEventListener('click', function () {
-        if (currentTypeMultiplier === 1.5) {
-            currentTypeMultiplier = 2;
-        } else {
-            currentTypeMultiplier = 1.5;
-        }
-        updateMultiplierButtonStyles();
-        if (currentPokemon) {
-            displayTypeEffectiveness(currentPokemon);
-        }
+        setCurrentTypeMultiplier(1.5);
+        pokemon.typeMultiplierMode = 1.5;
+        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
         document.dispatchEvent(new Event('typeMultiplierChange'));
     });
 
     multiplyBtn2.addEventListener('click', function () {
-        if (currentTypeMultiplier === 2) {
-            currentTypeMultiplier = 1.5;
-        } else {
-            currentTypeMultiplier = 2;
-        }
-        updateMultiplierButtonStyles();
-        if (currentPokemon) {
-            displayTypeEffectiveness(currentPokemon);
-        }
+        setCurrentTypeMultiplier(2);
+        pokemon.typeMultiplierMode = 2;
+        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
         document.dispatchEvent(new Event('typeMultiplierChange'));
     });
 }
