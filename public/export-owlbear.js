@@ -55,6 +55,7 @@ function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
     const formulaMax = calculateOwlbearHPValue(pokemon.level, pokemon.stats?.HP, pokemon.hpFormula);
     const hpMax = Number.isFinite(Number(pokemon.hitPointsMax)) ? Number(pokemon.hitPointsMax) : formulaMax;
     const hpValue = Number.isFinite(Number(pokemon.hitPoints)) ? Number(pokemon.hitPoints) : hpMax;
+    const speed = String(Number.isFinite(Number(pokemon.stats?.spe)) ? Number(pokemon.stats?.spe) : 0);
 
     const parsed = JSON.parse(templateText);
     const item = parsed.items.shared.PLACEHOLDER_TOKEN_UUID;
@@ -65,6 +66,7 @@ function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
     item.metadata['com.owl-trackers/trackers'][0].value = hpValue;
     item.metadata['com.owl-trackers/trackers'][0].max = hpMax;
     item.metadata['com.owl-trackers/trackers'][1].id = generateOwlTrackersUUID();
+    item.metadata['com.pretty-initiative/metadata'].count = speed;
     item.image.url = imageUrl;
     item.text.plainText = pokemonName;
 
