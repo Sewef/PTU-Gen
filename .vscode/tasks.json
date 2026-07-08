@@ -4,7 +4,8 @@
         {
             "label": "start",
             "type": "shell",
-            "command": "npx wrangler dev"
+            "command": "npx wrangler dev",
+            "problemMatcher": []
         }
     ]
 }

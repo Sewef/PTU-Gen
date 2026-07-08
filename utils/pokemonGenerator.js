@@ -778,28 +778,90 @@ class PokemonGenerator {
    * @returns {number} Calculated Hit Points
    */
   static calculateHitPoints(level, hpStat, formula = 'LEVEL + (HP * 3) + 10') {
-    let hp; // Declare variable before try/catch
-    
+    // Fast path: avoid runtime string evaluation for the default formula.
+    const compactFormula = String(formula ?? '').toUpperCase().replace(/\s+/g, '');
+    if (compactFormula === 'LEVEL+(HP*3)+10') {
+      return Math.max(1, Math.floor(level + (hpStat * 3) + 10));
+    }
+
+    let hp;
     try {
-      // Safely evaluate formula using a function constructor (safer than eval)
-      // Only allow basic math operations + LEVEL and HP variables
-      const sanitized = formula
-        .toUpperCase()
-        .replace(/[^0-9+\-*/(). LEVEL HP]/g, '');
-      
-      if (sanitized !== formula.toUpperCase() || sanitized.length === 0) {
+      const normalizedFormula = String(formula ?? '').toUpperCase().trim();
+      if (!normalizedFormula) {
         throw new Error('Invalid formula');
       }
-      
-      // Create function with named parameters (sandboxed execution)
-      const calcFunction = new Function('LEVEL', 'HP', `return ${sanitized}`);
-      hp = Math.max(1, Math.floor(calcFunction(level, hpStat)));
+
+      // Tokenize and evaluate with a tiny parser (no eval/new Function; Worker-safe).
+      const tokens = normalizedFormula.match(/LEVEL|HP|\d+(?:\.\d+)?|[()+\-*/]/g);
+      if (!tokens || tokens.join('') !== normalizedFormula.replace(/\s+/g, '')) {
+        throw new Error('Invalid formula');
+      }
+
+      const valueTokens = tokens.map(token => {
+        if (token === 'LEVEL') return String(level);
+        if (token === 'HP') return String(hpStat);
+        return token;
+      });
+
+      let index = 0;
+      const parseExpression = () => {
+        let value = parseTerm();
+        while (index < valueTokens.length && (valueTokens[index] === '+' || valueTokens[index] === '-')) {
+          const op = valueTokens[index++];
+          const rhs = parseTerm();
+          value = op === '+' ? value + rhs : value - rhs;
+        }
+        return value;
+      };
+      const parseTerm = () => {
+        let value = parseFactor();
+        while (index < valueTokens.length && (valueTokens[index] === '*' || valueTokens[index] === '/')) {
+          const op = valueTokens[index++];
+          const rhs = parseFactor();
+          value = op === '*' ? value * rhs : value / rhs;
+        }
+        return value;
+      };
+      const parseFactor = () => {
+        const token = valueTokens[index];
+        if (token === '+') {
+          index++;
+          return parseFactor();
+        }
+        if (token === '-') {
+          index++;
+          return -parseFactor();
+        }
+        if (token === '(') {
+          index++;
+          const value = parseExpression();
+          if (valueTokens[index] !== ')') {
+            throw new Error('Invalid formula');
+          }
+          index++;
+          return value;
+        }
+        if (/^\d+(?:\.\d+)?$/.test(token || '')) {
+          index++;
+          return Number(token);
+        }
+        throw new Error('Invalid formula');
+      };
+
+      const evaluated = parseExpression();
+      if (index !== valueTokens.length) {
+        throw new Error('Invalid formula');
+      }
+      if (!Number.isFinite(evaluated)) {
+        throw new Error('Invalid formula result');
+      }
+      hp = Math.max(1, Math.floor(evaluated));
     } catch (e) {
       // Fallback to default formula if custom formula fails
       console.warn(`Invalid HP formula "${formula}", using default`);
       hp = Math.max(1, Math.floor(level + (hpStat * 3) + 10));
     }
-    
+
     return hp;
   }
 
