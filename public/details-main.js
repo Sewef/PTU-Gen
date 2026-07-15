@@ -6,6 +6,12 @@ function loadPokemonDetails() {
         return;
     }
 
+    // Clean up Pokémon saved before the multiplier switch was removed.
+    if (Object.prototype.hasOwnProperty.call(pokemon, 'typeMultiplierMode')) {
+        delete pokemon.typeMultiplierMode;
+        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    }
+
 
     // Ensure capabilities is an array
     if (!pokemon.capabilities) {

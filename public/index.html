@@ -387,11 +387,19 @@
                 const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
                 if (!raw) return { ...SETTINGS_DEFAULTS };
                 const parsed = JSON.parse(raw);
-                return {
+                const settings = {
                     ...SETTINGS_DEFAULTS,
                     ...parsed,
                     fandex: Array.isArray(parsed?.fandex) ? parsed.fandex : []
                 };
+
+                // Remove the legacy weakness/resistance switch from existing preferences.
+                if (Object.prototype.hasOwnProperty.call(settings, 'typeMultiplierMode')) {
+                    delete settings.typeMultiplierMode;
+                    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+                }
+
+                return settings;
             } catch {
                 return { ...SETTINGS_DEFAULTS };
             }
@@ -1167,6 +1175,7 @@
         function openPokemonDetail(index) {
             const pokemon = JSON.parse(sessionStorage.getItem(`pokemon_${index}`));
             if (pokemon) {
+                delete pokemon.typeMultiplierMode;
                 // Store in localStorage for the new tab
                 localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
                 window.open('details.html', '_blank');
