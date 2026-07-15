@@ -640,7 +640,6 @@ class PokemonGenerator {
     const distribution = (options.distribution || 'RANDOM').toUpperCase();
     const ignoreBaseRelation = this.normalizeIgnoreBaseRelation(options.ignorebaserelation);
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
-    const typeMultiplierMode = (String(options.typemultipliermode ?? options.typeMultiplierMode ?? '2').trim() === '1.5') ? 1.5 : 2;
     
     // Extract base stats, handling variants like Pumpkaboo (Small/Average/Large/Super Size)
     const extractedStats = extractBaseStats(species['Base Stats']);
@@ -733,7 +732,6 @@ class PokemonGenerator {
       hitPoints: hitPointsMax,
       hitPointsMax: hitPointsMax,
       hpFormula: hpFormula,
-      typeMultiplierMode: typeMultiplierMode,
       ignoreBaseRelation: ignoreBaseRelation,
       moves: this.selectMovesForPokemon(species, level, 6),
       item: this.selectItem(),
@@ -883,11 +881,10 @@ class PokemonGenerator {
     const level = options.level || 50;
     const dataset = options.dataset || 'core';
     const hpFormula = options.hpformula;
-    const typeMultiplierMode = options.typemultipliermode;
     const includeLegendaries = options.includelegendaries === 'true' || options.includelegendaries === true;
 
     for (let i = 0; i < count; i++) {
-      team.push(await this.generatePokemon({ level, dataset, hpformula: hpFormula, typemultipliermode: typeMultiplierMode, includelegendaries: includeLegendaries }));
+      team.push(await this.generatePokemon({ level, dataset, hpformula: hpFormula, includelegendaries: includeLegendaries }));
     }
 
     return {

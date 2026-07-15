@@ -120,7 +120,6 @@ app.get('/api/pokemon/generate', async c => {
       distribution: (query.distribution || 'RANDOM').toUpperCase(),
       ignorebaserelation: query.ignorebaserelation?.toUpperCase(),
       hpformula: query.hpformula,
-      typemultipliermode: query.typemultipliermode,
       dataset: (query.dataset || 'core').toLowerCase(),
       nature: query.nature,
       includelegendaries: query.includelegendaries,
@@ -190,7 +189,6 @@ app.get('/api/pokemon/team', async c => {
       dataset: (query.dataset || 'core').toLowerCase(),
       fandex: splitFandex(query),
       hpformula: query.hpformula,
-      typemultipliermode: query.typemultipliermode,
       includelegendaries: query.includelegendaries
     };
 

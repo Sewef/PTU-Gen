@@ -25,10 +25,6 @@ function loadPokemonDetails() {
         pokemon.hpFormula = pokemon.hp_formula;
     }
 
-    if (pokemon.typeMultiplierMode !== 1.5 && pokemon.typeMultiplierMode !== 2) {
-        pokemon.typeMultiplierMode = 2;
-    }
-
     // Initialize hitPoints and hitPointsMax if not present
     if (pokemon.stats && pokemon.stats.HP) {
         const defaultHPFormula = 'LEVEL + (HP * 3) + 10';
@@ -518,13 +514,7 @@ function loadPokemonDetails() {
 
             <div class="details-right">
                 <div class="info-box">
-                    <div class="flex-between-center-15">
-                        <div class="info-label">Type Effectiveness</div>
-                        <div class="flex-gap-5">
-                            <button id="multiplyBtn15" class="multiplier-btn inactive" title="Alternative scaling: start from 1x, each weakness adds +0.5, each resistance still halves the value.">×1.5</button>
-                            <button id="multiplyBtn2" class="multiplier-btn active" title="Standard scaling: each weakness doubles the value, each resistance halves it.">×2</button>
-                        </div>
-                    </div>
+                    <div class="info-label">Type Effectiveness</div>
                     <div id="typeEffectiveness" class="type-effectiveness-display">
                         <!-- Type effectiveness will be generated here -->
                     </div>
@@ -823,17 +813,10 @@ function loadPokemonDetails() {
     setupDamageControls(pokemon);
 
     // Display type effectiveness
-    currentPokemon = pokemon;
-    if (typeof setCurrentTypeMultiplier === 'function') {
-        setCurrentTypeMultiplier(pokemon.typeMultiplierMode);
-    }
     displayTypeEffectiveness(pokemon);
 
     // Setup stat distribution buttons
     setupStatDistributionButtons(pokemon);
-
-    // Setup type effectiveness multiplier buttons
-    setupTypeMultiplierButtons(pokemon);
 
     // Setup moves editor
     setupMovesEditor(pokemon);
@@ -1012,19 +995,7 @@ function getDamageTypeMultiplier(pokemon, attackingType) {
     }
 
     const effectiveness = calculateTypeEffectiveness(getPokemonDefendingTypes(pokemon));
-    let multiplier = effectiveness[attackingType] ?? 1;
-
-    if (currentTypeMultiplier === 1.5 && multiplier > 1) {
-        let weaknessCount = 0;
-        let tempMultiplier = multiplier;
-        while (tempMultiplier > 1) {
-            weaknessCount++;
-            tempMultiplier = tempMultiplier / 2;
-        }
-        multiplier = 1 + (0.5 * weaknessCount);
-    }
-
-    return multiplier;
+    return effectiveness[attackingType] ?? 1;
 }
 
 function formatDamageMultiplier(multiplier) {
@@ -1104,7 +1075,6 @@ function setupDamageControls(pokemon) {
     typeSelect.addEventListener('change', updatePreview);
     categorySelect.addEventListener('change', updatePreview);
     applyButton.addEventListener('click', applyDamage);
-    document.addEventListener('typeMultiplierChange', updatePreview);
     amountInput.addEventListener('keydown', event => {
         if (event.key === 'Enter') {
             event.preventDefault();

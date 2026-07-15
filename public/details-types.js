@@ -1,18 +1,3 @@
-let currentTypeMultiplier = 2;
-let currentPokemon = null;
-
-function normalizeTypeMultiplierMode(mode) {
-    return String(mode) === '1.5' || Number(mode) === 1.5 ? 1.5 : 2;
-}
-
-function setCurrentTypeMultiplier(mode) {
-    currentTypeMultiplier = normalizeTypeMultiplierMode(mode);
-    updateMultiplierButtonStyles();
-    if (currentPokemon) {
-        displayTypeEffectiveness(currentPokemon);
-    }
-}
-
 // Type effectiveness chart - structured as [defendingType][attackingType]
 // Based on Vue.js reference (X=attacking type, Y=defending type)
 const typeEffectiveness = {"normal": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 2, "fire": 1, "flying": 1, "ghost": 0, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 1, "water": 1}, "fire": {"bug": 0.5, "dark": 1, "dragon": 1, "electric": 1, "fairy": 0.5, "fighting": 1, "fire": 0.5, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 2, "ice": 0.5, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 0.5, "water": 2}, "water": {"bug": 1, "dark": 1, "dragon": 1, "electric": 2, "fairy": 1, "fighting": 1, "fire": 0.5, "flying": 1, "ghost": 1, "grass": 2, "ground": 1, "ice": 0.5, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 0.5, "water": 0.5}, "grass": {"bug": 2, "dark": 1, "dragon": 1, "electric": 0.5, "fairy": 1, "fighting": 1, "fire": 2, "flying": 2, "ghost": 1, "grass": 0.5, "ground": 0.5, "ice": 2, "normal": 1, "poison": 2, "psychic": 1, "rock": 1, "steel": 1, "water": 0.5}, "flying": {"bug": 0.5, "dark": 1, "dragon": 1, "electric": 2, "fairy": 1, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 0, "ice": 2, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 1, "water": 1}, "fighting": {"bug": 0.5, "dark": 0.5, "dragon": 1, "electric": 1, "fairy": 2, "fighting": 1, "fire": 1, "flying": 2, "ghost": 1, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 2, "rock": 0.5, "steel": 1, "water": 1}, "poison": {"bug": 0.5, "dark": 1, "dragon": 1, "electric": 1, "fairy": 0.5, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 2, "ice": 1, "normal": 1, "poison": 0.5, "psychic": 2, "rock": 1, "steel": 1, "water": 1}, "ground": {"bug": 1, "dark": 1, "dragon": 1, "electric": 0, "fairy": 1, "fighting": 1, "fire": 1, "flying": 1, "ghost": 1, "grass": 2, "ground": 1, "ice": 2, "normal": 1, "poison": 0.5, "psychic": 1, "rock": 0.5, "steel": 1, "water": 2}, "rock": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 2, "fire": 0.5, "flying": 0.5, "ghost": 1, "grass": 2, "ground": 2, "ice": 1, "normal": 0.5, "poison": 0.5, "psychic": 1, "rock": 1, "steel": 2, "water": 2}, "psychic": {"bug": 2, "dark": 2, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 2, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 0.5, "rock": 1, "steel": 1, "water": 1}, "ice": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 2, "fire": 2, "flying": 1, "ghost": 1, "grass": 1, "ground": 1, "ice": 0.5, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 2, "water": 1}, "bug": {"bug": 1, "dark": 1, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 0.5, "fire": 2, "flying": 2, "ghost": 1, "grass": 0.5, "ground": 0.5, "ice": 1, "normal": 1, "poison": 1, "psychic": 1, "rock": 2, "steel": 0.5, "water": 1}, "ghost": {"bug": 0.5, "dark": 2, "dragon": 1, "electric": 1, "fairy": 1, "fighting": 0, "fire": 1, "flying": 1, "ghost": 2, "grass": 1, "ground": 1, "ice": 1, "normal": 0, "poison": 0.5, "psychic": 1, "rock": 1, "steel": 1, "water": 1}, "steel": {"bug": 0.5, "dark": 1, "dragon": 0.5, "electric": 1, "fairy": 0.5, "fighting": 2, "fire": 2, "flying": 0.5, "ghost": 1, "grass": 0.5, "ground": 2, "ice": 0.5, "normal": 0.5, "poison": 0, "psychic": 0.5, "rock": 0.5, "steel": 0.5, "water": 1}, "dragon": {"bug": 1, "dark": 1, "dragon": 2, "electric": 0.5, "fairy": 2, "fighting": 1, "fire": 0.5, "flying": 1, "ghost": 1, "grass": 0.5, "ground": 1, "ice": 2, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 1, "water": 0.5}, "dark": {"bug": 2, "dark": 0.5, "dragon": 1, "electric": 1, "fairy": 2, "fighting": 2, "fire": 1, "flying": 1, "ghost": 0.5, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 1, "psychic": 0, "rock": 1, "steel": 1, "water": 1}, "fairy": {"bug": 0.5, "dark": 0.5, "dragon": 0, "electric": 1, "fairy": 1, "fighting": 0.5, "fire": 1, "flying": 1, "ghost": 1, "grass": 1, "ground": 1, "ice": 1, "normal": 1, "poison": 2, "psychic": 1, "rock": 1, "steel": 2, "water": 1}, "electric": {"bug": 1, "dark": 1, "dragon": 1, "electric": 0.5, "fairy": 1, "fighting": 1, "fire": 1, "flying": 0.5, "ghost": 1, "grass": 1, "ground": 2, "ice": 1, "normal": 1, "poison": 1, "psychic": 1, "rock": 1, "steel": 0.5, "water": 1}};
@@ -27,8 +12,12 @@ function calculateTypeEffectiveness(types) {
         effectiveness[attackingType] = 1;
     });
 
-    // For each attacking type, multiply effectiveness against each defending type
+    // First calculate a net score: +1 per weakness and -1 per resistance.
+    // Then convert that score to the final multiplier.
     allTypes.forEach(attackingType => {
+        let effectivenessScore = 0;
+        let isImmune = false;
+
         types.forEach(defendingType => {
             const defendingTypeLower = defendingType.toLowerCase();
             const defendingTypeData = typeEffectiveness[defendingTypeLower];
@@ -45,8 +34,26 @@ function calculateTypeEffectiveness(types) {
                 return;
             }
             
-            effectiveness[attackingType] = effectiveness[attackingType] * eff;
+            if (eff === 0) {
+                isImmune = true;
+            } else if (eff > 1) {
+                effectivenessScore++;
+            } else if (eff < 1) {
+                effectivenessScore--;
+            }
         });
+
+        if (isImmune) {
+            effectiveness[attackingType] = 0;
+        } else if (effectivenessScore < 0) {
+            effectiveness[attackingType] = Math.pow(0.5, Math.abs(effectivenessScore));
+        } else if (effectivenessScore === 0) {
+            effectiveness[attackingType] = 1;
+        } else if (effectivenessScore === 1) {
+            effectiveness[attackingType] = 1.5;
+        } else {
+            effectiveness[attackingType] = effectivenessScore;
+        }
     });
 
     return effectiveness;
@@ -99,25 +106,6 @@ function displayTypeEffectiveness(pokemon) {
         // Second row: Effectiveness values
         types.forEach(type => {
             let eff = effectiveness[type.toLowerCase()];
-            
-            // Apply multiplier logic:
-            // Mode x2: multiplicateurs normaux (x2, x4, etc)
-            // Mode x1.5: système additif - chaque faiblesse ajoute 0.5 à la valeur de base (1)
-            // - Une seule faiblesse (x2) → 1 + 0.5 = 1.5
-            // - Double faiblesse (x4) → 1 + 0.5 + 0.5 = 2
-            // - Résistances inchangées (x0.5, x0.25)
-            if (currentTypeMultiplier === 1.5 && eff > 1) {
-                // Compter le nombre de faiblesses (combien de fois on multiplie par 2)
-                let weakness_count = 0;
-                let temp = eff;
-                while (temp > 1) {
-                    weakness_count++;
-                    temp = temp / 2;
-                }
-                // En mode x1.5, chaque faiblesse = +0.5
-                eff = 1 + (0.5 * weakness_count);
-            }
-            // Résistances et neutral restent inchangés
             
             let effClass = 'eff-neutral'; // Default
             let effText = '1x';
@@ -179,53 +167,6 @@ function setupTypeEditor(pokemon) {
         console.log('editTypesBtn clicked');
         showTypeModal(pokemon);
     });
-}
-
-// Setup type effectiveness multiplier buttons
-function setupTypeMultiplierButtons(pokemon) {
-    const multiplyBtn15 = document.getElementById('multiplyBtn15');
-    const multiplyBtn2 = document.getElementById('multiplyBtn2');
-
-    if (!multiplyBtn15 || !multiplyBtn2) return;
-
-    currentPokemon = pokemon;
-    currentTypeMultiplier = normalizeTypeMultiplierMode(pokemon?.typeMultiplierMode);
-    
-    updateMultiplierButtonStyles();
-
-    multiplyBtn15.addEventListener('click', function () {
-        setCurrentTypeMultiplier(1.5);
-        pokemon.typeMultiplierMode = 1.5;
-        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
-        document.dispatchEvent(new Event('typeMultiplierChange'));
-    });
-
-    multiplyBtn2.addEventListener('click', function () {
-        setCurrentTypeMultiplier(2);
-        pokemon.typeMultiplierMode = 2;
-        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
-        document.dispatchEvent(new Event('typeMultiplierChange'));
-    });
-}
-
-// Update multiplier button visual styles
-function updateMultiplierButtonStyles() {
-    const multiplyBtn15 = document.getElementById('multiplyBtn15');
-    const multiplyBtn2 = document.getElementById('multiplyBtn2');
-    
-    if (!multiplyBtn15 || !multiplyBtn2) return;
-    
-    if (currentTypeMultiplier === 1.5) {
-        multiplyBtn15.classList.remove('inactive');
-        multiplyBtn15.classList.add('active');
-        multiplyBtn2.classList.remove('active');
-        multiplyBtn2.classList.add('inactive');
-    } else {
-        multiplyBtn2.classList.remove('inactive');
-        multiplyBtn2.classList.add('active');
-        multiplyBtn15.classList.remove('active');
-        multiplyBtn15.classList.add('inactive');
-    }
 }
 
 // Show type selection modal

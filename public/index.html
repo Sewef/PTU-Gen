@@ -193,14 +193,6 @@
                                 <small class="small-block-text">Use LEVEL and HP placeholders</small>
                             </div>
 
-                            <div class="form-group">
-                                <label style="font-size: 0.85em;">Weakness / Resistance Style</label>
-                                <select id="typeMultiplierMode">
-                                    <option value="2">×2 (standard)</option>
-                                    <option value="1.5">×1.5 (alternative)</option>
-                                </select>
-                                <small class="small-block-text">Used on details page for type effectiveness and damage preview</small>
-                            </div>
                         </div>
                     </div>
 
@@ -387,8 +379,7 @@
             forceEvolution: false,
             distribution: 'RANDOM',
             ignoreBaseRelation: '',
-            hpFormula: 'LEVEL + (HP * 3) + 10',
-            typeMultiplierMode: '2'
+            hpFormula: 'LEVEL + (HP * 3) + 10'
         };
 
         function readStoredSettings() {
@@ -416,8 +407,7 @@
                 forceEvolution: document.getElementById('forceEvolution').checked,
                 distribution: document.getElementById('distribution').value || SETTINGS_DEFAULTS.distribution,
                 ignoreBaseRelation: (document.getElementById('ignoreBaseRelation').value || '').trim(),
-                hpFormula: (document.getElementById('hpFormula').value || '').trim(),
-                typeMultiplierMode: document.getElementById('typeMultiplierMode').value || SETTINGS_DEFAULTS.typeMultiplierMode
+                hpFormula: (document.getElementById('hpFormula').value || '').trim()
             };
 
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
@@ -441,13 +431,11 @@
             const distribution = document.getElementById('distribution');
             const ignoreBaseRelation = document.getElementById('ignoreBaseRelation');
             const hpFormula = document.getElementById('hpFormula');
-            const typeMultiplierMode = document.getElementById('typeMultiplierMode');
 
             const selectedFandex = Array.from(document.querySelectorAll('.fandex-checkbox:checked')).map(cb => cb.value);
             const hasFandexChanges = selectedFandex.length > 0;
             const hasIgnoreBaseRelationChanges = (ignoreBaseRelation.value || '').trim() !== SETTINGS_DEFAULTS.ignoreBaseRelation;
             const hasHpFormulaChanges = (hpFormula.value || '').trim() !== SETTINGS_DEFAULTS.hpFormula;
-            const hasTypeMultiplierModeChanges = (typeMultiplierMode.value || SETTINGS_DEFAULTS.typeMultiplierMode) !== SETTINGS_DEFAULTS.typeMultiplierMode;
 
             setControlChangedState(dataset, dataset.value !== SETTINGS_DEFAULTS.dataset);
             setControlChangedState(randomForm, randomForm.checked !== SETTINGS_DEFAULTS.randomForm);
@@ -455,7 +443,6 @@
             setControlChangedState(distribution, distribution.value !== SETTINGS_DEFAULTS.distribution);
             setControlChangedState(ignoreBaseRelation, hasIgnoreBaseRelationChanges);
             setControlChangedState(hpFormula, hasHpFormulaChanges);
-            setControlChangedState(typeMultiplierMode, hasTypeMultiplierModeChanges);
 
             includeLegendaries.classList.toggle('pref-changed-control', includeLegendaries.checked !== SETTINGS_DEFAULTS.includeLegendaries);
             forceEvolution.classList.toggle('pref-changed-control', forceEvolution.checked !== SETTINGS_DEFAULTS.forceEvolution);
@@ -472,7 +459,7 @@
             const advancedSection = document.getElementById('advancedSection');
             const advancedToggle = document.querySelector('.advanced-toggle[onclick="toggleAdvanced()"]');
             const toggleIcon = document.getElementById('toggleIcon');
-            const hasAdvancedChanges = hasIgnoreBaseRelationChanges || hasHpFormulaChanges || hasTypeMultiplierModeChanges;
+            const hasAdvancedChanges = hasIgnoreBaseRelationChanges || hasHpFormulaChanges;
             const collapsed = !advancedSection.classList.contains('open');
 
             if (advancedToggle) {
@@ -494,7 +481,6 @@
             document.getElementById('distribution').value = stored.distribution || SETTINGS_DEFAULTS.distribution;
             document.getElementById('ignoreBaseRelation').value = stored.ignoreBaseRelation || SETTINGS_DEFAULTS.ignoreBaseRelation;
             document.getElementById('hpFormula').value = stored.hpFormula || SETTINGS_DEFAULTS.hpFormula;
-            document.getElementById('typeMultiplierMode').value = stored.typeMultiplierMode || SETTINGS_DEFAULTS.typeMultiplierMode;
         }
 
         // Load FanDex list
@@ -899,8 +885,7 @@
             document.getElementById('forceEvolution'),
             document.getElementById('distribution'),
             document.getElementById('ignoreBaseRelation'),
-            document.getElementById('hpFormula'),
-            document.getElementById('typeMultiplierMode')
+            document.getElementById('hpFormula')
         ].forEach(control => {
             const eventName = control.tagName === 'INPUT' && control.type === 'text' ? 'input' : 'change';
             control.addEventListener(eventName, () => {
@@ -962,10 +947,6 @@
             pokemon.hitPointsMax = hpMax;
             pokemon.hitPoints = hpMax;
             return pokemon;
-        }
-
-        function getSelectedTypeMultiplierModeValue() {
-            return document.getElementById('typeMultiplierMode')?.value === '1.5' ? 1.5 : 2;
         }
 
         async function generateMultiplePokemon(count) {
@@ -1055,8 +1036,6 @@
                             params.append('hpFormula', document.getElementById('hpFormula').value);
                         }
 
-                        params.append('typeMultiplierMode', document.getElementById('typeMultiplierMode').value || '2');
-
                         addLog(`🌐 Pokémon ${i + 1}/${count}: Sending API request...`);
                         const response = await fetch(`/api/pokemon/generate?${params}`);
                         if (!response.ok) {
@@ -1067,7 +1046,6 @@
 
                         addLog(`✓ Pokémon ${i + 1}/${count}: Received response, processing...`);
                         const pokemon = await response.json();
-                        pokemon.typeMultiplierMode = getSelectedTypeMultiplierModeValue();
                         normalizeGeneratedPokemonHP(pokemon);
                         addLog(`✅ Pokémon ${i + 1}/${count}: Complete`);
                         pokemons.push(pokemon);
@@ -1189,9 +1167,6 @@
         function openPokemonDetail(index) {
             const pokemon = JSON.parse(sessionStorage.getItem(`pokemon_${index}`));
             if (pokemon) {
-                if (pokemon.typeMultiplierMode !== 1.5 && pokemon.typeMultiplierMode !== 2) {
-                    pokemon.typeMultiplierMode = getSelectedTypeMultiplierModeValue();
-                }
                 // Store in localStorage for the new tab
                 localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
                 window.open('details.html', '_blank');

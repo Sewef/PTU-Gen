@@ -93,7 +93,6 @@ router.get('/generate', async (req, res) => {
       distribution: (req.query.distribution || 'RANDOM').toUpperCase(),
       ignorebaserelation: req.query.ignorebaserelation?.toUpperCase(),
       hpformula: req.query.hpformula,
-      typemultipliermode: req.query.typemultipliermode,
       dataset: (req.query.dataset || 'core').toLowerCase(),
       nature: req.query.nature,
       includelegendaries: req.query.includelegendaries,
@@ -191,7 +190,6 @@ router.get('/team', async (req, res) => {
       dataset: (req.query.dataset || 'core').toLowerCase(),
       fandex: splitFandex(req.query),
       hpformula: req.query.hpformula,
-      typemultipliermode: req.query.typemultipliermode,
       includelegendaries: req.query.includelegendaries
     };
 

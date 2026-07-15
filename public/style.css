@@ -3254,36 +3254,6 @@ pre {
     color: var(--text-tertiary);
 }
 
-/* Multiplier Buttons */
-.multiplier-btn {
-    padding: 4px 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.75em;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-}
-
-.multiplier-btn.inactive {
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    opacity: 0.7;
-}
-
-.multiplier-btn.active {
-    background: var(--primary-color);
-    color: white;
-    font-weight: 600;
-}
-
-.multiplier-btn:hover {
-    opacity: 1;
-    transition: opacity 0.2s ease;
-}
-
 /* Type Effectiveness Colors */
 .eff-immune {
     color: #27ae60;
