@@ -169,12 +169,49 @@ function addBlankMove(pokemon) {
         ac: '',
         db: '',
         effect: '',
+        usageCount: 0,
         editable: true
     };
 
     pokemon.moves.push(blankMove);
     localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
     updateMovesDisplay(pokemon);
+}
+
+function getMoveAttackValue(pokemon, move) {
+    const moveClass = String(move.class || '').toLowerCase();
+    if (moveClass === 'physical') return Number(pokemon.stats?.atk) || 0;
+    if (moveClass === 'special') return Number(pokemon.stats?.spA) || 0;
+    return null;
+}
+
+function getMoveRollFormula(pokemon, move) {
+    if (!move.damageBase?.dmg) return null;
+    const attackValue = getMoveAttackValue(pokemon, move);
+    return attackValue === null ? null : `${move.damageBase.dmg}+${attackValue}`;
+}
+
+async function copyMoveRollFormula(button) {
+    const command = `/r ${button.dataset.rollFormula}`;
+
+    try {
+        await navigator.clipboard.writeText(command);
+    } catch (error) {
+        const textarea = document.createElement('textarea');
+        textarea.value = command;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+    }
+
+    const originalText = button.textContent;
+    button.textContent = '✓ Copied';
+    setTimeout(() => {
+        button.textContent = originalText;
+    }, 1200);
 }
 
 // Update moves display
@@ -190,7 +227,15 @@ function updateMovesDisplay(pokemon) {
                         <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
                     </div>
                     <div class="section-card-field"><strong>Type:</strong> <input type="text" class="custom-move-field-input" data-field="type" value="${move.type || ''}" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 150px;" /></div>
-                    <div class="section-card-field"><strong>Frequency:</strong> <input type="text" class="custom-move-field-input" data-field="frequency" value="${move.frequency || ''}" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 150px;" /></div>
+                    <div class="section-card-field">
+                        <strong>Frequency:</strong> <input type="text" class="custom-move-field-input" data-field="frequency" value="${move.frequency || ''}" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 150px;" />
+                        <span class="usage-tracker" data-move-name="${move.name}">
+                            <span class="usage-label">Uses:</span>
+                            <div class="usage-boxes">
+                                ${Array.from({ length: 4 }, (_, i) => `<button class="usage-checkbox ${(move.usageCount || 0) > i ? 'checked' : ''}" data-index="${i}" title="Use #${i + 1}"></button>`).join('')}
+                            </div>
+                        </span>
+                    </div>
                     <div class="section-card-field"><strong>Class:</strong> <input type="text" class="custom-move-field-input" data-field="class" value="${move.class || ''}" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 150px;" /></div>
                     <div class="section-card-field"><strong>Range:</strong> <input type="text" class="custom-move-field-input" data-field="range" value="${move.range || ''}" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 150px;" /></div>
                     <div class="section-card-field"><strong>AC:</strong> <input type="text" class="custom-move-field-input" data-field="ac" value="${move.ac || ''}" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 100px;" /></div>
@@ -213,9 +258,10 @@ function updateMovesDisplay(pokemon) {
                     <div class="section-card-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
                     <div class="section-card-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
                     ${move.ac ? `<div class="section-card-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
-                    ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
+                    ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg}${getMoveAttackValue(pokemon, move) !== null ? ` + ${getMoveAttackValue(pokemon, move)}` : ''} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
                         <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
                         <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
+                        ${getMoveRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn" data-roll-formula="${getMoveRollFormula(pokemon, move)}" title="Copy /r ${getMoveRollFormula(pokemon, move)}">Copy roll</button>` : ''}
                     </div>` : ''}
                     ${move.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                 </div>
@@ -239,6 +285,12 @@ function updateMovesDisplay(pokemon) {
             const moveName = dbField.getAttribute('data-move-name');
             const isIncrease = btn.classList.contains('db-increase');
             adjustMoveDB(pokemon, moveName, isIncrease ? 1 : -1);
+        });
+    });
+
+    document.querySelectorAll('.copy-roll-formula-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            copyMoveRollFormula(btn);
         });
     });
 

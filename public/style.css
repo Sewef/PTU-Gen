@@ -1293,7 +1293,8 @@ button {
     flex: 1;
 }
 
-.remove-ability-btn {
+.remove-ability-btn,
+.remove-poke-edge-btn {
     flex-shrink: 0;
 }
 
@@ -2856,6 +2857,25 @@ pre {
     background: var(--bg-tertiary);
 }
 
+.copy-roll-formula-btn {
+    padding: 3px 8px;
+    margin-left: 8px;
+    background: var(--bg-secondary);
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.75em;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.copy-roll-formula-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
 
 /* Table Styles */
 .details-table {
@@ -2957,7 +2977,8 @@ pre {
     background: var(--primary-dark);
 }
 
-.remove-ability-btn {
+.remove-ability-btn,
+.remove-poke-edge-btn {
     padding: 4px 8px;
     background: var(--bg-secondary);
     color: var(--error-text);
@@ -2969,7 +2990,8 @@ pre {
     transition: all 0.2s ease;
 }
 
-.remove-ability-btn:hover {
+.remove-ability-btn:hover,
+.remove-poke-edge-btn:hover {
     background: var(--error-bg);
     border-color: var(--error-text);
 }

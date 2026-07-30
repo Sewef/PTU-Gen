@@ -133,6 +133,7 @@ function addBlankAbility(pokemon) {
         name: newName,
         frequency: '',
         effect: '',
+        usageCount: 0,
         editable: true
     };
     
@@ -189,7 +190,15 @@ function updateAbilitiesDisplay(pokemon) {
                         <input type="text" class="custom-ability-name-input" value="${ability.name}" placeholder="Ability name" style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 4px;" />
                         <button class="remove-ability-btn" title="Remove this ability">✕ Remove</button>
                     </div>
-                    <div class="section-card-field"><strong>Frequency:</strong> <input type="text" class="custom-ability-field-input" data-field="frequency" value="${ability.frequency || ''}" placeholder="e.g., Static, Daily x3" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 200px;" /></div>
+                    <div class="section-card-field">
+                        <strong>Frequency:</strong> <input type="text" class="custom-ability-field-input" data-field="frequency" value="${ability.frequency || ''}" placeholder="e.g., Static, Daily x3" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 200px;" />
+                        <span class="usage-tracker" data-ability-index="${abilityIndex}">
+                            <span class="usage-label">Uses:</span>
+                            <div class="usage-boxes">
+                                ${Array.from({ length: 4 }, (_, i) => `<button class="usage-checkbox ${(ability.usageCount || 0) > i ? 'checked' : ''}" data-index="${i}" title="Use #${i + 1}"></button>`).join('')}
+                            </div>
+                        </span>
+                    </div>
                     <div class="section-card-field"><strong>Effect:</strong> <input type="text" class="custom-ability-field-input" data-field="effect" value="${ability.effect || ''}" placeholder="Ability effect" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 100%;" /></div>
                 </div>
             `;
