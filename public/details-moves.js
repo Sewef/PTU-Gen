@@ -217,11 +217,11 @@ async function copyMoveRollFormula(button) {
 // Update moves display
 function updateMovesDisplay(pokemon) {
     const movesList = document.getElementById('movesList');
-    movesList.innerHTML = pokemon.moves.map(move => {
+    movesList.innerHTML = pokemon.moves.map((move, moveIndex) => {
         const isCustom = move.editable === true;
         if (isCustom) {
             return `
-                <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
+                <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-index="${moveIndex}" data-move-name="${move.name}">
                     <div class="section-card-header">
                         <input type="text" class="custom-move-name-input" value="${move.name}" placeholder="Move name" style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 4px;" />
                         <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
@@ -268,6 +268,29 @@ function updateMovesDisplay(pokemon) {
             `;
         }
     }).join('');
+
+    // Keep editable cards in sync with the model. Without this, their values only
+    // live in the DOM and are lost whenever adding/removing a move rerenders the list.
+    document.querySelectorAll('#movesList .section-card[data-move-index]').forEach(card => {
+        const moveIndex = parseInt(card.getAttribute('data-move-index'), 10);
+        const move = pokemon.moves[moveIndex];
+        if (!move) return;
+
+        const nameInput = card.querySelector('.custom-move-name-input');
+        nameInput?.addEventListener('input', function () {
+            move.name = this.value;
+            card.setAttribute('data-move-name', move.name);
+            card.querySelector('.usage-tracker')?.setAttribute('data-move-name', move.name);
+            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        });
+
+        card.querySelectorAll('.custom-move-field-input').forEach(input => {
+            input.addEventListener('input', function () {
+                move[this.getAttribute('data-field')] = this.value;
+                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            });
+        });
+    });
 
     // Re-attach remove listeners
     document.querySelectorAll('.remove-move-btn').forEach(btn => {

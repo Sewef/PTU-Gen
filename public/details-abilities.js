@@ -233,6 +233,28 @@ function updateAbilitiesDisplay(pokemon) {
         }
     }).join('');
 
+    // Keep editable cards in sync with the model. Adding another ability rerenders
+    // this list, so unsynchronised DOM-only values would otherwise be reset.
+    document.querySelectorAll('#abilitiesList .section-card[data-ability-index]').forEach(card => {
+        const abilityIndex = parseInt(card.getAttribute('data-ability-index'), 10);
+        const ability = pokemon.abilities[abilityIndex];
+        if (!ability?.editable) return;
+
+        const nameInput = card.querySelector('.custom-ability-name-input');
+        nameInput?.addEventListener('input', function () {
+            ability.name = this.value;
+            card.setAttribute('data-ability-name', ability.name);
+            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        });
+
+        card.querySelectorAll('.custom-ability-field-input').forEach(input => {
+            input.addEventListener('input', function () {
+                ability[this.getAttribute('data-field')] = this.value;
+                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            });
+        });
+    });
+
     // Re-attach remove listeners
     document.querySelectorAll('.remove-ability-btn').forEach(btn => {
         btn.addEventListener('click', function () {
