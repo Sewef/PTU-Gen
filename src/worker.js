@@ -80,6 +80,7 @@ app.get('/api/info', c => {
     endpoints: {
       health: '/health',
       generate: '/api/pokemon/generate',
+      generateBlank: '/api/pokemon/generateBlank',
       generateWild: '/api/pokemon/generateWild/:level',
       team: '/api/pokemon/team',
       list: '/api/pokemon/list',
@@ -130,6 +131,21 @@ app.get('/api/pokemon/generate', async c => {
     return c.json(pokemon);
   } catch (error) {
     console.error('Error generating pokemon:', error);
+    return jsonError(c, error, 400);
+  }
+});
+
+app.get('/api/pokemon/generateBlank', c => {
+  try {
+    const query = normalizeQuery(c.req.query());
+    const pokemon = PokemonGenerator.generateBlankPokemon({
+      level: query.level,
+      nature: query.nature,
+      hpformula: query.hpformula,
+      dataset: query.dataset
+    });
+    return c.json(pokemon);
+  } catch (error) {
     return jsonError(c, error, 400);
   }
 });

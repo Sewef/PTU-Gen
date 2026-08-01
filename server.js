@@ -35,6 +35,7 @@ app.get('/api/info', (req, res) => {
     endpoints: {
       health: '/health',
       generate: '/api/pokemon/generate',
+      generateBlank: '/api/pokemon/generateBlank',
       generateWild: '/api/pokemon/generateWild/:level',
       team: '/api/pokemon/team',
       list: '/api/pokemon/list',

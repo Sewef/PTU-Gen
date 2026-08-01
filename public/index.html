@@ -257,6 +257,7 @@
                     <!-- Buttons -->
                     <div class="button-group">
                         <button type="submit" class="btn-generate">🎲 Generate Pokémon</button>
+                        <button type="button" id="generateBlankBtn" class="btn-generate">＋ Blank Pokémon</button>
                         <button type="reset" class="btn-reset">↻ Reset</button>
                     </div>
                 </form>
@@ -929,6 +930,28 @@
                 count = parseInt(pokemonCountInput.value) || 1;
             }
             await generateMultiplePokemon(count);
+        });
+
+        document.getElementById('generateBlankBtn').addEventListener('click', async function () {
+            try {
+                pokemonDisplay.innerHTML = '<div class="loading"><div class="spinner"></div>Creating blank Pokémon...</div>';
+                const params = new URLSearchParams();
+                params.set('level', levelModeRange.checked ? (minLevelInput.value || '1') : (levelInput.value || '1'));
+                params.set('dataset', document.getElementById('dataset').value);
+                if (document.getElementById('hpFormula').value) {
+                    params.set('hpFormula', document.getElementById('hpFormula').value);
+                }
+
+                const response = await fetch(`/api/pokemon/generateBlank?${params}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || response.statusText);
+                }
+
+                displayMultiplePokemon([await response.json()]);
+            } catch (error) {
+                pokemonDisplay.innerHTML = `<div class="error">❌ ${error.message}</div>`;
+            }
         });
 
         function calculateGeneratedHPValue(level, hpStat, formula) {

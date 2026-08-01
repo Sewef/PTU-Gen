@@ -771,6 +771,67 @@ class PokemonGenerator {
   }
 
   /**
+   * Create an empty Pokemon sheet without selecting a species or dataset entry.
+   * The neutral nature and zeroed bases make it suitable as a custom starting point.
+   */
+  static generateBlankPokemon(options = {}) {
+    const parsedLevel = parseInt(options.level, 10);
+    const level = Number.isNaN(parsedLevel) ? 1 : Math.min(Math.max(parsedLevel, 1), 100);
+    const nature = options.nature ? this.getNatureByName(options.nature) : this.getNatureByName('Composed');
+    const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
+    const zeroBaseStats = {
+      HP: 0,
+      Attack: 0,
+      Defense: 0,
+      'Special Attack': 0,
+      'Special Defense': 0,
+      Speed: 0
+    };
+    const zeroStats = { HP: 0, atk: 0, def: 0, spA: 0, spD: 0, spe: 0 };
+    const hitPointsMax = this.calculateHitPoints(level, 0, hpFormula);
+
+    return {
+      id: 0,
+      Icon: 0,
+      name: 'Blank Pokémon',
+      displayName: 'Blank Pokémon',
+      baseName: 'Blank Pokémon',
+      form: null,
+      level,
+      types: [],
+      actualTypes: [],
+      abilities: [],
+      shiny: false,
+      nature,
+      baseStats: zeroBaseStats,
+      baseWithNature: { ...zeroStats },
+      stats: { ...zeroStats },
+      hitPoints: hitPointsMax,
+      hitPointsMax,
+      hpFormula,
+      moves: [],
+      item: '',
+      skills: {},
+      otherInfo: {
+        sizeCategory: 'Unknown',
+        weightClass: 0,
+        gender: 'Unknown',
+        diet: 'Unknown',
+        habitat: 'Unknown'
+      },
+      capabilities: [],
+      legendary: false,
+      dataset: (options.dataset || 'core').toLowerCase(),
+      fandex: [],
+      learnsets: {
+        moveLearns: {},
+        abilityLearns: { basicAbilities: [], advancedAbilities: [], highAbilities: [] }
+      },
+      blank: true
+    };
+  }
+
+  /**
    * Calculate Hit Points based on level and HP stat
    * @param {number} level - Pokemon level
    * @param {number} hpStat - Pokemon HP stat value

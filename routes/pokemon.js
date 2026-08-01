@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const PokemonGenerator = require('../utils/pokemonGenerator');
+const PokemonGeneratorModule = require('../utils/pokemonGenerator');
+const PokemonGenerator = PokemonGeneratorModule.default || PokemonGeneratorModule;
 
 // Middleware to normalize query parameter keys to lowercase
 router.use((req, res, next) => {
@@ -104,6 +105,21 @@ router.get('/generate', async (req, res) => {
     res.json(pokemon);
   } catch (error) {
     console.error('Error generating pokemon:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/** GET /api/pokemon/generateBlank - Create an empty, editable Pokemon sheet. */
+router.get('/generateBlank', (req, res) => {
+  try {
+    const pokemon = PokemonGenerator.generateBlankPokemon({
+      level: req.query.level,
+      nature: req.query.nature,
+      hpformula: req.query.hpformula,
+      dataset: req.query.dataset
+    });
+    res.json(pokemon);
+  } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
