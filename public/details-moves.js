@@ -180,9 +180,15 @@ function addBlankMove(pokemon) {
 
 function getMoveAttackValue(pokemon, move) {
     const moveClass = String(move.class || '').toLowerCase();
-    if (moveClass === 'physical') return Number(pokemon.stats?.atk) || 0;
-    if (moveClass === 'special') return Number(pokemon.stats?.spA) || 0;
-    return null;
+    const statName = moveClass === 'physical' ? 'atk' : moveClass === 'special' ? 'spA' : null;
+    if (!statName) return null;
+
+    // Use the total currently shown in the stat editor, including Combat Stages.
+    // Fall back to the model when the editor is not present (for example in tests).
+    if (typeof getCurrentDisplayedStat === 'function') {
+        return getCurrentDisplayedStat(statName, Number(pokemon.stats?.[statName]) || 0);
+    }
+    return Number(pokemon.stats?.[statName]) || 0;
 }
 
 function getMoveRollFormula(pokemon, move) {

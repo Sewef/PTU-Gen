@@ -743,6 +743,13 @@ function loadPokemonDetails() {
         const total = Math.floor(subtotal * multiplier);
 
         row.querySelector('.stat-total').textContent = total;
+
+        // Keep the model and move damage rolls synchronized with edited stats.
+        pokemon.stats[statName] = subtotal;
+        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        if ((statName === 'atk' || statName === 'spA') && document.getElementById('movesList')) {
+            updateMovesDisplay(pokemon);
+        }
     }
 
     // Handle capability value changes

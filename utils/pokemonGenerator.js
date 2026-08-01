@@ -130,6 +130,20 @@ let customAbilities = {};
 let customMoves = {};
 
 /**
+ * Return the canonical move name used as a database key.
+ * Some learnsets decorate moves with Markdown and variant metadata, for example:
+ * "**Spook\\* [Ember, -1SpD]**" becomes "Spook* [Ember]".
+ */
+function cleanMoveName(moveName) {
+  return String(moveName ?? '')
+    .trim()
+    .replace(/^\*\*(.*?)\*\*$/, '$1')
+    .replace(/\\\*/g, '*')
+    .replace(/\[([^\],]+),[^\]]*\]/g, '[$1]')
+    .trim();
+}
+
+/**
  * Fetch data from URL
  */
 async function fetchDataFromURL(url) {
@@ -1181,25 +1195,21 @@ class PokemonGenerator {
    */
   static getMoveDefinition(moveName) {
     if (!moveName) return null;
-    // Remove trailing asterisks are just markers, not part of the move name
-    const cleanName = moveName.replace(/\*+$/, '');
-    const lowerName = cleanName.toLowerCase();
+    const cleanName = cleanMoveName(moveName);
+    const fallbackName = cleanName.replace(/\s*\[[^\]]*\]\s*$/, '').replace(/\*+$/, '').trim();
+    const candidateNames = [...new Set([cleanName, fallbackName])];
     
-    // Check custom moves first (exact then lowercase)
-    if (customMoves[cleanName]) {
-      return customMoves[cleanName];
-    }
-    const customLower = Object.keys(customMoves).find(key => key.toLowerCase() === lowerName);
-    if (customLower) {
-      return customMoves[customLower];
-    }
-    
-    // Try database (exact then lowercase indexed map)
-    if (movesDatabase[cleanName]) {
-      return movesDatabase[cleanName];
-    }
-    if (movesMapLower[lowerName]) {
-      return movesMapLower[lowerName];
+    for (const candidateName of candidateNames) {
+      const lowerName = candidateName.toLowerCase();
+
+      // Check custom moves first (exact then lowercase)
+      if (customMoves[candidateName]) return customMoves[candidateName];
+      const customLower = Object.keys(customMoves).find(key => key.toLowerCase() === lowerName);
+      if (customLower) return customMoves[customLower];
+
+      // Try database (exact then lowercase indexed map)
+      if (movesDatabase[candidateName]) return movesDatabase[candidateName];
+      if (movesMapLower[lowerName]) return movesMapLower[lowerName];
     }
     
     return null;
@@ -1306,15 +1316,15 @@ class PokemonGenerator {
     // Take the most recent moves up to the count, or fill with earlier moves
     for (let i = 0; i < Math.min(count, sortedMoves.length); i++) {
       const move = sortedMoves[i];
-      const cleanMoveName = move.Move.replace(/\*+$/, '');
-      if (!selected.some(m => m.name === cleanMoveName)) {
+      const canonicalMoveName = cleanMoveName(move.Move);
+      if (!selected.some(m => m.name === canonicalMoveName)) {
         const moveDefinition = this.getMoveDefinition(move.Move);
         if (moveDefinition) {
           // Add name property and include move definition with camelCase fields
-          const normalizedMove = this.normalizeMoveFields(moveDefinition, cleanMoveName, pokemonTypes);
+          const normalizedMove = this.normalizeMoveFields(moveDefinition, canonicalMoveName, pokemonTypes);
           selected.push(normalizedMove);
         } else {
-          selected.push({ name: cleanMoveName });
+          selected.push({ name: canonicalMoveName });
         }
       }
     }
@@ -1816,18 +1826,18 @@ class PokemonGenerator {
           // Level Up Moves
           if (Array.isArray(movesData['Level Up Move List'])) {
             result.levelUp = movesData['Level Up Move List'].map(move => {
-              const cleanMoveName = move.Move.replace(/\*+$/, '');
+              const canonicalMoveName = cleanMoveName(move.Move);
               const hasStab = pokemonTypes.some(type => type.toLowerCase() === move.Type?.toLowerCase());
-              const moveDef = this.getMoveDefinition(cleanMoveName);
+              const moveDef = this.getMoveDefinition(canonicalMoveName);
               return {
-                name: cleanMoveName,
+                name: canonicalMoveName,
                 type: moveDef?.['Type'] || move.Type,
                 level: move.Level,
                 frequency: moveDef?.['Frequency'] || 'N/A',
                 class: moveDef?.['Class'] || 'N/A',
                 range: moveDef?.['Range'] || 'N/A',
                 damageBase: moveDef ? convertDamageBase(moveDef['Damage Base'], hasStab) : null,
-                ac: moveDef?.['AC'] || moveDef?.['Accuracy'],
+                ac: moveDef?.['AC'],
                 effect: moveDef?.['Effect']
               };
             });
@@ -1836,17 +1846,17 @@ class PokemonGenerator {
           // TM/HM Moves
           if (Array.isArray(movesData['TM/HM Move List'])) {
             result.tm = movesData['TM/HM Move List'].map(move => {
-              const cleanMoveName = move.Move.replace(/\*+$/, '');
+              const canonicalMoveName = cleanMoveName(move.Move);
               const hasStab = pokemonTypes.some(type => type.toLowerCase() === move.Type?.toLowerCase());
-              const moveDef = this.getMoveDefinition(cleanMoveName);
+              const moveDef = this.getMoveDefinition(canonicalMoveName);
               return {
-                name: cleanMoveName,
+                name: canonicalMoveName,
                 type: moveDef?.['Type'] || move.Type,
                 frequency: moveDef?.['Frequency'] || 'N/A',
                 class: moveDef?.['Class'] || 'N/A',
                 range: moveDef?.['Range'] || 'N/A',
                 damageBase: moveDef ? convertDamageBase(moveDef['Damage Base'], hasStab) : null,
-                ac: moveDef?.['AC'] || moveDef?.['Accuracy'],
+                ac: moveDef?.['AC'],
                 effect: moveDef?.['Effect']
               };
             });
@@ -1855,17 +1865,17 @@ class PokemonGenerator {
           // Tutor Moves
           if (Array.isArray(movesData['Tutor Move List'])) {
             result.tutor = movesData['Tutor Move List'].map(move => {
-              const cleanMoveName = move.Move.replace(/\*+$/, '');
+              const canonicalMoveName = cleanMoveName(move.Move);
               const hasStab = pokemonTypes.some(type => type.toLowerCase() === move.Type?.toLowerCase());
-              const moveDef = this.getMoveDefinition(cleanMoveName);
+              const moveDef = this.getMoveDefinition(canonicalMoveName);
               return {
-                name: cleanMoveName,
+                name: canonicalMoveName,
                 type: moveDef?.['Type'] || move.Type,
                 frequency: moveDef?.['Frequency'] || 'N/A',
                 class: moveDef?.['Class'] || 'N/A',
                 range: moveDef?.['Range'] || 'N/A',
                 damageBase: moveDef ? convertDamageBase(moveDef['Damage Base'], hasStab) : null,
-                ac: moveDef?.['AC'] || moveDef?.['Accuracy'],
+                ac: moveDef?.['AC'],
                 effect: moveDef?.['Effect']
               };
             });
@@ -2008,7 +2018,7 @@ class PokemonGenerator {
           class: moveData['Class'] || 'N/A',
           range: moveData['Range'] || 'N/A',
           damageBase: convertDamageBase(moveData['Damage Base']) || null,
-          ac: moveData['Accuracy'],
+          ac: moveData['AC'],
           effect: moveData['Effect'] || 'N/A'
         });
       }

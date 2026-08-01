@@ -330,6 +330,11 @@ function updateStatsDisplay(pokemon) {
         const total = Math.floor((effectiveBase + levelPts) * multiplier);
         row.querySelector('.stat-total').textContent = total;
     });
+
+    // Nature/distribution changes can alter Attack and Special Attack too.
+    if (document.getElementById('movesList') && typeof updateMovesDisplay === 'function') {
+        updateMovesDisplay(pokemon);
+    }
 }
 
 // Setup moves editor
