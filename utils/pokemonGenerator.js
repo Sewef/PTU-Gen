@@ -105,7 +105,7 @@ const FANDEX_DATASETS = {
     moves: 'moves/fandex/moves_uranium.min.json',
     capabilities: 'capabilities/fandex/capabilities_uranium.min.json'
   },
-  slimerancher: {
+  "slime rancher": {
     name: 'Slime Rancher',
     pokedex: 'pokedex/fandex/pokedex_slimerancher.min.json'
   }
