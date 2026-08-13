@@ -48,7 +48,10 @@ function calculateOwlbearHPValue(level, hpStat, formula = OWLBEAR_DEFAULT_HP_FOR
  */
 function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
     const imageNumber = pokemon.Icon || pokemon.id;
-    const imageUrl = `https://sewef.github.io/ptu/img/pokemon/full/${imageNumber}.png`;
+    const imagePath = pokemon._fandex
+        ? `${pokemon._fandex}/${imageNumber}`
+        : imageNumber;
+    const imageUrl = `https://sewef.github.io/ptu/img/pokemon/full/${imagePath}.png`;
     const pokemonName = pokemon.nickname || pokemon.name;
     const uuid = generateTokenUUID();
     const W = OWLBEAR_TOKEN_SIZE;
