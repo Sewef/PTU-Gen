@@ -242,8 +242,8 @@ function loadPokemonDetails() {
                     ` : ''}
 
                     <!-- Capture Rate Section -->
-                    <div class="info-box">
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                    <div class="info-box capture-rate-summary">
+                        <div class="capture-rate-title-row">
                             <div class="info-label">Capture Rate</div>
                         </div>
                         <div class="capture-rate-display" id="captureRateDisplay">
@@ -260,7 +260,7 @@ function loadPokemonDetails() {
                     </div>
 
                     <!-- Standard Capture Rate Modifiers -->
-                    <div class="info-box" id="standardCaptureModifiers">
+                    <div class="info-box capture-rate-calculator" id="standardCaptureModifiers">
                         <div class="capture-rate-modifiers">
                             <div class="modifiers-grid">
                                 <!-- HP (Automatic) -->
@@ -325,7 +325,7 @@ function loadPokemonDetails() {
                     </div>
 
                     <!-- Errata 2015 Capture Rate Modifiers -->
-                    <div class="info-box" id="errata2015Modifiers" style="display: none;">
+                    <div class="info-box capture-rate-calculator" id="errata2015Modifiers" style="display: none;">
                         <div class="capture-rate-modifiers">
                             <div class="errata-container">
                                 <!-- <div class="errata-info">
@@ -448,7 +448,7 @@ function loadPokemonDetails() {
                 if (withoutValues.length > 0) {
                     html += `<div class="grid-item capability capability-full">
                                         <div class="grid-item-title">Other</div>
-                                        <input type="text" id="capabilitiesNoValueInput" class="capability-no-value-input" value="${withoutValues.join(', ')}" />
+                                        <textarea id="capabilitiesNoValueInput" class="capability-no-value-input" rows="2">${withoutValues.join(', ')}</textarea>
                                     </div>`;
                 }
 
@@ -763,12 +763,20 @@ function loadPokemonDetails() {
     // Handle capability without value changes
     const capNoValueInput = document.getElementById('capabilitiesNoValueInput');
     if (capNoValueInput) {
+        const resizeCapNoValueInput = () => {
+            capNoValueInput.style.height = 'auto';
+            capNoValueInput.style.height = `${capNoValueInput.scrollHeight}px`;
+        };
+
+        capNoValueInput.addEventListener('input', resizeCapNoValueInput);
         capNoValueInput.addEventListener('change', function () {
-            // Parse the comma-separated input and update pokemon.capabilities
+            // Accept comma-separated capabilities as well as one capability per line.
             const capabilitiesWithValues = pokemon.capabilities.filter(cap => /^.+\s+[\d/]+$/.test(cap));
-            const newCapNoValues = this.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            const newCapNoValues = this.value.split(/[,\n]+/).map(s => s.trim()).filter(s => s.length > 0);
             pokemon.capabilities = [...capabilitiesWithValues, ...newCapNoValues];
         });
+
+        resizeCapNoValueInput();
     }
 
     // Handle add capability buttons
@@ -915,7 +923,7 @@ function loadPokemonDetails() {
         const capNoValueInput = document.getElementById('capabilitiesNoValueInput');
         if (capNoValueInput) {
             const capabilitiesWithValues = pokemon.capabilities.filter(cap => /^.+\s+[\d/]+$/.test(cap));
-            const newCapNoValues = capNoValueInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            const newCapNoValues = capNoValueInput.value.split(/[,\n]+/).map(s => s.trim()).filter(s => s.length > 0);
             pokemon.capabilities = capabilitiesWithValues.concat(newCapNoValues);
         }
     };
