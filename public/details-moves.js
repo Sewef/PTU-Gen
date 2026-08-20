@@ -256,14 +256,16 @@ function updateMovesDisplay(pokemon) {
                         <div class="section-card-name">${move.name}${move.type ? `<span class="move-badge type-${move.type.toLowerCase().replace(' ', '-')}">${move.type}</span>` : ''}${move.class ? `<span class="move-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
                         <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
                     </div>
-                    <div class="section-card-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
+                    <div class="move-meta-row">
+                        <div class="section-card-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
+                        <div class="section-card-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
+                        <div class="section-card-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
+                        ${move.ac ? `<div class="section-card-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
+                    </div>
                     <div class="section-card-field">
                         <strong>Frequency:</strong> ${move.frequency || 'N/A'}
                         ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({ length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1 }, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i + 1}"></button>`).join('')}</div></span>` : ''}
                     </div>
-                    <div class="section-card-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
-                    <div class="section-card-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
-                    ${move.ac ? `<div class="section-card-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
                     ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg}${getMoveAttackValue(pokemon, move) !== null ? ` + ${getMoveAttackValue(pokemon, move)}` : ''} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
                         <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
                         <button class="db-adjust-btn db-increase" title="Increase DB">+</button>

@@ -3157,6 +3157,208 @@ pre {
     justify-content: center;
 }
 
+/* Compact density for the details page */
+body.details-page {
+    padding: 12px;
+}
+
+.details-page > .container {
+    padding: 14px;
+}
+
+.details-page .header {
+    margin: -14px -14px 10px;
+}
+
+.details-page .pokemon-display {
+    padding: 14px;
+}
+
+.details-page .pokemon-info {
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.details-page .info-box:not(.capture-rate-summary):not(.capture-rate-calculator) {
+    padding: 10px 12px;
+}
+
+.details-page .info-label {
+    margin-bottom: 3px;
+}
+
+.details-page .level-hp-wrapper {
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.details-page .margin-top-8,
+.details-page .hp-damage-controls {
+    margin-top: 5px;
+}
+
+.details-page .hp-damage-preview {
+    min-height: 0;
+    margin-top: 3px;
+}
+
+.details-page .hp-damage-preview:empty {
+    display: none;
+}
+
+.details-page .nature-select {
+    padding: 6px;
+    margin-bottom: 4px;
+}
+
+.details-page .other-info-grid {
+    gap: 6px;
+}
+
+.details-page .stats-breakdown {
+    gap: 4px;
+    margin: 6px 0;
+}
+
+.details-page .stat-breakdown-row {
+    gap: 8px;
+    padding: 5px 6px;
+}
+
+.details-page .stat-breakdown-component input,
+.details-page .base-stat-value {
+    padding: 3px;
+}
+
+.details-page .stat-breakdown-component.total {
+    padding: 3px 7px;
+}
+
+.details-page .base-relation-summary {
+    padding: 4px 8px;
+    margin-bottom: 4px;
+}
+
+.details-page .stat-ignore-btn {
+    margin-top: 2px;
+    padding: 2px 5px;
+    font-size: 0.78em;
+}
+
+.details-page .section {
+    margin: 10px 0;
+}
+
+.details-page .section-list {
+    gap: 6px;
+}
+
+.details-page .section-card {
+    padding: 8px 10px;
+}
+
+.details-page .section-card-header {
+    margin-bottom: 4px;
+}
+
+.details-page .section-card-name {
+    margin-bottom: 0;
+}
+
+.details-page .section-card-field {
+    margin-bottom: 3px;
+}
+
+.details-page .move-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+    margin-bottom: 3px;
+}
+
+.details-page .move-meta-row .section-card-field {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.details-page .section-card > .section-card-field:last-child {
+    margin-bottom: 0;
+}
+
+.details-page .ability-table-wrap {
+    margin: 4px 0 5px;
+}
+
+.details-page .ability-table th,
+.details-page .ability-table td {
+    padding: 4px 6px;
+}
+
+.details-page .usage-tracker {
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.details-page .usage-boxes {
+    gap: 3px;
+}
+
+.details-page .usage-checkbox {
+    width: 18px;
+    height: 18px;
+}
+
+.details-page .type-effectiveness-display {
+    gap: 3px;
+}
+
+.details-page .details-table {
+    margin-bottom: 4px;
+}
+
+.details-page .type-effectiveness-display .details-table:last-child {
+    margin-bottom: 0;
+}
+
+.details-page .details-table-header-row {
+    height: 31px;
+}
+
+.details-page .details-table-body-row {
+    height: 25px;
+}
+
+.details-page .details-table-type-cell,
+.details-page .type-eff-value-cell {
+    padding: 3px;
+}
+
+.details-page .type-badge-table {
+    padding: 3px 6px;
+}
+
+.details-page .empty-state.compact {
+    padding: 8px;
+}
+
+@media (max-width: 640px) {
+    body.details-page {
+        padding: 8px;
+    }
+
+    .details-page > .container {
+        padding: 10px;
+    }
+
+    .details-page .header {
+        margin: -10px -10px 8px;
+    }
+
+    .details-page .details-content {
+        gap: 12px;
+    }
+}
+
 /* Modal Search Bar Container */
 .modal-search-bar {
     margin-bottom: 15px;
