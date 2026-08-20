@@ -59,6 +59,27 @@ function calculateTypeEffectiveness(types) {
     return effectiveness;
 }
 
+function updateDamageTypeEffectivenessSelection() {
+    const container = document.getElementById('typeEffectiveness');
+    const damageTypeSelect = document.getElementById('damageTypeSelect');
+    if (!container || !damageTypeSelect) return;
+
+    const selectedDamageType = damageTypeSelect.value;
+
+    container.querySelectorAll('.details-table-type-cell[data-damage-type]').forEach(typeCell => {
+        const isSelected = typeCell.dataset.damageType === selectedDamageType;
+        typeCell.classList.toggle('damage-type-selected-top', isSelected);
+        typeCell.querySelector('.type-effectiveness-button')?.setAttribute('aria-pressed', isSelected.toString());
+    });
+
+    container.querySelectorAll('.type-eff-value-cell[data-damage-type]').forEach(valueCell => {
+        valueCell.classList.toggle(
+            'damage-type-selected-bottom',
+            valueCell.dataset.damageType === selectedDamageType
+        );
+    });
+}
+
 function displayTypeEffectiveness(pokemon) {
     // Get the actual types to use
     let typesToUse = pokemon.actualTypes || pokemon.types || [];
@@ -91,9 +112,17 @@ function displayTypeEffectiveness(pokemon) {
 
         // First row: Type badges
         types.forEach(type => {
+            const damageType = type.toLowerCase();
             html += `
-                <td class="details-table-type-cell">
-                    <span class="type-badge type-badge-table type-${type.toLowerCase().replace(' ', '-')}">${type}</span>
+                <td class="details-table-type-cell" data-damage-type="${damageType}">
+                    <button
+                        type="button"
+                        class="type-badge type-badge-table type-effectiveness-button type-${damageType.replace(' ', '-')}"
+                        data-damage-type="${damageType}"
+                        aria-pressed="false"
+                        aria-label="Use ${type} as damage type"
+                        title="Use ${type} as damage type"
+                    >${type}</button>
                 </td>
             `;
         });
@@ -105,7 +134,8 @@ function displayTypeEffectiveness(pokemon) {
 
         // Second row: Effectiveness values
         types.forEach(type => {
-            let eff = effectiveness[type.toLowerCase()];
+            const damageType = type.toLowerCase();
+            let eff = effectiveness[damageType];
             
             let effClass = 'eff-neutral'; // Default
             let effText = '1x';
@@ -140,7 +170,7 @@ function displayTypeEffectiveness(pokemon) {
             }
 
             html += `
-                <td class="type-eff-value-cell ${effClass}">
+                <td class="type-eff-value-cell ${effClass}" data-damage-type="${damageType}">
                     ${effText}
                 </td>
             `;
@@ -156,6 +186,24 @@ function displayTypeEffectiveness(pokemon) {
     };
 
     container.innerHTML = renderHalf(firstHalf) + renderHalf(secondHalf);
+
+    container.querySelectorAll('.type-effectiveness-button').forEach(typeButton => {
+        typeButton.addEventListener('click', () => {
+            const damageTypeSelect = document.getElementById('damageTypeSelect');
+            if (!damageTypeSelect) return;
+
+            damageTypeSelect.value = typeButton.dataset.damageType;
+            damageTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
+    const damageTypeSelect = document.getElementById('damageTypeSelect');
+    if (damageTypeSelect && !damageTypeSelect.dataset.effectivenessHighlightBound) {
+        damageTypeSelect.addEventListener('change', updateDamageTypeEffectivenessSelection);
+        damageTypeSelect.dataset.effectivenessHighlightBound = 'true';
+    }
+
+    updateDamageTypeEffectivenessSelection();
 }
 
 function setupTypeEditor(pokemon) {

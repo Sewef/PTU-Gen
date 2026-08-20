@@ -2921,6 +2921,40 @@ pre {
     white-space: nowrap;
 }
 
+.type-effectiveness-button {
+    border: 0;
+    font-family: inherit;
+    line-height: inherit;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.type-effectiveness-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.type-effectiveness-button:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.details-table-type-cell.damage-type-selected-top {
+    position: relative;
+    z-index: 1;
+    box-shadow:
+        inset 2px 2px 0 var(--primary-color),
+        inset -2px 0 0 var(--primary-color);
+}
+
+.type-eff-value-cell.damage-type-selected-bottom {
+    position: relative;
+    z-index: 1;
+    box-shadow:
+        inset 2px -2px 0 var(--primary-color),
+        inset -2px 0 0 var(--primary-color);
+}
+
 /* Nature Select */
 .nature-select {
     width: 100%;
