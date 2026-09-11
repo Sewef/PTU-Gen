@@ -52,7 +52,7 @@ function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
         ? `${pokemon._fandex}/${imageNumber}`
         : imageNumber;
     const imageUrl = `https://sewef.github.io/ptu/img/pokemon/full/${imagePath}.png`;
-    const pokemonName = pokemon.nickname || pokemon.name;
+    const pokemonName = pokemon.shiny ? `✨ ${pokemon.nickname || pokemon.name}` : pokemon.nickname || pokemon.name;
     const uuid = generateTokenUUID();
     const W = OWLBEAR_TOKEN_SIZE;
     const formulaMax = calculateOwlbearHPValue(pokemon.level, pokemon.stats?.HP, pokemon.hpFormula);
