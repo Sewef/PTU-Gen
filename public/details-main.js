@@ -150,12 +150,30 @@ function loadPokemonDetails() {
                     <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level} • ${pokemon.dataset ? pokemon.dataset.charAt(0).toUpperCase() + pokemon.dataset.slice(1) : 'Core'} Dataset • ${pokemon._fandex ? `${pokemon._fandex.charAt(0).toUpperCase() + pokemon._fandex.slice(1)}` : ''}</div>
                 </div>
                 <div class="export-button-wrapper">
-                    <button id="exportOwlbearBtn" class="export-btn-main"><img src="https://www.owlbear.rodeo/assets/logo-DZfycRP_.svg" alt="Owlbear" height="20" width="20" style="vertical-align: middle;" /> Copy Owlbear Token</button>
+                    <div class="owlbear-export-group" aria-label="Owlbear token actions">
+                        <button id="exportOwlbearBtn" class="export-btn-main owlbear-copy-btn"><img src="https://www.owlbear.rodeo/assets/logo-DZfycRP_.svg" alt="Owlbear" height="20" width="20" /> Owlbear Token</button>
+                        <button id="owlbearConfigBtn" title="Owlbear token settings" class="export-btn-main owlbear-settings-btn">⚙️</button>
+                    </div>
                     <button id="exportBtn" title="Export options" class="export-btn-main">📥 Export <span class="dropdown-arrow">▼</span></button>
                     <div id="exportDropdown" class="export-dropdown">
                         <button id="exportJsonBtn" class="export-dropdown-item">📄 Export PTU-Gen JSON</button>
                         <button id="exportRoll20Btn" class="export-dropdown-item">🎲 Export Roll20</button>
                         <button id="exportPokesheetsBtn" class="export-dropdown-item">📊 Export Pokésheets</button>
+                    </div>
+                </div>
+                <div id="owlbearConfigModal" class="modal-overlay" style="display: none;">
+                    <div class="modal-content" style="max-width: 420px;">
+                        <div class="modal-title">Owlbear Token Settings</div>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; cursor: pointer;">
+                            <input type="checkbox" id="detailsOwlbearVisible" style="width: auto;">
+                            <span>Visible</span>
+                        </label>
+                        <label style="display: block; margin-bottom: 6px;">Player Id</label>
+                        <input type="text" id="detailsOwlbearPlayerId" placeholder="Player Id" autocomplete="off" style="width: 100%; margin-bottom: 16px;">
+                        <div class="modal-buttons">
+                            <button type="button" id="saveOwlbearConfigBtn" class="modal-btn modal-btn-primary">Save</button>
+                            <button type="button" id="closeOwlbearConfigBtn" class="modal-btn modal-btn-secondary">Cancel</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -872,6 +890,32 @@ function loadPokemonDetails() {
     const exportRoll20Btn = document.getElementById('exportRoll20Btn');
     const exportPokesheetsBtn = document.getElementById('exportPokesheetsBtn');
     const exportOwlbearBtn = document.getElementById('exportOwlbearBtn');
+    const owlbearConfigBtn = document.getElementById('owlbearConfigBtn');
+    const owlbearConfigModal = document.getElementById('owlbearConfigModal');
+    const detailsOwlbearVisible = document.getElementById('detailsOwlbearVisible');
+    const detailsOwlbearPlayerId = document.getElementById('detailsOwlbearPlayerId');
+    const saveOwlbearConfigBtn = document.getElementById('saveOwlbearConfigBtn');
+    const closeOwlbearConfigBtn = document.getElementById('closeOwlbearConfigBtn');
+
+    pokemon.owlbear = {
+        visible: pokemon.owlbear?.visible !== undefined ? Boolean(pokemon.owlbear.visible) : true,
+        playerId: String(pokemon.owlbear?.playerId || '').trim()
+    };
+
+    const syncOwlbearConfigFromControls = () => {
+        pokemon.owlbear = {
+            visible: detailsOwlbearVisible ? detailsOwlbearVisible.checked : true,
+            playerId: detailsOwlbearPlayerId ? detailsOwlbearPlayerId.value.trim() : ''
+        };
+        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    };
+
+    const hydrateOwlbearConfigControls = () => {
+        if (detailsOwlbearVisible) detailsOwlbearVisible.checked = pokemon.owlbear.visible;
+        if (detailsOwlbearPlayerId) detailsOwlbearPlayerId.value = pokemon.owlbear.playerId;
+    };
+
+    hydrateOwlbearConfigControls();
 
     // Helper function to sync all pending changes to pokemon object before export
     const syncPokemonBeforeExport = () => {
@@ -928,7 +972,40 @@ function loadPokemonDetails() {
             const newCapNoValues = capNoValueInput.value.split(/[,\n]+/).map(s => s.trim()).filter(s => s.length > 0);
             pokemon.capabilities = capabilitiesWithValues.concat(newCapNoValues);
         }
+
+        syncOwlbearConfigFromControls();
     };
+
+    if (owlbearConfigBtn && owlbearConfigModal) {
+        owlbearConfigBtn.onclick = (e) => {
+            e.stopPropagation();
+            hydrateOwlbearConfigControls();
+            owlbearConfigModal.style.display = 'flex';
+        };
+    }
+
+    if (closeOwlbearConfigBtn && owlbearConfigModal) {
+        closeOwlbearConfigBtn.onclick = () => {
+            hydrateOwlbearConfigControls();
+            owlbearConfigModal.style.display = 'none';
+        };
+    }
+
+    if (saveOwlbearConfigBtn && owlbearConfigModal) {
+        saveOwlbearConfigBtn.onclick = () => {
+            syncOwlbearConfigFromControls();
+            owlbearConfigModal.style.display = 'none';
+        };
+    }
+
+    if (owlbearConfigModal) {
+        owlbearConfigModal.addEventListener('click', (e) => {
+            if (e.target === owlbearConfigModal) {
+                hydrateOwlbearConfigControls();
+                owlbearConfigModal.style.display = 'none';
+            }
+        });
+    }
 
     if (exportBtn && exportDropdown) {
         // Initialize dropdown display state
@@ -984,7 +1061,7 @@ function loadPokemonDetails() {
                 e.stopPropagation();
                 syncPokemonBeforeExport();
                 exportDropdown.style.display = 'none';
-                const originalText = exportOwlbearBtn.textContent;
+                const originalContent = exportOwlbearBtn.innerHTML;
                 exportOwlbearBtn.textContent = '⏳ Generating...';
                 exportOwlbearBtn.disabled = true;
                 try {
@@ -995,7 +1072,7 @@ function loadPokemonDetails() {
                     exportOwlbearBtn.textContent = '❌ Failed';
                 } finally {
                     exportOwlbearBtn.disabled = false;
-                    setTimeout(() => { exportOwlbearBtn.textContent = originalText; }, 2000);
+                    setTimeout(() => { exportOwlbearBtn.innerHTML = originalContent; }, 2000);
                 }
             };
         }

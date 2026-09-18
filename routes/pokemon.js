@@ -98,6 +98,8 @@ router.get('/generate', async (req, res) => {
       nature: req.query.nature,
       includelegendaries: req.query.includelegendaries,
       forceevolution: req.query.forceevolution,
+      owlbearvisible: req.query.owlbearvisible,
+      owlbearplayerid: req.query.owlbearplayerid,
       fandex: splitFandex(req.query)
     };
 
@@ -116,7 +118,9 @@ router.get('/generateBlank', (req, res) => {
       level: req.query.level,
       nature: req.query.nature,
       hpformula: req.query.hpformula,
-      dataset: req.query.dataset
+      dataset: req.query.dataset,
+      owlbearvisible: req.query.owlbearvisible,
+      owlbearplayerid: req.query.owlbearplayerid
     });
     res.json(pokemon);
   } catch (error) {
@@ -148,6 +152,8 @@ router.get('/generateWild/:level', async (req, res) => {
     const pokemon = await PokemonGenerator.generatePokemon({
       level,
       dataset,
+      owlbearvisible: req.query.owlbearvisible,
+      owlbearplayerid: req.query.owlbearplayerid,
       fandex
     });
     res.json(pokemon);
@@ -206,7 +212,9 @@ router.get('/team', async (req, res) => {
       dataset: (req.query.dataset || 'core').toLowerCase(),
       fandex: splitFandex(req.query),
       hpformula: req.query.hpformula,
-      includelegendaries: req.query.includelegendaries
+      includelegendaries: req.query.includelegendaries,
+      owlbearvisible: req.query.owlbearvisible,
+      owlbearplayerid: req.query.owlbearplayerid
     };
 
     if (options.level < 1 || options.level > 100) {

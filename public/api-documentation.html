@@ -156,6 +156,18 @@
                             <td>Include legendary Pokémon in generation (default: false - legendaries are excluded)</td>
                             <td><code>includeLegendaries=true</code></td>
                         </tr>
+                        <tr>
+                            <td class="param-name">owlbearVisible</td>
+                            <td><span class="param-type">boolean</span></td>
+                            <td>Set the exported Owlbear token visibility stored on the generated Pokemon</td>
+                            <td><code>owlbearVisible=false</code></td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">owlbearPlayerId</td>
+                            <td><span class="param-type">string</span></td>
+                            <td>Player id to use as the Owlbear token createdUserId when exporting</td>
+                            <td><code>owlbearPlayerId=user-123</code></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -260,6 +272,16 @@ GET /api/pokemon/generate?species=Dragonite&level=75&distribution=MINMAXED&natur
                             <td><span class="param-type">string</span></td>
                             <td>Data source: core, community, or homebrew (default: core)</td>
                         </tr>
+                        <tr>
+                            <td class="param-name">owlbearVisible</td>
+                            <td><span class="param-type">boolean</span></td>
+                            <td>Set the exported Owlbear token visibility stored on the generated Pokemon</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">owlbearPlayerId</td>
+                            <td><span class="param-type">string</span></td>
+                            <td>Player id to use as the Owlbear token createdUserId when exporting</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -342,6 +364,18 @@ GET /api/pokemon/generateWild/42?dataset=core
                             <td><span class="param-type">boolean</span></td>
                             <td>Include legendary Pokémon in generation (default: false)</td>
                             <td>false</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">owlbearVisible</td>
+                            <td><span class="param-type">boolean</span></td>
+                            <td>Set the exported Owlbear token visibility stored on generated Pokemon</td>
+                            <td>true</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">owlbearPlayerId</td>
+                            <td><span class="param-type">string</span></td>
+                            <td>Player id to use as the Owlbear token createdUserId when exporting</td>
+                            <td>-</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1343,6 +1377,38 @@ LEVEL + (HP * 4)        // Increased HP gain<br>
                 <strong>Note:</strong> The <code>includeLegendaries</code> parameter only applies when generating random species.
                 If you specify a legendary species directly with the <code>species</code> parameter, it will always be generated regardless of this setting.
             </div>
+        </div>
+
+        <div class="endpoint">
+            <h3>Owlbear Export Metadata</h3>
+            <p class="description">
+                Store Owlbear token export settings directly on generated Pokemon using URL parameters.
+            </p>
+
+            <table class="params-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Available On</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="param-name">owlbearVisible</span></td>
+                        <td><span class="param-type">boolean</span></td>
+                        <td><code>/generate</code>, <code>/generateBlank</code>, <code>/generateWild/:level</code>, <code>/team</code></td>
+                        <td>Controls the Owlbear item <code>visible</code> value when copying a token.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="param-name">owlbearPlayerId</span></td>
+                        <td><span class="param-type">string</span></td>
+                        <td><code>/generate</code>, <code>/generateBlank</code>, <code>/generateWild/:level</code>, <code>/team</code></td>
+                        <td>When set, copied Owlbear tokens include <code>createdUserId</code> with this value.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <div class="endpoint">

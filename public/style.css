@@ -2681,14 +2681,18 @@ pre {
     position: relative;
     margin-left: auto;
     align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.export-button-wrapper > button {
+.export-button-wrapper button {
     margin-top: 2px;
 }
 
 .export-btn-main {
-    padding: 5px 10px;
+    min-height: 34px;
+    padding: 6px 12px;
     background: var(--primary-color);
     color: white;
     border: none;
@@ -2697,13 +2701,74 @@ pre {
     font-size: 0.8em;
     font-weight: 600;
     transition: all 0.2s ease;
-    /* display: flex; */
+    display: inline-flex;
     align-items: center;
     gap: 6px;
+    white-space: nowrap;
+    line-height: 1;
 }
 
 .export-btn-main:hover {
     background: var(--primary-dark);
+}
+
+.owlbear-export-group {
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.owlbear-export-group .export-btn-main {
+    margin-top: 2px;
+}
+
+.owlbear-copy-btn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.owlbear-copy-btn img {
+    display: block;
+}
+
+.owlbear-settings-btn {
+    border-left: 1px solid rgba(255, 255, 255, 0.35);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+@media (max-width: 768px) {
+    .pokemon-header-content {
+        flex-wrap: wrap;
+    }
+
+    .export-button-wrapper {
+        width: 100%;
+        margin-left: 84px;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 520px) {
+    .export-button-wrapper {
+        margin-left: 0;
+    }
+
+    .owlbear-export-group,
+    .export-button-wrapper > .export-btn-main {
+        width: 100%;
+    }
+
+    .owlbear-copy-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .owlbear-settings-btn {
+        justify-content: center;
+    }
 }
 
 .export-dropdown {

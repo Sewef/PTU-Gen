@@ -573,6 +573,8 @@ class PokemonGenerator {
    * @param {string} options.distribution - RANDOM (default), BALANCED, or MINMAXED
    * @param {string} options.ignoreBaseRelation - 'IGNORE' (all stats) or comma-separated list (e.g., 'HP,ATK,DEF')
    * @param {string} options.hpFormula - Custom HP formula. Default: 'LEVEL + (HP * 3) + 10'
+   * @param {boolean|string} options.owlbearvisible - Owlbear token visibility
+   * @param {string} options.owlbearplayerid - Owlbear created user id
    * @param {string} options.dataset - Dataset to use: 'core', 'community', 'homebrew'. Default: 'core'
    * @param {string|string[]} options.fandex - FanDexes to apply as overrides. Comma-separated or array.
    * @param {string} options.nature - Specific nature name to use. If not specified, a random nature is chosen
@@ -654,6 +656,10 @@ class PokemonGenerator {
     const distribution = (options.distribution || 'RANDOM').toUpperCase();
     const ignoreBaseRelation = this.normalizeIgnoreBaseRelation(options.ignorebaserelation);
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
+    const owlbear = {
+      visible: options.owlbearvisible === undefined ? true : options.owlbearvisible === true || options.owlbearvisible === 'true',
+      playerId: String(options.owlbearplayerid || '').trim()
+    };
     
     // Extract base stats, handling variants like Pumpkaboo (Small/Average/Large/Super Size)
     const extractedStats = extractBaseStats(species['Base Stats']);
@@ -747,6 +753,7 @@ class PokemonGenerator {
       hitPointsMax: hitPointsMax,
       hpFormula: hpFormula,
       ignoreBaseRelation: ignoreBaseRelation,
+      owlbear,
       moves: this.selectMovesForPokemon(species, level, 6),
       item: this.selectItem(),
       skills: species.Skills || {},
@@ -793,6 +800,10 @@ class PokemonGenerator {
     const level = Number.isNaN(parsedLevel) ? 1 : Math.min(Math.max(parsedLevel, 1), 100);
     const nature = options.nature ? this.getNatureByName(options.nature) : this.getNatureByName('Composed');
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
+    const owlbear = {
+      visible: options.owlbearvisible === undefined ? true : options.owlbearvisible === true || options.owlbearvisible === 'true',
+      playerId: String(options.owlbearplayerid || '').trim()
+    };
     const zeroBaseStats = {
       HP: 0,
       Attack: 0,
@@ -823,6 +834,7 @@ class PokemonGenerator {
       hitPoints: hitPointsMax,
       hitPointsMax,
       hpFormula,
+      owlbear,
       moves: [],
       item: '',
       skills: {},
@@ -959,7 +971,14 @@ class PokemonGenerator {
     const includeLegendaries = options.includelegendaries === 'true' || options.includelegendaries === true;
 
     for (let i = 0; i < count; i++) {
-      team.push(await this.generatePokemon({ level, dataset, hpformula: hpFormula, includelegendaries: includeLegendaries }));
+      team.push(await this.generatePokemon({
+        level,
+        dataset,
+        hpformula: hpFormula,
+        includelegendaries: includeLegendaries,
+        owlbearvisible: options.owlbearvisible,
+        owlbearplayerid: options.owlbearplayerid
+      }));
     }
 
     return {

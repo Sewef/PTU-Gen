@@ -34,6 +34,18 @@ function getStoredPokemons() {
     return pokemons;
 }
 
+function getBulkOwlbearSettings() {
+    const visibleInput = document.getElementById('owlbearVisible');
+    const playerIdInput = document.getElementById('owlbearPlayerId');
+
+    if (!visibleInput && !playerIdInput) return null;
+
+    return {
+        visible: visibleInput ? visibleInput.checked : true,
+        playerId: playerIdInput ? playerIdInput.value.trim() : ''
+    };
+}
+
 // ─── PTU-Gen JSON ────────────────────────────────────────────────────────────
 
 async function exportBulkPTUGen(pokemons) {
@@ -89,9 +101,13 @@ async function exportBulkOwlbear(pokemons) {
 
     const shared = {};
     let currentX = 0;
+    const owlbearSettings = getBulkOwlbearSettings();
 
     for (const pokemon of pokemons) {
-        const { uuid, item } = buildOwlbearItem(pokemon, templateText, { x: currentX, y: 0 });
+        const pokemonForExport = owlbearSettings
+            ? { ...pokemon, owlbear: { ...owlbearSettings } }
+            : pokemon;
+        const { uuid, item } = buildOwlbearItem(pokemonForExport, templateText, { x: currentX, y: 0 });
         shared[uuid] = item;
         currentX += OWLBEAR_TOKEN_SIZE;
     }

@@ -125,6 +125,8 @@ app.get('/api/pokemon/generate', async c => {
       nature: query.nature,
       includelegendaries: query.includelegendaries,
       forceevolution: query.forceevolution,
+      owlbearvisible: query.owlbearvisible,
+      owlbearplayerid: query.owlbearplayerid,
       fandex: splitFandex(query)
     });
 
@@ -142,7 +144,9 @@ app.get('/api/pokemon/generateBlank', c => {
       level: query.level,
       nature: query.nature,
       hpformula: query.hpformula,
-      dataset: query.dataset
+      dataset: query.dataset,
+      owlbearvisible: query.owlbearvisible,
+      owlbearplayerid: query.owlbearplayerid
     });
     return c.json(pokemon);
   } catch (error) {
@@ -164,7 +168,13 @@ app.get('/api/pokemon/generateWild/:level', async c => {
       return c.json({ error: 'Level must be between 1 and 100' }, 400);
     }
 
-    const pokemon = await PokemonGenerator.generatePokemon({ level, dataset, fandex });
+    const pokemon = await PokemonGenerator.generatePokemon({
+      level,
+      dataset,
+      fandex,
+      owlbearvisible: query.owlbearvisible,
+      owlbearplayerid: query.owlbearplayerid
+    });
     return c.json(pokemon);
   } catch (error) {
     return jsonError(c, error, 500);
@@ -205,7 +215,9 @@ app.get('/api/pokemon/team', async c => {
       dataset: (query.dataset || 'core').toLowerCase(),
       fandex: splitFandex(query),
       hpformula: query.hpformula,
-      includelegendaries: query.includelegendaries
+      includelegendaries: query.includelegendaries,
+      owlbearvisible: query.owlbearvisible,
+      owlbearplayerid: query.owlbearplayerid
     };
 
     if (options.level < 1 || options.level > 100) {

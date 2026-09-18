@@ -72,6 +72,14 @@ function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
     item.metadata['com.pretty-initiative/metadata'].count = speed;
     item.image.url = imageUrl;
     item.text.plainText = pokemonName;
+    item.visible = pokemon.owlbear?.visible !== undefined ? Boolean(pokemon.owlbear.visible) : item.visible;
+
+    const createdUserId = String(pokemon.owlbear?.playerId || '').trim();
+    if (createdUserId) {
+        item.createdUserId = createdUserId;
+    } else {
+        delete item.createdUserId;
+    }
 
     item.position.x = position.x;
     item.position.y = position.y;
