@@ -4,6 +4,40 @@ function calculateDefaultTutorPoints(level) {
     return Math.floor((parseInt(level, 10) || 0) / 5) + 1;
 }
 
+function parsePokeEdgeTutorPointCost(cost) {
+    const text = String(cost || '').trim();
+    if (!text) return 0;
+
+    const tutorPointMatch = text.match(/(\d+)\s*(?:tutor\s*points?|tp)\b/i);
+    if (tutorPointMatch) {
+        return parseInt(tutorPointMatch[1], 10) || 0;
+    }
+
+    const numberMatch = text.match(/\d+/);
+    return numberMatch ? parseInt(numberMatch[0], 10) || 0 : 0;
+}
+
+function calculateSpentTutorPoints(pokemon) {
+    return (pokemon.pokeEdges || []).reduce((total, edge) => total + parsePokeEdgeTutorPointCost(edge.cost), 0);
+}
+
+function updateTutorPointsCounter(pokemon) {
+    const tutorPointsInput = document.getElementById('tutorPointsInput');
+    const currentDisplay = document.getElementById('tutorPointsCurrentDisplay');
+    if (!tutorPointsInput || !currentDisplay) return;
+
+    const maxTutorPoints = Math.max(0, parseInt(tutorPointsInput.value, 10) || 0);
+    const spentTutorPoints = calculateSpentTutorPoints(pokemon);
+    const currentTutorPoints = Math.max(0, maxTutorPoints - spentTutorPoints);
+
+    pokemon.tutorPoints = maxTutorPoints;
+    pokemon.tutorPointsCurrent = currentTutorPoints;
+    pokemon.tutorPointsSpent = spentTutorPoints;
+
+    currentDisplay.textContent = currentTutorPoints;
+    currentDisplay.title = `${spentTutorPoints} Tutor Point${spentTutorPoints === 1 ? '' : 's'} spent on Poké Edges`;
+}
+
 function setupPokeEdgesEditor(pokemon) {
     const addPokeEdgeBtn = document.getElementById('addPokeEdgeBtn');
     const addBlankPokeEdgeBtn = document.getElementById('addBlankPokeEdgeBtn');
@@ -19,9 +53,14 @@ function setupPokeEdgesEditor(pokemon) {
 
     if (tutorPointsInput) {
         tutorPointsInput.value = pokemon.tutorPoints;
+        updateTutorPointsCounter(pokemon);
+        tutorPointsInput.addEventListener('input', function () {
+            updateTutorPointsCounter(pokemon);
+        });
         tutorPointsInput.addEventListener('change', function () {
             pokemon.tutorPoints = parseInt(this.value, 10) || 0;
             pokemon.tutorPointsManual = true;
+            updateTutorPointsCounter(pokemon);
             localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
         });
     }
@@ -155,6 +194,7 @@ function updatePokeEdgesDisplay(pokemon) {
 
     if (!pokemon.pokeEdges || pokemon.pokeEdges.length === 0) {
         pokeEdgesList.innerHTML = '<div class="empty-state compact">No Poké Edges yet.</div>';
+        updateTutorPointsCounter(pokemon);
         return;
     }
 
@@ -212,9 +252,12 @@ function updatePokeEdgesDisplay(pokemon) {
             const edge = pokemon.pokeEdges.find(item => item.name === edgeElement.getAttribute('data-poke-edge-name'));
             if (!edge) return;
             edge[input.dataset.field] = input.value.trim();
+            updateTutorPointsCounter(pokemon);
             localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
         });
     });
+
+    updateTutorPointsCounter(pokemon);
 }
 
 async function showAddPokeEdgeModal(pokemon) {

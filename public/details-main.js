@@ -585,7 +585,11 @@ function loadPokemonDetails() {
                         <div class="button-group poke-edges-toolbar">
                             <label class="tutor-points-control">
                                 <span>Tutor Points</span>
-                                <input type="number" id="tutorPointsInput" min="0" value="${pokemon.tutorPoints}" />
+                                <span class="tutor-points-counter">
+                                    <span id="tutorPointsCurrentDisplay">${pokemon.tutorPoints}</span>
+                                    <span class="text-secondary">/</span>
+                                    <input type="number" id="tutorPointsInput" min="0" value="${pokemon.tutorPoints}" />
+                                </span>
                             </label>
                             <button id="addPokeEdgeBtn" title="Add Poké Edge from list" class="edit-bn">✎ Add</button>
                             <button id="addBlankPokeEdgeBtn" title="Add blank Poké Edge" class="edit-bn">+ Blank</button>

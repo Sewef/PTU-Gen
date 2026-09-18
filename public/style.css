@@ -1044,6 +1044,18 @@ button {
     font-weight: 600;
 }
 
+.tutor-points-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-primary);
+}
+
+#tutorPointsCurrentDisplay {
+    min-width: 22px;
+    text-align: right;
+}
+
 .tutor-points-control input {
     width: 56px;
     padding: 4px 6px;
