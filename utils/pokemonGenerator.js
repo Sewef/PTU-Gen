@@ -571,13 +571,14 @@ class PokemonGenerator {
    * @param {string} options.habitat - Specific habitat to generate (random Pokemon from that habitat)
    * @param {boolean} options.shiny - Force shiny
    * @param {string} options.distribution - RANDOM (default), BALANCED, or MINMAXED
-   * @param {string} options.ignoreBaseRelation - 'IGNORE' (all stats) or comma-separated list (e.g., 'HP,ATK,DEF')
+   * @param {string} options.ignoreBaseRelation - 'ALL' (all stats) or comma-separated list (e.g., 'HP,ATK,DEF')
    * @param {string} options.hpFormula - Custom HP formula. Default: 'LEVEL + (HP * 3) + 10'
    * @param {boolean|string} options.owlbearvisible - Owlbear token visibility
    * @param {string} options.owlbearplayerid - Owlbear created user id
    * @param {string} options.dataset - Dataset to use: 'core', 'community', 'homebrew'. Default: 'core'
    * @param {string|string[]} options.fandex - FanDexes to apply as overrides. Comma-separated or array.
-   * @param {string} options.nature - Specific nature name to use. If not specified, a random nature is chosen
+   * @param {string} options.naturemode - random, optimal, or fixed
+   * @param {string} options.nature - Specific nature name to use when naturemode is fixed
    * @returns {Object} Generated Pokemon
    */
   static async generatePokemon(options = {}) {
@@ -650,9 +651,6 @@ class PokemonGenerator {
       species = this.selectEvolvedSpecies(species, level);
     }
 
-    const nature = options.nature 
-      ? this.getNatureByName(options.nature)
-      : this.selectNature();
     const distribution = (options.distribution || 'RANDOM').toUpperCase();
     const ignoreBaseRelation = this.normalizeIgnoreBaseRelation(options.ignorebaserelation);
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
@@ -664,6 +662,7 @@ class PokemonGenerator {
     // Extract base stats, handling variants like Pumpkaboo (Small/Average/Large/Super Size)
     const extractedStats = extractBaseStats(species['Base Stats']);
     const baseStatsData = getActualBaseStats(extractedStats);
+    const nature = this.selectNatureForOptions(options, baseStatsData);
     const stats = this.calculateStats(baseStatsData, level, nature, distribution, ignoreBaseRelation);
     
     // Get selected abilities with their definitions
@@ -723,7 +722,7 @@ class PokemonGenerator {
       ? `${species.Species} (${species.Form})`
       : species.Species;
     
-    const hitPointsMax = this.calculateHitPoints(level, stats.HP, hpFormula);
+    const hitPointsMax = this.calculateHitPoints(level, stats, hpFormula);
 
     const pokemon = {
       id: species.Number,
@@ -798,7 +797,6 @@ class PokemonGenerator {
   static generateBlankPokemon(options = {}) {
     const parsedLevel = parseInt(options.level, 10);
     const level = Number.isNaN(parsedLevel) ? 1 : Math.min(Math.max(parsedLevel, 1), 100);
-    const nature = options.nature ? this.getNatureByName(options.nature) : this.getNatureByName('Composed');
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
     const owlbear = {
       visible: options.owlbearvisible === undefined ? true : options.owlbearvisible === true || options.owlbearvisible === 'true',
@@ -812,8 +810,9 @@ class PokemonGenerator {
       'Special Defense': 0,
       Speed: 0
     };
+    const nature = this.selectNatureForOptions(options, zeroBaseStats);
     const zeroStats = { HP: 0, atk: 0, def: 0, spA: 0, spD: 0, spe: 0 };
-    const hitPointsMax = this.calculateHitPoints(level, 0, hpFormula);
+    const hitPointsMax = this.calculateHitPoints(level, zeroStats, hpFormula);
 
     return {
       id: 0,
@@ -864,11 +863,12 @@ class PokemonGenerator {
    * @param {string} formula - Formula string (e.g., 'LEVEL + (HP * 3) + 10')
    * @returns {number} Calculated Hit Points
    */
-  static calculateHitPoints(level, hpStat, formula = 'LEVEL + (HP * 3) + 10') {
+  static calculateHitPoints(level, statsOrHp, formula = 'LEVEL + (HP * 3) + 10') {
+    const statValues = this.normalizeFormulaStats(statsOrHp);
     // Fast path: avoid runtime string evaluation for the default formula.
     const compactFormula = String(formula ?? '').toUpperCase().replace(/\s+/g, '');
     if (compactFormula === 'LEVEL+(HP*3)+10') {
-      return Math.max(1, Math.floor(level + (hpStat * 3) + 10));
+      return Math.max(1, Math.floor(level + (statValues.HP * 3) + 10));
     }
 
     let hp;
@@ -879,14 +879,14 @@ class PokemonGenerator {
       }
 
       // Tokenize and evaluate with a tiny parser (no eval/new Function; Worker-safe).
-      const tokens = normalizedFormula.match(/LEVEL|HP|\d+(?:\.\d+)?|[()+\-*/]/g);
+      const tokens = normalizedFormula.match(/LEVEL|HP|ATK|DEF|SPA|SPD|SPE|\d+(?:\.\d+)?|[()+\-*/]/g);
       if (!tokens || tokens.join('') !== normalizedFormula.replace(/\s+/g, '')) {
         throw new Error('Invalid formula');
       }
 
       const valueTokens = tokens.map(token => {
         if (token === 'LEVEL') return String(level);
-        if (token === 'HP') return String(hpStat);
+        if (Object.prototype.hasOwnProperty.call(statValues, token)) return String(statValues[token]);
         return token;
       });
 
@@ -946,10 +946,32 @@ class PokemonGenerator {
     } catch (e) {
       // Fallback to default formula if custom formula fails
       console.warn(`Invalid HP formula "${formula}", using default`);
-      hp = Math.max(1, Math.floor(level + (hpStat * 3) + 10));
+      hp = Math.max(1, Math.floor(level + (statValues.HP * 3) + 10));
     }
 
     return hp;
+  }
+
+  static normalizeFormulaStats(statsOrHp) {
+    if (statsOrHp && typeof statsOrHp === 'object') {
+      return {
+        HP: Number(statsOrHp.HP) || 0,
+        ATK: Number(statsOrHp.atk ?? statsOrHp.ATK ?? statsOrHp.Attack) || 0,
+        DEF: Number(statsOrHp.def ?? statsOrHp.DEF ?? statsOrHp.Defense) || 0,
+        SPA: Number(statsOrHp.spA ?? statsOrHp.SPA ?? statsOrHp['Special Attack']) || 0,
+        SPD: Number(statsOrHp.spD ?? statsOrHp.SPD ?? statsOrHp['Special Defense']) || 0,
+        SPE: Number(statsOrHp.spe ?? statsOrHp.SPE ?? statsOrHp.Speed) || 0
+      };
+    }
+
+    return {
+      HP: Number(statsOrHp) || 0,
+      ATK: 0,
+      DEF: 0,
+      SPA: 0,
+      SPD: 0,
+      SPE: 0
+    };
   }
 
   /**
@@ -976,6 +998,8 @@ class PokemonGenerator {
         dataset,
         hpformula: hpFormula,
         includelegendaries: includeLegendaries,
+        naturemode: options.naturemode,
+        nature: options.nature,
         owlbearvisible: options.owlbearvisible,
         owlbearplayerid: options.owlbearplayerid
       }));
@@ -992,7 +1016,7 @@ class PokemonGenerator {
   }
 
   /**
-   * Normalize ignoreBaseRelation so only the special value IGNORE is upper-cased.
+   * Normalize ignoreBaseRelation so only the special value ALL is upper-cased.
    * Individual stat names must remain in statCalc's canonical short-name format
    * (HP, atk, def, spA, spD, spe), otherwise partial ignores like "atk,def"
    * do not match the generated stat groups.
@@ -1045,7 +1069,7 @@ class PokemonGenerator {
    * - Gain 1 point per level to distribute
    * - Base Relation: equal stats stay as even as possible, order is preserved (can be ignored)
    * - Distribution mode: RANDOM, BALANCED, or MINMAXED
-   * - ignoreBaseRelation: 'IGNORE' to disable Base Relation, or comma-separated stats to exclude from grouping
+   * - ignoreBaseRelation: 'ALL' to disable Base Relation, or comma-separated stats to exclude from grouping
    */
   static calculateStats(baseStats, level, nature, distribution = 'RANDOM', ignoreBaseRelation = undefined) {
     return statCalc.calculateStats(baseStats, level, nature, distribution, ignoreBaseRelation);
@@ -1151,6 +1175,47 @@ class PokemonGenerator {
    */
   static selectNature() {
     return this.getAllNatures()[Math.floor(Math.random() * this.getAllNatures().length)];
+  }
+
+  static selectNatureForOptions(options = {}, baseStats = {}) {
+    const mode = (options.naturemode || (options.nature ? 'fixed' : 'random')).toLowerCase();
+
+    if (mode === 'fixed') {
+      return options.nature ? this.getNatureByName(options.nature) : this.getNatureByName('Composed');
+    }
+
+    if (mode === 'optimal') {
+      return this.selectOptimalNature(baseStats);
+    }
+
+    return this.selectNature();
+  }
+
+  static selectOptimalNature(baseStats = {}) {
+    const statEntries = [
+      { natureKey: 'HP', value: Number(baseStats.HP) || 0 },
+      { natureKey: 'atk', value: Number(baseStats.Attack) || 0 },
+      { natureKey: 'def', value: Number(baseStats.Defense) || 0 },
+      { natureKey: 'spA', value: Number(baseStats['Special Attack']) || 0 },
+      { natureKey: 'spD', value: Number(baseStats['Special Defense']) || 0 },
+      { natureKey: 'spe', value: Number(baseStats.Speed) || 0 }
+    ];
+
+    const maxValue = Math.max(...statEntries.map(stat => stat.value));
+    const minValue = Math.min(...statEntries.map(stat => stat.value));
+    const highestStats = statEntries.filter(stat => stat.value === maxValue);
+    const lowestStats = statEntries.filter(stat => stat.value === minValue);
+
+    if (highestStats.length !== 1 || lowestStats.length !== 1) {
+      return this.getNatureByName('Composed');
+    }
+
+    const nature = this.getAllNatures().find(candidate =>
+      candidate.raise === highestStats[0].natureKey &&
+      candidate.lower === lowestStats[0].natureKey
+    );
+
+    return nature || this.getNatureByName('Composed');
   }
 
   /**

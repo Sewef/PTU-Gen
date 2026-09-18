@@ -71,8 +71,8 @@ function normalizeIgnoreBaseRelation(ignoreBaseRelation) {
         return undefined;
     }
 
-    if (rawValue.toUpperCase() === 'IGNORE') {
-        return 'IGNORE';
+    if (rawValue.toUpperCase() === 'ALL' || rawValue.toUpperCase() === 'IGNORE') {
+        return 'ALL';
     }
 
     const statAliases = {
@@ -105,7 +105,7 @@ function normalizeIgnoreBaseRelation(ignoreBaseRelation) {
 function getStatGroups(baseWithNature, ignoreBaseRelation) {
     const normalizedIgnoreBaseRelation = normalizeIgnoreBaseRelation(ignoreBaseRelation);
 
-    if (normalizedIgnoreBaseRelation === 'IGNORE') {
+    if (normalizedIgnoreBaseRelation === 'ALL') {
         return STAT_SHORT_NAMES.map(stat => ({
             stats: [stat],
             baseValue: baseWithNature[stat]
@@ -311,7 +311,7 @@ function getDistributedPoints(baseStats, level, nature, distribution = 'RANDOM',
             level + 10,
             groups,
             normalizedDistribution,
-            normalizedIgnoreBaseRelation !== 'IGNORE'
+            normalizedIgnoreBaseRelation !== 'ALL'
         ),
         distribution: normalizedDistribution,
         ignoreBaseRelation: normalizedIgnoreBaseRelation

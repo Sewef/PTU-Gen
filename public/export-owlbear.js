@@ -19,26 +19,40 @@ function generateOwlTrackersUUID() {
     return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
-function calculateOwlbearHPValue(level, hpStat, formula = OWLBEAR_DEFAULT_HP_FORMULA) {
+function getOwlbearFormulaStats(statsOrHp) {
+    if (statsOrHp && typeof statsOrHp === 'object') {
+        return {
+            HP: Number(statsOrHp.HP) || 0,
+            ATK: Number(statsOrHp.atk ?? statsOrHp.ATK ?? statsOrHp.Attack) || 0,
+            DEF: Number(statsOrHp.def ?? statsOrHp.DEF ?? statsOrHp.Defense) || 0,
+            SPA: Number(statsOrHp.spA ?? statsOrHp.SPA ?? statsOrHp['Special Attack']) || 0,
+            SPD: Number(statsOrHp.spD ?? statsOrHp.SPD ?? statsOrHp['Special Defense']) || 0,
+            SPE: Number(statsOrHp.spe ?? statsOrHp.SPE ?? statsOrHp.Speed) || 0
+        };
+    }
+
+    return { HP: Number(statsOrHp) || 0, ATK: 0, DEF: 0, SPA: 0, SPD: 0, SPE: 0 };
+}
+
+function calculateOwlbearHPValue(level, statsOrHp, formula = OWLBEAR_DEFAULT_HP_FORMULA) {
     const parsedLevel = Number(level);
-    const parsedHP = Number(hpStat);
     const safeLevel = Number.isFinite(parsedLevel) ? parsedLevel : 1;
-    const safeHP = Number.isFinite(parsedHP) ? parsedHP : 0;
+    const stats = getOwlbearFormulaStats(statsOrHp);
 
     try {
         const formulaText = String(formula);
         const sanitized = formulaText
             .toUpperCase()
-            .replace(/[^0-9+\-*/(). LEVEL HP]/g, '');
+            .replace(/[^0-9+\-*/(). LEVEL HP ATK DEF SPA SPD SPE]/g, '');
 
         if (sanitized !== formulaText.toUpperCase() || sanitized.length === 0) {
             throw new Error('Invalid formula');
         }
 
-        const calcFunction = new Function('LEVEL', 'HP', `return ${sanitized}`);
-        return Math.max(1, Math.floor(calcFunction(safeLevel, safeHP)));
+        const calcFunction = new Function('LEVEL', 'HP', 'ATK', 'DEF', 'SPA', 'SPD', 'SPE', `return ${sanitized}`);
+        return Math.max(1, Math.floor(calcFunction(safeLevel, stats.HP, stats.ATK, stats.DEF, stats.SPA, stats.SPD, stats.SPE)));
     } catch (e) {
-        return Math.max(1, Math.floor(safeLevel + (safeHP * 3) + 10));
+        return Math.max(1, Math.floor(safeLevel + (stats.HP * 3) + 10));
     }
 }
 
@@ -55,7 +69,7 @@ function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
     const pokemonName = pokemon.shiny ? `✨ ${pokemon.nickname || pokemon.name}` : pokemon.nickname || pokemon.name;
     const uuid = generateTokenUUID();
     const W = OWLBEAR_TOKEN_SIZE;
-    const formulaMax = calculateOwlbearHPValue(pokemon.level, pokemon.stats?.HP, pokemon.hpFormula);
+    const formulaMax = calculateOwlbearHPValue(pokemon.level, pokemon.stats, pokemon.hpFormula);
     const hpMax = Number.isFinite(Number(pokemon.hitPointsMax)) ? Number(pokemon.hitPointsMax) : formulaMax;
     const hpValue = Number.isFinite(Number(pokemon.hitPoints)) ? Number(pokemon.hitPoints) : hpMax;
     const speed = String(Number.isFinite(Number(pokemon.stats?.spe)) ? Number(pokemon.stats?.spe) : 0);

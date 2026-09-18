@@ -37,9 +37,9 @@ function loadPokemonDetails() {
         const hpFormula = pokemon.hpFormula || defaultHPFormula;
         const hadHitPointsMax = pokemon.hitPointsMax !== undefined && pokemon.hitPointsMax !== null;
         if (!hadHitPointsMax) {
-            pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+            pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats, hpFormula);
         }
-        const defaultFormulaHP = calculateHPValue(pokemon.level, pokemon.stats.HP, defaultHPFormula);
+        const defaultFormulaHP = calculateHPValue(pokemon.level, pokemon.stats, defaultHPFormula);
         const hasStaleDefaultHP = hpFormula !== defaultHPFormula && pokemon.hitPoints === defaultFormulaHP;
         if (!hadHitPointsMax || hasStaleDefaultHP || pokemon.hitPoints === undefined || pokemon.hitPoints === null) {
             pokemon.hitPoints = pokemon.hitPointsMax;
@@ -216,7 +216,7 @@ function loadPokemonDetails() {
                             </div>
                         </div>
                         <div class="margin-top-8">
-                            <input type="text" id="hpFormulaInput" value="${pokemon.hpFormula || 'LEVEL + (HP * 3) + 10'}" class="skill-input" placeholder="e.g., LEVEL + (HP * 3) + 10" />
+                            <input type="text" id="hpFormulaInput" value="${pokemon.hpFormula || 'LEVEL + (HP * 3) + 10'}" class="skill-input" placeholder="e.g., LEVEL + (HP * 3) + DEF" title="Formula placeholders: LEVEL, HP, ATK, DEF, SPA, SPD, SPE" />
                         </div>
                         <div class="hp-damage-controls">
                             <input type="number" id="damageAmountInput" class="hp-damage-input" min="0" placeholder="Damage" />
@@ -636,7 +636,7 @@ function loadPokemonDetails() {
     // Base-relation summary line: "atk = def > HP = spA = spD > spe"
     const naturalGroups = groupStatsByValue(pokemon.baseWithNature);
     const ignoredStatsSet = new Set(
-        pokemon.ignoreBaseRelation === 'IGNORE' ? shortNames
+        (pokemon.ignoreBaseRelation === 'ALL' || pokemon.ignoreBaseRelation === 'IGNORE') ? shortNames
             : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(s => s.trim()) : [])
     );
     const baseRelationSummary = naturalGroups
@@ -702,8 +702,8 @@ function loadPokemonDetails() {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
             const stat = btn.dataset.stat;
-            let ignoredStats = (pokemon.ignoreBaseRelation === 'IGNORE') ? shortNames : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(s => s.trim()) : []);
-            if (pokemon.ignoreBaseRelation === 'IGNORE') {
+            let ignoredStats = (pokemon.ignoreBaseRelation === 'ALL' || pokemon.ignoreBaseRelation === 'IGNORE') ? shortNames : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(s => s.trim()) : []);
+            if (pokemon.ignoreBaseRelation === 'ALL' || pokemon.ignoreBaseRelation === 'IGNORE') {
                 // Toggle off for this stat: switch to comma list minus this stat
                 ignoredStats = shortNames.filter(s => s !== stat);
                 pokemon.ignoreBaseRelation = ignoredStats.length === 0 ? undefined : ignoredStats.join(',');
@@ -715,9 +715,9 @@ function loadPokemonDetails() {
                     // Add to ignored
                     ignoredStats.push(stat);
                 }
-                // If all stats are ignored, use 'IGNORE'
+                // If all stats are ignored, use 'ALL'
                 if (ignoredStats.length === shortNames.length) {
-                    pokemon.ignoreBaseRelation = 'IGNORE';
+                    pokemon.ignoreBaseRelation = 'ALL';
                 } else {
                     pokemon.ignoreBaseRelation = ignoredStats.length === 0 ? undefined : ignoredStats.join(',');
                 }
@@ -837,7 +837,7 @@ function loadPokemonDetails() {
 
     function updateHPMax() {
         const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
-        const hpMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+        const hpMax = calculateHPValue(pokemon.level, pokemon.stats, hpFormula);
         pokemon.hitPointsMax = hpMax;
         if (hpMaxDisplay) hpMaxDisplay.textContent = hpMax;
     }
@@ -938,7 +938,7 @@ function loadPokemonDetails() {
 
         // Calculate and store HP max
         const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
-        pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+        pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats, hpFormula);
 
         const tutorPointsInput = document.getElementById('tutorPointsInput');
         if (tutorPointsInput) {

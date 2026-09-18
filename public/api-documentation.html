@@ -129,13 +129,13 @@
                         <tr>
                             <td class="param-name">ignoreBaseRelation</td>
                             <td><span class="param-type">string</span></td>
-                            <td>Disable Base Relation for specific stats. Use 'IGNORE' for all or comma-separated list (HP,ATK,DEF,SPA,SPD,SPE)</td>
+                            <td>Disable Base Relation for specific stats. Use 'ALL' for all or comma-separated list (HP,ATK,DEF,SPA,SPD,SPE)</td>
                             <td><code>ignoreBaseRelation=ATK,SPA</code></td>
                         </tr>
                         <tr>
                             <td class="param-name">hpFormula</td>
                             <td><span class="param-type">string</span></td>
-                            <td>Custom HP calculation formula using 'LEVEL' and 'HP' placeholders</td>
+                            <td>Custom HP calculation formula using LEVEL, HP, ATK, DEF, SPA, SPD, and SPE placeholders</td>
                             <td><code>hpFormula=LEVEL+(HP*2)</code></td>
                         </tr>
                         <tr>
@@ -147,8 +147,14 @@
                         <tr>
                             <td class="param-name">nature</td>
                             <td><span class="param-type">string</span></td>
-                            <td>Specific nature (e.g., 'Adamant', 'Timid'). If omitted, random nature is chosen</td>
+                            <td>Specific nature when natureMode=fixed (e.g., 'Adamant', 'Timid')</td>
                             <td><code>nature=Adamant</code></td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">natureMode</td>
+                            <td><span class="param-type">string</span></td>
+                            <td>Nature selection mode: random, optimal, or fixed. Optimal raises the highest base stat and lowers the lowest, using Composed on ties.</td>
+                            <td><code>natureMode=optimal</code></td>
                         </tr>
                         <tr>
                             <td class="param-name">includeLegendaries</td>
@@ -1319,7 +1325,7 @@ GET /api/pokemon/all-abilities
             </p>
 
             <div class="note">
-                <strong>IGNORE:</strong> Completely disables Base Relation for all stats. Each stat is distributed independently.
+                <strong>ALL:</strong> Completely disables Base Relation for all stats. Each stat is distributed independently.
             </div>
 
             <div class="note">
@@ -1340,7 +1346,8 @@ GET /api/pokemon/all-abilities
 
             <div class="stats-info">
                 <strong>LEVEL:</strong> The Pokémon's level<br>
-                <strong>HP:</strong> The assigned HP stat value
+                <strong>HP:</strong> The assigned HP stat value<br>
+                <strong>ATK, DEF, SPA, SPD, SPE:</strong> The assigned Attack, Defense, Special Attack, Special Defense, and Speed stat values
             </div>
 
             <div class="note">
@@ -1352,7 +1359,7 @@ GET /api/pokemon/all-abilities
                 <div class="example-code">
 LEVEL + (HP * 2)        // Halved HP gain<br>
 LEVEL + (HP * 4)        // Increased HP gain<br>
-(HP * 2) + 50           // No level scaling
+(HP * 2) + DEF + 50     // Include another stat
                 </div>
             </div>
         </div>

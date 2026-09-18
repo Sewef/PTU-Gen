@@ -122,6 +122,7 @@ app.get('/api/pokemon/generate', async c => {
       ignorebaserelation: query.ignorebaserelation?.toUpperCase(),
       hpformula: query.hpformula,
       dataset: (query.dataset || 'core').toLowerCase(),
+      naturemode: query.naturemode,
       nature: query.nature,
       includelegendaries: query.includelegendaries,
       forceevolution: query.forceevolution,
@@ -142,6 +143,7 @@ app.get('/api/pokemon/generateBlank', c => {
     const query = normalizeQuery(c.req.query());
     const pokemon = PokemonGenerator.generateBlankPokemon({
       level: query.level,
+      naturemode: query.naturemode,
       nature: query.nature,
       hpformula: query.hpformula,
       dataset: query.dataset,
@@ -172,6 +174,8 @@ app.get('/api/pokemon/generateWild/:level', async c => {
       level,
       dataset,
       fandex,
+      naturemode: query.naturemode,
+      nature: query.nature,
       owlbearvisible: query.owlbearvisible,
       owlbearplayerid: query.owlbearplayerid
     });
@@ -216,6 +220,8 @@ app.get('/api/pokemon/team', async c => {
       fandex: splitFandex(query),
       hpformula: query.hpformula,
       includelegendaries: query.includelegendaries,
+      naturemode: query.naturemode,
+      nature: query.nature,
       owlbearvisible: query.owlbearvisible,
       owlbearplayerid: query.owlbearplayerid
     };

@@ -64,11 +64,11 @@ function splitFandex(query) {
  *     * BALANCED: Equal points to all stat groups
  *     * MINMAXED: More points to highest base stats, fewer to lowest
  *     * Note: Stats with equal base values always remain equal (Base Relation preserved)
- *   - ignoreBaseRelation: string - 'IGNORE' (disable for all stats) or comma-separated list (HP,ATK,DEF,SPA,SPD,SPE)
- *     * IGNORE: Completely disable Base Relation - each stat distributed independently
+ *   - ignoreBaseRelation: string - 'ALL' (disable for all stats) or comma-separated list (HP,ATK,DEF,SPA,SPD,SPE)
+ *     * ALL: Completely disable Base Relation - each stat distributed independently
  *     * HP,ATK: Ignore Base Relation only for specified stats, others remain grouped
  *   - hpFormula: string - Custom HP calculation formula (default: 'LEVEL + (HP * 3) + 10')
- *     * Can use 'LEVEL' and 'HP' placeholders, e.g., 'LEVEL + (HP * 2)'
+ *     * Can use LEVEL, HP, ATK, DEF, SPA, SPD, and SPE placeholders, e.g., 'LEVEL + (HP * 2) + DEF'
  *   - dataset: string - 'core' (default), 'community', or 'homebrew'
  *   - nature: string - Specific nature name (e.g., 'Adamant', 'Timid'). If not specified, a random nature is chosen
  *   - includeLegendaries: boolean - Include legendary Pokemon in generation (default: false)
@@ -95,6 +95,7 @@ router.get('/generate', async (req, res) => {
       ignorebaserelation: req.query.ignorebaserelation?.toUpperCase(),
       hpformula: req.query.hpformula,
       dataset: (req.query.dataset || 'core').toLowerCase(),
+      naturemode: req.query.naturemode,
       nature: req.query.nature,
       includelegendaries: req.query.includelegendaries,
       forceevolution: req.query.forceevolution,
@@ -116,6 +117,7 @@ router.get('/generateBlank', (req, res) => {
   try {
     const pokemon = PokemonGenerator.generateBlankPokemon({
       level: req.query.level,
+      naturemode: req.query.naturemode,
       nature: req.query.nature,
       hpformula: req.query.hpformula,
       dataset: req.query.dataset,
@@ -152,6 +154,8 @@ router.get('/generateWild/:level', async (req, res) => {
     const pokemon = await PokemonGenerator.generatePokemon({
       level,
       dataset,
+      naturemode: req.query.naturemode,
+      nature: req.query.nature,
       owlbearvisible: req.query.owlbearvisible,
       owlbearplayerid: req.query.owlbearplayerid,
       fandex
@@ -213,6 +217,8 @@ router.get('/team', async (req, res) => {
       fandex: splitFandex(req.query),
       hpformula: req.query.hpformula,
       includelegendaries: req.query.includelegendaries,
+      naturemode: req.query.naturemode,
+      nature: req.query.nature,
       owlbearvisible: req.query.owlbearvisible,
       owlbearplayerid: req.query.owlbearplayerid
     };

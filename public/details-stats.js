@@ -43,19 +43,43 @@ async function setupNatureDropdown(pokemon) {
 // Recalculate and display HP
 function updateHPDisplay(pokemon) {
     const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
-    pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats.HP, hpFormula);
+    pokemon.hitPointsMax = calculateHPValue(pokemon.level, pokemon.stats, hpFormula);
     pokemon.hitPoints = pokemon.hitPointsMax;
     const hpDisplay = document.getElementById('hpDisplay');
     if (hpDisplay) hpDisplay.textContent = pokemon.hitPoints;
 }
 
-function calculateHPValue(level, hpStat, formula) {
+function getFormulaStatValues(statsOrHp) {
+    if (statsOrHp && typeof statsOrHp === 'object') {
+        return {
+            HP: Number(statsOrHp.HP) || 0,
+            ATK: Number(statsOrHp.atk ?? statsOrHp.ATK ?? statsOrHp.Attack) || 0,
+            DEF: Number(statsOrHp.def ?? statsOrHp.DEF ?? statsOrHp.Defense) || 0,
+            SPA: Number(statsOrHp.spA ?? statsOrHp.SPA ?? statsOrHp['Special Attack']) || 0,
+            SPD: Number(statsOrHp.spD ?? statsOrHp.SPD ?? statsOrHp['Special Defense']) || 0,
+            SPE: Number(statsOrHp.spe ?? statsOrHp.SPE ?? statsOrHp.Speed) || 0
+        };
+    }
+
+    return { HP: Number(statsOrHp) || 0, ATK: 0, DEF: 0, SPA: 0, SPD: 0, SPE: 0 };
+}
+
+function calculateHPValue(level, statsOrHp, formula) {
     try {
-        const formulaStr = formula.toUpperCase().replace(/LEVEL/g, level).replace(/HP/g, hpStat);
+        const stats = getFormulaStatValues(statsOrHp);
+        const formulaStr = formula.toUpperCase()
+            .replace(/\bLEVEL\b/g, level)
+            .replace(/\bHP\b/g, stats.HP)
+            .replace(/\bATK\b/g, stats.ATK)
+            .replace(/\bDEF\b/g, stats.DEF)
+            .replace(/\bSPA\b/g, stats.SPA)
+            .replace(/\bSPD\b/g, stats.SPD)
+            .replace(/\bSPE\b/g, stats.SPE);
         if (!/^[\d+\-*/(). ]+$/.test(formulaStr)) throw new Error('Invalid formula');
         return Math.max(1, Math.floor(eval(formulaStr)));
     } catch (e) {
-        return Math.max(1, Math.floor(level + (hpStat * 3) + 10));
+        const stats = getFormulaStatValues(statsOrHp);
+        return Math.max(1, Math.floor(level + (stats.HP * 3) + 10));
     }
 }
 
@@ -118,7 +142,7 @@ function setupLevelEditor(pokemon) {
 
             // Recalculate HP with new level
             const hpFormula = pokemon.hpFormula || 'LEVEL + (HP * 3) + 10';
-            pokemon.hitPointsMax = calculateHPValue(newLevel, pokemon.stats.HP, hpFormula);
+            pokemon.hitPointsMax = calculateHPValue(newLevel, pokemon.stats, hpFormula);
             pokemon.hitPoints = pokemon.hitPointsMax;
 
             // Update HP current display
@@ -166,7 +190,7 @@ function setupHPFormulaEditor(pokemon) {
         const newFormula = this.value.trim();
         if (!newFormula) return;
 
-        const newHP = calculateHPValue(pokemon.level, pokemon.stats.HP, newFormula);
+        const newHP = calculateHPValue(pokemon.level, pokemon.stats, newFormula);
         if (newHP > 0) {
             pokemon.hitPointsMax = newHP;
             pokemon.hitPoints = newHP;
@@ -189,7 +213,7 @@ function setupHPFormulaEditor(pokemon) {
             this.value = newFormula;
         }
 
-        const newHP = calculateHPValue(pokemon.level, pokemon.stats.HP, newFormula);
+        const newHP = calculateHPValue(pokemon.level, pokemon.stats, newFormula);
         if (newHP > 0) {
             pokemon.hpFormula = newFormula;
             pokemon.hitPointsMax = newHP;
@@ -246,11 +270,11 @@ function recalculateStatsWithDistribution(pokemon, distribution) {
     let distributedPoints = {};
 
     if (distribution === 'BALANCED') {
-        distributedPoints = distributePointsBalanced(totalPoints, groups, pokemon.ignoreBaseRelation !== 'IGNORE');
+        distributedPoints = distributePointsBalanced(totalPoints, groups, pokemon.ignoreBaseRelation !== 'ALL' && pokemon.ignoreBaseRelation !== 'IGNORE');
     } else if (distribution === 'MINMAXED') {
-        distributedPoints = distributePointsMinmaxed(totalPoints, groups, pokemon.ignoreBaseRelation !== 'IGNORE');
+        distributedPoints = distributePointsMinmaxed(totalPoints, groups, pokemon.ignoreBaseRelation !== 'ALL' && pokemon.ignoreBaseRelation !== 'IGNORE');
     } else {
-        distributedPoints = distributePointsRandom(totalPoints, groups, pokemon.ignoreBaseRelation !== 'IGNORE');
+        distributedPoints = distributePointsRandom(totalPoints, groups, pokemon.ignoreBaseRelation !== 'ALL' && pokemon.ignoreBaseRelation !== 'IGNORE');
     }
 
     pokemon.baseWithNature = baseWithNature;
@@ -278,7 +302,7 @@ function updateStatsDisplay(pokemon) {
     // Refresh the base-relation summary (groups can change when nature changes)
     const naturalGroups = groupStatsByValue(pokemon.baseWithNature);
     const ignoredStatsSet = new Set(
-        pokemon.ignoreBaseRelation === 'IGNORE' ? ['HP', 'atk', 'def', 'spA', 'spD', 'spe']
+        (pokemon.ignoreBaseRelation === 'ALL' || pokemon.ignoreBaseRelation === 'IGNORE') ? ['HP', 'atk', 'def', 'spA', 'spD', 'spe']
         : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(s => s.trim()) : [])
     );
     const summaryEl = document.getElementById('baseRelationSummary');

@@ -44,12 +44,12 @@
                     </div>
 
                     <!-- FanDex -->
-                    <div class="form-group" id="fandexContainer" style="display: none;">
+                    <div class="form-group" id="fandexContainer">
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
                             FanDex
                         </label>
-                        <div id="fandexCheckboxes" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-main);">
-                            <!-- Will be populated via JS -->
+                        <div id="fandexCheckboxes" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 34px; padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-main); align-items: center;">
+                            <span class="small-text text-secondary">Loading FanDexes...</span>
                         </div>
                     </div>
 
@@ -150,24 +150,50 @@
                         </label>
                     </div>
 
-                    <!-- Distribution & Nature -->
-                    <div class="form-row">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
-                                Stat Distribution
+                    <!-- Distribution -->
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
+                            Stat Distribution
                                 <span class="help-icon" title="Random: Completely unpredictable distribution&#10;Balanced: Equal distribution across all stats&#10;Minmaxed: Specializes - high stats get higher, low stats get lower">ℹ️</span>
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="distribution" id="distributionRandom" value="RANDOM" checked style="width: auto;">
+                                <span style="font-size: 0.85em;">Random</span>
                             </label>
-                            <select id="distribution">
-                                <option value="RANDOM">Random</option>
-                                <option value="BALANCED">Balanced</option>
-                                <option value="MINMAXED">Extremes</option>
-                            </select>
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="distribution" id="distributionBalanced" value="BALANCED" style="width: auto;">
+                                <span style="font-size: 0.85em;">Balanced</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="distribution" id="distributionMinmaxed" value="MINMAXED" style="width: auto;">
+                                <span style="font-size: 0.85em;">Extremes</span>
+                            </label>
                         </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label style="font-size: 0.85em;">Nature</label>
-                            <select id="nature">
-                                <option value="">Random Nature</option>
-                            </select>
+                    </div>
+
+                    <!-- Nature -->
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
+                            Nature
+                            <span class="help-icon" title="Random: Chooses any nature&#10;Optimal: Raises the species' highest base stat and lowers its lowest base stat&#10;Fixed: Uses the selected nature from the dropdown&#10;Ties currently use Composed">ℹ️</span>
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="natureMode" id="natureModeRandom" value="random" checked style="width: auto;">
+                                <span style="font-size: 0.85em;">Random</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <input type="radio" name="natureMode" id="natureModeOptimal" value="optimal" style="width: auto;">
+                                <span style="font-size: 0.85em;">Optimal</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; margin: 0; flex: 1; min-width: 180px;">
+                                <input type="radio" name="natureMode" id="natureModeFixed" value="fixed" style="width: auto;">
+                                <span style="font-size: 0.85em;">Fixed</span>
+                                <select id="nature" disabled style="flex: 1; min-width: 140px; opacity: 0.5;">
+                                    <option value="">Choose Nature</option>
+                                </select>
+                            </label>
                         </div>
                     </div>
 
@@ -181,17 +207,23 @@
                         <div class="advanced-content">
                             <!-- Ignore Base Relation -->
                             <div class="form-group">
-                                <label style="font-size: 0.85em;">Ignore Base Relation</label>
-                                <input type="text" id="ignoreBaseRelation" placeholder="ex: IGNORE or HP,ATK,DEF"
+                                <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
+                                    Ignore Base Relation
+                                    <span class="help-icon" title="Use ALL to disable Base Relation for every stat, or list specific stats separated by commas. Accepted stats: HP, ATK, DEF, SPA, SPD, SPE.">ℹ️</span>
+                                </label>
+                                <input type="text" id="ignoreBaseRelation" placeholder="ex: ALL or HP,ATK,DEF"
                                     autocomplete="off">
                             </div>
 
                             <!-- HP Formula -->
                             <div class="form-group">
-                                <label style="font-size: 0.85em;">Hit Points Formula</label>
+                                <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85em;">
+                                    Hit Points Formula
+                                    <span class="help-icon" title="Formula placeholders: LEVEL, HP, ATK, DEF, SPA, SPD, SPE. Example: LEVEL + (HP * 3) + DEF.">ℹ️</span>
+                                </label>
                                 <input type="text" id="hpFormula" placeholder="ex: LEVEL + (HP * 3) + 10"
                                     value="LEVEL + (HP * 3) + 10" autocomplete="off">
-                                <small class="small-block-text">Use LEVEL and HP placeholders</small>
+                                <small class="small-block-text">Use LEVEL, HP, ATK, DEF, SPA, SPD, and SPE placeholders</small>
                             </div>
 
                         </div>
@@ -264,15 +296,15 @@
                     <div class="advanced-section" id="owlbearSection">
                         <div class="advanced-content">
                             <div class="form-group">
+                                <label style="font-size: 0.85em;">Player Id</label>
+                                <input type="text" id="owlbearPlayerId" placeholder="Player Id" autocomplete="off">
+                            </div>
+
+                            <div class="form-group">
                                 <label style="display: flex; align-items: center; gap: 6px; margin: 0; cursor: pointer;">
                                     <input type="checkbox" id="owlbearVisible" style="width: auto;">
                                     <span style="font-size: 0.85em;">Visible</span>
                                 </label>
-                            </div>
-
-                            <div class="form-group">
-                                <label style="font-size: 0.85em;">Player Id</label>
-                                <input type="text" id="owlbearPlayerId" placeholder="Player Id" autocomplete="off">
                             </div>
                         </div>
                     </div>
@@ -403,6 +435,8 @@
             includeLegendaries: false,
             forceEvolution: false,
             distribution: 'RANDOM',
+            natureMode: 'random',
+            nature: '',
             ignoreBaseRelation: '',
             hpFormula: 'LEVEL + (HP * 3) + 10',
             owlbearVisible: true,
@@ -419,6 +453,10 @@
                     ...parsed,
                     fandex: Array.isArray(parsed?.fandex) ? parsed.fandex : []
                 };
+                if (settings.ignoreBaseRelation === 'IGNORE') {
+                    settings.ignoreBaseRelation = 'ALL';
+                    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+                }
 
                 // Remove the legacy weakness/resistance switch from existing preferences.
                 if (Object.prototype.hasOwnProperty.call(settings, 'typeMultiplierMode')) {
@@ -440,7 +478,9 @@
                 shinyOdds: parseFloat(document.getElementById('shinyOdds').value || SETTINGS_DEFAULTS.shinyOdds),
                 includeLegendaries: document.getElementById('includeLegendaries').checked,
                 forceEvolution: document.getElementById('forceEvolution').checked,
-                distribution: document.getElementById('distribution').value || SETTINGS_DEFAULTS.distribution,
+                distribution: document.querySelector('input[name="distribution"]:checked')?.value || SETTINGS_DEFAULTS.distribution,
+                natureMode: document.querySelector('input[name="natureMode"]:checked')?.value || SETTINGS_DEFAULTS.natureMode,
+                nature: document.getElementById('nature').value || SETTINGS_DEFAULTS.nature,
                 ignoreBaseRelation: (document.getElementById('ignoreBaseRelation').value || '').trim(),
                 hpFormula: (document.getElementById('hpFormula').value || '').trim(),
                 owlbearVisible: document.getElementById('owlbearVisible').checked,
@@ -465,7 +505,9 @@
             const shinyOdds = document.getElementById('shinyOdds');
             const includeLegendaries = document.getElementById('includeLegendaries');
             const forceEvolution = document.getElementById('forceEvolution');
-            const distribution = document.getElementById('distribution');
+            const distribution = document.querySelector('input[name="distribution"]:checked');
+            const nature = document.getElementById('nature');
+            const natureMode = document.querySelector('input[name="natureMode"]:checked')?.value || SETTINGS_DEFAULTS.natureMode;
             const ignoreBaseRelation = document.getElementById('ignoreBaseRelation');
             const hpFormula = document.getElementById('hpFormula');
             const owlbearVisible = document.getElementById('owlbearVisible');
@@ -475,6 +517,7 @@
             const hasFandexChanges = selectedFandex.length > 0;
             const hasIgnoreBaseRelationChanges = (ignoreBaseRelation.value || '').trim() !== SETTINGS_DEFAULTS.ignoreBaseRelation;
             const hasHpFormulaChanges = (hpFormula.value || '').trim() !== SETTINGS_DEFAULTS.hpFormula;
+            const hasNatureChanges = natureMode !== SETTINGS_DEFAULTS.natureMode || (natureMode === 'fixed' && nature.value !== SETTINGS_DEFAULTS.nature);
             const hasOwlbearVisibleChanges = owlbearVisible.checked !== SETTINGS_DEFAULTS.owlbearVisible;
             const hasOwlbearPlayerIdChanges = (owlbearPlayerId.value || '').trim() !== SETTINGS_DEFAULTS.owlbearPlayerId;
 
@@ -482,6 +525,7 @@
             setControlChangedState(randomForm, randomForm.checked !== SETTINGS_DEFAULTS.randomForm);
             setControlChangedState(shinyOdds, Number(shinyOdds.value || SETTINGS_DEFAULTS.shinyOdds) !== SETTINGS_DEFAULTS.shinyOdds);
             setControlChangedState(distribution, distribution.value !== SETTINGS_DEFAULTS.distribution);
+            setControlChangedState(nature, hasNatureChanges);
             setControlChangedState(ignoreBaseRelation, hasIgnoreBaseRelationChanges);
             setControlChangedState(hpFormula, hasHpFormulaChanges);
             setControlChangedState(owlbearVisible, hasOwlbearVisibleChanges);
@@ -534,11 +578,25 @@
             document.getElementById('shinyOdds').value = String(stored.shinyOdds ?? SETTINGS_DEFAULTS.shinyOdds);
             document.getElementById('includeLegendaries').checked = Boolean(stored.includeLegendaries);
             document.getElementById('forceEvolution').checked = Boolean(stored.forceEvolution);
-            document.getElementById('distribution').value = stored.distribution || SETTINGS_DEFAULTS.distribution;
+            const storedDistribution = stored.distribution || SETTINGS_DEFAULTS.distribution;
+            const distributionControl = document.querySelector(`input[name="distribution"][value="${storedDistribution}"]`);
+            if (distributionControl) distributionControl.checked = true;
+            const storedNatureMode = stored.natureMode || SETTINGS_DEFAULTS.natureMode;
+            const natureModeControl = document.querySelector(`input[name="natureMode"][value="${storedNatureMode}"]`);
+            if (natureModeControl) natureModeControl.checked = true;
+            document.getElementById('nature').value = stored.nature || SETTINGS_DEFAULTS.nature;
+            updateNatureModeControls();
             document.getElementById('ignoreBaseRelation').value = stored.ignoreBaseRelation || SETTINGS_DEFAULTS.ignoreBaseRelation;
             document.getElementById('hpFormula').value = stored.hpFormula || SETTINGS_DEFAULTS.hpFormula;
             document.getElementById('owlbearVisible').checked = Boolean(stored.owlbearVisible);
             document.getElementById('owlbearPlayerId').value = stored.owlbearPlayerId || SETTINGS_DEFAULTS.owlbearPlayerId;
+        }
+
+        function updateNatureModeControls() {
+            const natureSelect = document.getElementById('nature');
+            const fixedMode = document.getElementById('natureModeFixed').checked;
+            natureSelect.disabled = !fixedMode;
+            natureSelect.style.opacity = fixedMode ? '1' : '0.5';
         }
 
         // Load FanDex list
@@ -548,7 +606,6 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.fandexes && data.fandexes.length > 0) {
-                        fandexContainer.style.display = 'block';
                         fandexCheckboxes.innerHTML = data.fandexes.map(f => `
                             <label style="display: flex; align-items: center; gap: 6px; margin: 0; cursor: pointer;">
                                 <input type="checkbox" class="fandex-checkbox" value="${f.key}" style="width: auto;">
@@ -572,10 +629,13 @@
                         });
 
                         updatePreferenceIndicators();
+                    } else {
+                        fandexCheckboxes.innerHTML = '<span class="small-text text-secondary">No FanDexes available</span>';
                     }
                 }
             } catch (error) {
                 console.error('Failed to load FanDex list:', error);
+                fandexCheckboxes.innerHTML = '<span class="small-text text-secondary">FanDexes unavailable</span>';
             }
         }
 
@@ -941,7 +1001,13 @@
             document.getElementById('shinyOdds'),
             document.getElementById('includeLegendaries'),
             document.getElementById('forceEvolution'),
-            document.getElementById('distribution'),
+            document.getElementById('distributionRandom'),
+            document.getElementById('distributionBalanced'),
+            document.getElementById('distributionMinmaxed'),
+            document.getElementById('natureModeRandom'),
+            document.getElementById('natureModeOptimal'),
+            document.getElementById('natureModeFixed'),
+            document.getElementById('nature'),
             document.getElementById('ignoreBaseRelation'),
             document.getElementById('hpFormula'),
             document.getElementById('owlbearVisible'),
@@ -949,12 +1015,14 @@
         ].forEach(control => {
             const eventName = control.tagName === 'INPUT' && control.type === 'text' ? 'input' : 'change';
             control.addEventListener(eventName, () => {
+                updateNatureModeControls();
                 writeStoredSettings();
                 updatePreferenceIndicators();
             });
 
             if (eventName !== 'change') {
                 control.addEventListener('change', () => {
+                    updateNatureModeControls();
                     writeStoredSettings();
                     updatePreferenceIndicators();
                 });
@@ -991,6 +1059,11 @@
                 if (document.getElementById('hpFormula').value) {
                     params.set('hpFormula', document.getElementById('hpFormula').value);
                 }
+                const natureMode = document.querySelector('input[name="natureMode"]:checked')?.value || 'random';
+                params.set('natureMode', natureMode);
+                if (natureMode === 'fixed' && document.getElementById('nature').value) {
+                    params.set('nature', document.getElementById('nature').value);
+                }
                 params.set('owlbearVisible', document.getElementById('owlbearVisible').checked ? 'true' : 'false');
                 const owlbearPlayerId = document.getElementById('owlbearPlayerId').value.trim();
                 if (owlbearPlayerId) {
@@ -1009,16 +1082,37 @@
             }
         });
 
-        function calculateGeneratedHPValue(level, hpStat, formula) {
+        function getFormulaStatValues(statsOrHp) {
+            if (statsOrHp && typeof statsOrHp === 'object') {
+                return {
+                    HP: Number(statsOrHp.HP) || 0,
+                    ATK: Number(statsOrHp.atk ?? statsOrHp.ATK ?? statsOrHp.Attack) || 0,
+                    DEF: Number(statsOrHp.def ?? statsOrHp.DEF ?? statsOrHp.Defense) || 0,
+                    SPA: Number(statsOrHp.spA ?? statsOrHp.SPA ?? statsOrHp['Special Attack']) || 0,
+                    SPD: Number(statsOrHp.spD ?? statsOrHp.SPD ?? statsOrHp['Special Defense']) || 0,
+                    SPE: Number(statsOrHp.spe ?? statsOrHp.SPE ?? statsOrHp.Speed) || 0
+                };
+            }
+
+            return { HP: Number(statsOrHp) || 0, ATK: 0, DEF: 0, SPA: 0, SPD: 0, SPE: 0 };
+        }
+
+        function calculateGeneratedHPValue(level, statsOrHp, formula) {
             try {
-                const formulaStr = String(formula || 'LEVEL + (HP * 3) + 10')
-                    .toUpperCase()
-                    .replace(/LEVEL/g, Number(level))
-                    .replace(/HP/g, Number(hpStat));
+                const stats = getFormulaStatValues(statsOrHp);
+                const formulaStr = String(formula || 'LEVEL + (HP * 3) + 10').toUpperCase()
+                    .replace(/\bLEVEL\b/g, Number(level))
+                    .replace(/\bHP\b/g, stats.HP)
+                    .replace(/\bATK\b/g, stats.ATK)
+                    .replace(/\bDEF\b/g, stats.DEF)
+                    .replace(/\bSPA\b/g, stats.SPA)
+                    .replace(/\bSPD\b/g, stats.SPD)
+                    .replace(/\bSPE\b/g, stats.SPE);
                 if (!/^[\d+\-*/(). ]+$/.test(formulaStr)) throw new Error('Invalid formula');
                 return Math.max(1, Math.floor(Function(`return ${formulaStr}`)()));
             } catch (e) {
-                return Math.max(1, Math.floor(Number(level) + (Number(hpStat) * 3) + 10));
+                const stats = getFormulaStatValues(statsOrHp);
+                return Math.max(1, Math.floor(Number(level) + (stats.HP * 3) + 10));
             }
         }
 
@@ -1027,7 +1121,7 @@
 
             const hpMax = calculateGeneratedHPValue(
                 pokemon.level,
-                pokemon.stats.HP,
+                pokemon.stats,
                 pokemon.hpFormula || 'LEVEL + (HP * 3) + 10'
             );
 
@@ -1095,7 +1189,7 @@
                             }
                         }
 
-                        params.append('distribution', document.getElementById('distribution').value);
+                        params.append('distribution', document.querySelector('input[name="distribution"]:checked')?.value || SETTINGS_DEFAULTS.distribution);
                         params.append('dataset', document.getElementById('dataset').value);
 
                         const fandex = getSelectedFandexes();
@@ -1111,7 +1205,9 @@
                             params.append('forceEvolution', 'true');
                         }
 
-                        if (document.getElementById('nature').value) {
+                        const natureMode = document.querySelector('input[name="natureMode"]:checked')?.value || 'random';
+                        params.append('natureMode', natureMode);
+                        if (natureMode === 'fixed' && document.getElementById('nature').value) {
                             params.append('nature', document.getElementById('nature').value);
                         }
 
@@ -1393,6 +1489,10 @@
                         option.textContent = `${nature.name} (+${nature.raise} -${nature.lower})`;
                         natureSelect.appendChild(option);
                     });
+                    const stored = readStoredSettings();
+                    natureSelect.value = stored.nature || SETTINGS_DEFAULTS.nature;
+                    updateNatureModeControls();
+                    updatePreferenceIndicators();
                 }
             } catch (error) {
                 console.error('Failed to load natures:', error);
