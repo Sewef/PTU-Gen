@@ -475,6 +475,7 @@ button {
 .pokemon-types-row > .pokemon-types-content,
 .level-hp-info-row > :not(.info-label) {
     grid-column: 2;
+    min-width: 0;
 }
 
 .pokemon-types-content {
@@ -501,7 +502,8 @@ button {
 
 .level-hp-info-row .hp-damage-controls {
     width: 100%;
-    grid-template-columns: minmax(76px, 82px) minmax(70px, 88px) minmax(70px, 82px) auto;
+    min-width: 0;
+    grid-template-columns: minmax(76px, 82px) minmax(0, 1fr) minmax(0, 1fr) minmax(48px, auto);
     justify-content: start;
 }
 
@@ -3265,7 +3267,9 @@ pre {
 
 .hp-damage-input,
 .hp-damage-select {
+    width: 100%;
     min-width: 0;
+    box-sizing: border-box;
     padding: 5px 4px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -3292,6 +3296,9 @@ pre {
 }
 
 .hp-damage-btn {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
     padding: 5px 8px;
     border: 1px solid var(--primary-color);
     border-radius: 4px;
@@ -3527,6 +3534,19 @@ pre {
     min-width: 0;
 }
 
+.type-effectiveness-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 7px;
+}
+
+.type-effectiveness-header .info-label {
+    margin: 0;
+}
+
 .type-effectiveness-item {
     display: grid;
     grid-template-rows: auto minmax(24px, auto);
@@ -3553,6 +3573,35 @@ pre {
     border: 0;
     font-size: .78em;
     font-weight: 700;
+}
+
+.type-effectiveness-select {
+    width: 100%;
+    min-width: 0;
+    min-height: 24px;
+    padding: 2px 3px;
+    border: 0;
+    border-top: 1px solid var(--border-color);
+    border-radius: 0;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: .75em;
+    font-weight: 700;
+    text-align: center;
+}
+
+.type-effectiveness-select:focus {
+    position: relative;
+    z-index: 2;
+    outline: 2px solid var(--primary-color);
+    outline-offset: -2px;
+}
+
+#editTypeEffectivenessBtn.editing {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
 }
 
 .details-table-type-cell.damage-type-selected-top {

@@ -59,6 +59,28 @@ function calculateTypeEffectiveness(types) {
     return effectiveness;
 }
 
+function getPokemonTypeEffectiveness(pokemon) {
+    let typesToUse = pokemon.actualTypes || pokemon.types || [];
+
+    if (typesToUse.isFormeVariant) {
+        typesToUse = typesToUse.formes[typesToUse.selectedForme] || [];
+    }
+
+    const effectiveness = calculateTypeEffectiveness(Array.isArray(typesToUse) ? typesToUse : []);
+    const overrides = pokemon.typeEffectivenessOverrides;
+
+    if (overrides && typeof overrides === 'object') {
+        Object.entries(overrides).forEach(([type, value]) => {
+            const numericValue = Number(value);
+            if (Object.prototype.hasOwnProperty.call(effectiveness, type) && Number.isFinite(numericValue)) {
+                effectiveness[type] = numericValue;
+            }
+        });
+    }
+
+    return effectiveness;
+}
+
 function updateDamageTypeEffectivenessSelection() {
     const container = document.getElementById('typeEffectiveness');
     const damageTypeSelect = document.getElementById('damageTypeSelect');
@@ -80,17 +102,8 @@ function updateDamageTypeEffectivenessSelection() {
     });
 }
 
-function displayTypeEffectiveness(pokemon) {
-    // Get the actual types to use
-    let typesToUse = pokemon.actualTypes || pokemon.types || [];
-    
-    // If types is a forme variant object, extract the actual types
-    if (typesToUse.isFormeVariant) {
-        const selectedForme = typesToUse.selectedForme;
-        typesToUse = typesToUse.formes[selectedForme] || [];
-    }
-
-    const effectiveness = calculateTypeEffectiveness(typesToUse);
+function displayTypeEffectiveness(pokemon, editing = false) {
+    const effectiveness = getPokemonTypeEffectiveness(pokemon);
     const container = document.getElementById('typeEffectiveness');
 
     if (!container) return;
@@ -98,6 +111,7 @@ function displayTypeEffectiveness(pokemon) {
     container.innerHTML = '';
 
     const allTypes = ['Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'];
+    const multiplierOptions = [0, 0.25, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4];
     const formatEff = (value) => {
         if (value === 0) return '0x';
         if (value === 1) return '1x';
@@ -128,9 +142,15 @@ function displayTypeEffectiveness(pokemon) {
                             aria-label="Use ${type} as damage type"
                             title="Use ${type} as damage type"
                         >${type}</button>
-                        <span class="type-eff-value-cell ${effClass}" data-damage-type="${damageType}">
-                            ${formatEff(eff)}
-                        </span>
+                        ${editing ? `
+                            <select class="type-effectiveness-select" data-damage-type="${damageType}" aria-label="${type} effectiveness">
+                                ${multiplierOptions.map(value => `<option value="${value}" ${value === eff ? 'selected' : ''}>${formatEff(value)}</option>`).join('')}
+                            </select>
+                        ` : `
+                            <span class="type-eff-value-cell ${effClass}" data-damage-type="${damageType}">
+                                ${formatEff(eff)}
+                            </span>
+                        `}
                     </div>
                 `;
             }).join('')}
@@ -154,6 +174,48 @@ function displayTypeEffectiveness(pokemon) {
     }
 
     updateDamageTypeEffectivenessSelection();
+}
+
+function setupTypeEffectivenessEditor(pokemon) {
+    const editButton = document.getElementById('editTypeEffectivenessBtn');
+    if (!editButton) return;
+
+    let editing = false;
+
+    editButton.addEventListener('click', () => {
+        if (!editing) {
+            editing = true;
+            editButton.textContent = '✓ Save';
+            editButton.title = 'Save type effectiveness';
+            editButton.classList.add('editing');
+            displayTypeEffectiveness(pokemon, true);
+            return;
+        }
+
+        const calculatedEffectiveness = calculateTypeEffectiveness(
+            typeof getPokemonDefendingTypes === 'function' ? getPokemonDefendingTypes(pokemon) : []
+        );
+        const overrides = {};
+
+        document.querySelectorAll('.type-effectiveness-select').forEach(select => {
+            const type = select.dataset.damageType;
+            const value = Number(select.value);
+            if (Number.isFinite(value) && value !== calculatedEffectiveness[type]) {
+                overrides[type] = value;
+            }
+        });
+
+        pokemon.typeEffectivenessOverrides = overrides;
+        saveSelectedPokemon(pokemon);
+
+        editing = false;
+        editButton.textContent = '✎ Edit';
+        editButton.title = 'Edit type effectiveness';
+        editButton.classList.remove('editing');
+        displayTypeEffectiveness(pokemon);
+
+        document.getElementById('damageTypeSelect')?.dispatchEvent(new Event('change', { bubbles: true }));
+    });
 }
 
 function setupTypeEditor(pokemon) {

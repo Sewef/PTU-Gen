@@ -594,7 +594,10 @@ function loadPokemonDetails() {
 
             <div class="details-right">
                 <div class="info-box">
-                    <div class="info-label">Type Effectiveness</div>
+                    <div class="type-effectiveness-header">
+                        <div class="info-label">Type Effectiveness</div>
+                        <button id="editTypeEffectivenessBtn" type="button" title="Edit type effectiveness" class="edit-bn">✎ Edit</button>
+                    </div>
                     <div id="typeEffectiveness" class="type-effectiveness-display">
                         <!-- Type effectiveness will be generated here -->
                     </div>
@@ -923,6 +926,7 @@ function loadPokemonDetails() {
 
     // Display type effectiveness
     displayTypeEffectiveness(pokemon);
+    setupTypeEffectivenessEditor(pokemon);
 
     // Setup stat distribution buttons
     setupStatDistributionButtons(pokemon);
@@ -1175,7 +1179,7 @@ function getDamageTypeMultiplier(pokemon, attackingType) {
         return 1;
     }
 
-    const effectiveness = calculateTypeEffectiveness(getPokemonDefendingTypes(pokemon));
+    const effectiveness = getPokemonTypeEffectiveness(pokemon);
     return effectiveness[attackingType] ?? 1;
 }
 
