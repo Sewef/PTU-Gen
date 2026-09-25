@@ -96,9 +96,6 @@ async function exportBulkPokesheets(pokemons) {
 // ─── Owlbear (merged) ────────────────────────────────────────────────────────
 
 async function exportBulkOwlbear(pokemons) {
-    const response = await fetch('owlbear_template.json');
-    const templateText = await response.text();
-
     const shared = {};
     let currentX = 0;
     const owlbearSettings = getBulkOwlbearSettings();
@@ -107,7 +104,7 @@ async function exportBulkOwlbear(pokemons) {
         const pokemonForExport = owlbearSettings
             ? { ...pokemon, owlbear: { ...owlbearSettings } }
             : pokemon;
-        const { uuid, item } = buildOwlbearItem(pokemonForExport, templateText, { x: currentX, y: 0 });
+        const { uuid, item } = buildOwlbearItem(pokemonForExport, { x: currentX, y: 0 });
         shared[uuid] = item;
         currentX += OWLBEAR_TOKEN_SIZE;
     }

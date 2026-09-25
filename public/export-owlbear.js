@@ -57,10 +57,10 @@ function calculateOwlbearHPValue(level, statsOrHp, formula = OWLBEAR_DEFAULT_HP_
 }
 
 /**
- * Fill the template for a single Pokémon and return { uuid, item }.
+ * Build a single Owlbear token and return { uuid, item }.
  * position defaults to {x:0, y:0}.
  */
-function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
+function buildOwlbearItem(pokemon, position = { x: 0, y: 0 }) {
     const imageNumber = pokemon.Icon || pokemon.id;
     const imagePath = pokemon._fandex
         ? `${pokemon._fandex}/${imageNumber}`
@@ -73,40 +73,84 @@ function buildOwlbearItem(pokemon, templateText, position = { x: 0, y: 0 }) {
     const hpMax = Number.isFinite(Number(pokemon.hitPointsMax)) ? Number(pokemon.hitPointsMax) : formulaMax;
     const hpValue = Number.isFinite(Number(pokemon.hitPoints)) ? Number(pokemon.hitPoints) : hpMax;
     const speed = String(Number.isFinite(Number(pokemon.stats?.spe)) ? Number(pokemon.stats?.spe) : 0);
-
-    const parsed = JSON.parse(templateText);
-    const item = parsed.items.shared.PLACEHOLDER_TOKEN_UUID;
-
-    item.id = uuid;
-    item.name = pokemonName;
-    item.metadata['com.owl-trackers/trackers'][0].id = generateOwlTrackersUUID();
-    item.metadata['com.owl-trackers/trackers'][0].value = hpValue;
-    item.metadata['com.owl-trackers/trackers'][0].max = hpMax;
-    item.metadata['com.owl-trackers/trackers'][1].id = generateOwlTrackersUUID();
-    item.metadata['com.pretty-initiative/metadata'].count = speed;
-    item.image.url = imageUrl;
-    item.text.plainText = pokemonName;
-    item.visible = pokemon.owlbear?.visible !== undefined ? Boolean(pokemon.owlbear.visible) : item.visible;
-
-    const createdUserId = String(pokemon.owlbear?.playerId || '').trim();
-    if (createdUserId) {
-        item.createdUserId = createdUserId;
-    } else {
-        delete item.createdUserId;
-    }
-
-    item.position.x = position.x;
-    item.position.y = position.y;
-
     const scale = OWLBEAR_SIZE_SCALES[pokemon.otherInfo?.sizeCategory] || 1;
-    item.scale.x = scale;
-    item.scale.y = scale;
+    const visible = pokemon.owlbear?.visible !== undefined ? Boolean(pokemon.owlbear.visible) : true;
+    const createdUserId = String(pokemon.owlbear?.playerId || '').trim();
 
-    item.image.width = W;
-    item.image.height = W;
-    item.grid.dpi = W;
-    item.grid.offset.x = W / 2;
-    item.grid.offset.y = W / 2;
+    const item = {
+        type: 'IMAGE',
+        id: uuid,
+        name: pokemonName,
+        position: {
+            x: Number(position.x) || 0,
+            y: Number(position.y) || 0
+        },
+        rotation: 0,
+        scale: { x: scale, y: scale },
+        visible,
+        locked: false,
+        metadata: {
+            'com.owl-trackers/trackers': [
+                {
+                    id: generateOwlTrackersUUID(),
+                    variant: 'value-max',
+                    color: 2,
+                    value: hpValue,
+                    max: hpMax,
+                    name: 'HP'
+                },
+                {
+                    id: generateOwlTrackersUUID(),
+                    variant: 'counter',
+                    color: 2,
+                    inlineMath: true,
+                    value: 0,
+                    name: 'Injuries'
+                }
+            ],
+            'com.owl-trackers/hidden': true,
+            'com.pretty-initiative/metadata': {
+                count: speed,
+                active: false,
+                group: 1
+            }
+        },
+        image: {
+            width: W,
+            height: W,
+            mime: 'image/png',
+            url: imageUrl
+        },
+        grid: {
+            dpi: W,
+            offset: { x: W / 2, y: W / 2 }
+        },
+        text: {
+            richText: [{ type: 'paragraph', children: [{ text: '' }] }],
+            plainText: pokemonName,
+            style: {
+                padding: 8,
+                fontFamily: 'Roboto',
+                fontSize: 24,
+                fontWeight: 400,
+                textAlign: 'CENTER',
+                textAlignVertical: 'BOTTOM',
+                fillColor: '#ffffff',
+                fillOpacity: 1,
+                strokeColor: '#ffffff',
+                strokeOpacity: 1,
+                strokeWidth: 0,
+                lineHeight: 1.5
+            },
+            type: 'PLAIN',
+            width: 'AUTO',
+            height: 'AUTO'
+        },
+        textItemType: 'LABEL',
+        layer: 'CHARACTER'
+    };
+
+    if (createdUserId) item.createdUserId = createdUserId;
 
     return { uuid, item };
 }
@@ -128,10 +172,7 @@ function computeOwlbearBounds(shared) {
 }
 
 async function exportPokemonOwlbear(pokemon) {
-    const response = await fetch('owlbear_template.json');
-    const templateText = await response.text();
-
-    const { uuid, item } = buildOwlbearItem(pokemon, templateText);
+    const { uuid, item } = buildOwlbearItem(pokemon);
     const shared = { [uuid]: item };
 
     const result = {
