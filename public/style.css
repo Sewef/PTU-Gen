@@ -146,7 +146,7 @@ body.owlbear-embedded .container {
     max-width: none;
     min-height: 100vh;
     padding: 12px;
-    border-radius: 0;
+    border-radius: 10px;
 }
 
 body.owlbear-embedded .header {
@@ -159,7 +159,7 @@ body.details-page.owlbear-embedded .header {
 
 body.details-page.owlbear-embedded .pokemon-display {
     padding: 12px;
-    border-radius: 0;
+    border-radius: 10px;
     box-shadow: none;
 }
 
@@ -175,7 +175,7 @@ body.details-page.owlbear-embedded .pokemon-display {
     margin: 0 auto;
     padding: 20px;
     background: var(--bg-main);
-    border-radius: 8px;
+    border-radius: 10px;
 }
 
 /* Header Styles */
@@ -322,7 +322,7 @@ input:focus, select:focus {
 
 .pref-changed-control {
     border-color: #f59e0b !important;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.22);
+    /* box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.22); */
 }
 
 .pref-changed-group {
@@ -4019,7 +4019,7 @@ body.details-page.owlbear-embedded .export-button-wrapper {
 
 /* Compact density for the details page */
 body.details-page {
-    padding: 12px;
+    padding: 0;
 }
 
 .details-page > .container {

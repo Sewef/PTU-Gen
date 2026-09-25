@@ -1310,6 +1310,7 @@
                 params.set('owlbearVisible', document.getElementById('owlbearVisible').checked ? 'true' : 'false');
                 params.set('owlbearTrackers', document.querySelector('input[name="owlbearTrackers"]:checked')?.value || 'none');
                 params.set('owlbearInitiative', document.querySelector('input[name="owlbearInitiative"]:checked')?.value || 'none');
+                params.set('owlbearDiceRoller', document.querySelector('input[name="owlbearDiceRoller"]:checked')?.value || 'none');
                 const owlbearPlayerId = document.getElementById('owlbearPlayerId').value.trim();
                 if (owlbearPlayerId) {
                     params.set('owlbearPlayerId', owlbearPlayerId);
@@ -1467,6 +1468,7 @@
                         params.append('owlbearVisible', document.getElementById('owlbearVisible').checked ? 'true' : 'false');
                         params.append('owlbearTrackers', document.querySelector('input[name="owlbearTrackers"]:checked')?.value || 'none');
                         params.append('owlbearInitiative', document.querySelector('input[name="owlbearInitiative"]:checked')?.value || 'none');
+                        params.append('owlbearDiceRoller', document.querySelector('input[name="owlbearDiceRoller"]:checked')?.value || 'none');
                         const owlbearPlayerId = document.getElementById('owlbearPlayerId').value.trim();
                         if (owlbearPlayerId) {
                             params.append('owlbearPlayerId', owlbearPlayerId);

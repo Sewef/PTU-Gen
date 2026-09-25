@@ -220,9 +220,37 @@ async function copyMoveRollFormula(button) {
     }, 1200);
 }
 
+async function rollMoveWithJustDices(button) {
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Rolling…';
+
+    try {
+        const callId = typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        await requestOwlbearCommand('roll-justdices', {
+            callId,
+            expression: `/r ${button.dataset.rollFormula}`,
+            showInLogs: true
+        });
+        button.textContent = '✓ Rolled';
+    } catch (error) {
+        button.textContent = 'Roll failed';
+        button.title = error instanceof Error ? error.message : String(error);
+    } finally {
+        setTimeout(() => {
+            button.disabled = false;
+            button.textContent = originalText;
+        }, 1200);
+    }
+}
+
 // Update moves display
 function updateMovesDisplay(pokemon) {
     const movesList = document.getElementById('movesList');
+    const useJustDices = document.body.classList.contains('owlbear-embedded')
+        && pokemon.owlbear?.diceRoller === 'justdices';
     movesList.innerHTML = pokemon.moves.map((move, moveIndex) => {
         const isCustom = move.editable === true;
         if (isCustom) {
@@ -269,7 +297,7 @@ function updateMovesDisplay(pokemon) {
                     ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg}${getMoveAttackValue(pokemon, move) !== null ? ` + ${getMoveAttackValue(pokemon, move)}` : ''} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
                         <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
                         <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
-                        ${getMoveRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn" data-roll-formula="${getMoveRollFormula(pokemon, move)}" title="Copy /r ${getMoveRollFormula(pokemon, move)}">Copy roll</button>` : ''}
+                        ${getMoveRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn" data-roll-formula="${getMoveRollFormula(pokemon, move)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll' : 'Copy'} /r ${getMoveRollFormula(pokemon, move)}">${useJustDices ? 'Roll' : 'Copy roll'}</button>` : ''}
                     </div>` : ''}
                     ${move.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                 </div>
@@ -321,7 +349,8 @@ function updateMovesDisplay(pokemon) {
 
     document.querySelectorAll('.copy-roll-formula-btn').forEach(btn => {
         btn.addEventListener('click', function () {
-            copyMoveRollFormula(btn);
+            if (btn.dataset.rollAction === 'justdices') rollMoveWithJustDices(btn);
+            else copyMoveRollFormula(btn);
         });
     });
 

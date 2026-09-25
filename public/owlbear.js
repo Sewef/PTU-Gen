@@ -3887,13 +3887,25 @@
       if (!updated) throw new Error("The linked token could not be read after changing its owner.");
       return updated;
     }
+    async function sendJustDicesRoll(payload) {
+      const ready = await owlbearReady;
+      if (!ready) throw new Error("Owlbear Rodeo is not available.");
+      const callId = String(payload.callId || "").trim();
+      const expression = String(payload.expression || "").trim();
+      if (!callId || !expression) throw new Error("The dice roll request is incomplete.");
+      await lib_default.broadcast.sendMessage("com.sewef.justdices/api.request", {
+        callId,
+        expression,
+        showInLogs: payload.showInLogs !== false
+      }, { destination: "LOCAL" });
+    }
     async function syncPokemonToSceneToken(pokemon) {
       const tokenId = String(pokemon?.owlbear?.tokenId || "").trim();
       if (!tokenId) return;
       await requireOwlbearScene();
       const [existing] = await lib_default.scene.items.getItems([tokenId]);
       if (!existing) return;
-      const desiredName = String(pokemon.nickname || "").trim() || String(pokemon.name || "Pok\xE9mon");
+      const desiredName = (pokemon.shiny ? "\u2728 " : "") + (String(pokemon.nickname || "").trim() || String(pokemon.name || "Pok\xE9mon"));
       const trackersEnabled = pokemon.owlbear?.trackers === "owltrackers";
       const trackers = existing.metadata?.[OWL_TRACKERS_METADATA_KEY];
       const hpTracker = Array.isArray(trackers) ? trackers.find((tracker) => String(tracker?.name || "").toLowerCase() === "hp") : null;
@@ -3939,6 +3951,8 @@
           item = await setSceneTokenVisibility(payload.tokenId, payload.visible, event.source);
         } else if (command === "set-token-owner") {
           item = await setSceneTokenOwner(payload.tokenId, payload.createdUserId, event.source);
+        } else if (command === "roll-justdices") {
+          await sendJustDicesRoll(payload);
         } else {
           throw new Error(`Unknown Owlbear command: ${command}`);
         }

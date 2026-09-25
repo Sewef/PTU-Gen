@@ -130,6 +130,7 @@ app.get('/api/pokemon/generate', async c => {
       owlbearplayerid: query.owlbearplayerid,
       owlbeartrackers: query.owlbeartrackers,
       owlbearinitiative: query.owlbearinitiative,
+      owlbeardiceroller: query.owlbeardiceroller,
       fandex: splitFandex(query)
     });
 
@@ -152,7 +153,8 @@ app.get('/api/pokemon/generateBlank', c => {
       owlbearvisible: query.owlbearvisible,
       owlbearplayerid: query.owlbearplayerid,
       owlbeartrackers: query.owlbeartrackers,
-      owlbearinitiative: query.owlbearinitiative
+      owlbearinitiative: query.owlbearinitiative,
+      owlbeardiceroller: query.owlbeardiceroller
     });
     return c.json(pokemon);
   } catch (error) {
@@ -183,7 +185,8 @@ app.get('/api/pokemon/generateWild/:level', async c => {
       owlbearvisible: query.owlbearvisible,
       owlbearplayerid: query.owlbearplayerid,
       owlbeartrackers: query.owlbeartrackers,
-      owlbearinitiative: query.owlbearinitiative
+      owlbearinitiative: query.owlbearinitiative,
+      owlbeardiceroller: query.owlbeardiceroller
     });
     return c.json(pokemon);
   } catch (error) {
@@ -231,7 +234,8 @@ app.get('/api/pokemon/team', async c => {
       owlbearvisible: query.owlbearvisible,
       owlbearplayerid: query.owlbearplayerid,
       owlbeartrackers: query.owlbeartrackers,
-      owlbearinitiative: query.owlbearinitiative
+      owlbearinitiative: query.owlbearinitiative,
+      owlbeardiceroller: query.owlbeardiceroller
     };
 
     if (options.level < 1 || options.level > 100) {

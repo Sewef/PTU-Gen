@@ -1081,6 +1081,7 @@ function loadPokemonDetails() {
         playerId: String(pokemon.owlbear?.playerId || '').trim(),
         trackers: pokemon.owlbear?.trackers === 'owltrackers' ? 'owltrackers' : 'none',
         initiative: pokemon.owlbear?.initiative === 'prettysordid' ? 'prettysordid' : 'none',
+        diceRoller: pokemon.owlbear?.diceRoller === 'justdices' ? 'justdices' : 'none',
         tokenId: String(pokemon.owlbear?.tokenId || '').trim()
     };
 
@@ -1090,6 +1091,7 @@ function loadPokemonDetails() {
             playerId: detailsOwlbearPlayerId ? detailsOwlbearPlayerId.value.trim() : '',
             trackers: pokemon.owlbear?.trackers === 'owltrackers' ? 'owltrackers' : 'none',
             initiative: pokemon.owlbear?.initiative === 'prettysordid' ? 'prettysordid' : 'none',
+            diceRoller: pokemon.owlbear?.diceRoller === 'justdices' ? 'justdices' : 'none',
             tokenId: String(pokemon.owlbear?.tokenId || '').trim()
         };
         saveSelectedPokemon(pokemon);
