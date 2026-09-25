@@ -3362,6 +3362,11 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     justify-content: flex-end;
 }
 
+body.details-page.owlbear-embedded #exportBtn,
+body.details-page.owlbear-embedded #exportDropdown {
+    display: none !important;
+}
+
 @media (max-width: 768px) {
     .pokemon-header-content {
         flex-wrap: wrap;
