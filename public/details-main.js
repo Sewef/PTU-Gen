@@ -801,9 +801,9 @@ function loadPokemonDetails() {
             <div class="stat-breakdown-row" data-stat="${statName}">
                 <div class="stat-breakdown-label">
                     <div>${statDisplayNames[statName] || statName}</div>
-                    <span class="stat-ignore-btn ${isIgnored ? 'ignored' : ''}" data-stat="${statName}" title="Toggle ignore base relation">
-                        ${isIgnored ? 'Ignored' : 'In Relation'}
-                    </span>
+                    <label class="stat-relation-toggle" title="Keep this stat in Base Relation">
+                        <input type="checkbox" class="stat-relation-checkbox" data-stat="${statName}" ${isIgnored ? '' : 'checked'} aria-label="Keep ${statDisplayNames[statName] || statName} in Base Relation" />
+                    </label>
                 </div>
                 <div class="stat-breakdown-component">
                     <label>Base</label>
@@ -823,7 +823,6 @@ function loadPokemonDetails() {
                     </div>
                 ` : ''}
                 <div class="stat-breakdown-component total">
-                    <label>Total</label>
                     <span class="stat-total" data-stat="${statName}">${finalValue}</span>
                 </div>
             </div>
@@ -832,30 +831,21 @@ function loadPokemonDetails() {
 
     statsBreakdownContainer.innerHTML = statsHTML;
 
-    // Add event listeners for stat ignore toggle (après rendu)
-    statsBreakdownContainer.querySelectorAll('.stat-ignore-btn').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            const stat = btn.dataset.stat;
+    // Add event listeners for Base Relation checkboxes (after rendering)
+    statsBreakdownContainer.querySelectorAll('.stat-relation-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            const stat = checkbox.dataset.stat;
             let ignoredStats = (pokemon.ignoreBaseRelation === 'ALL' || pokemon.ignoreBaseRelation === 'IGNORE') ? shortNames : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(s => s.trim()) : []);
-            if (pokemon.ignoreBaseRelation === 'ALL' || pokemon.ignoreBaseRelation === 'IGNORE') {
-                // Toggle off for this stat: switch to comma list minus this stat
-                ignoredStats = shortNames.filter(s => s !== stat);
-                pokemon.ignoreBaseRelation = ignoredStats.length === 0 ? undefined : ignoredStats.join(',');
+            if (checkbox.checked) {
+                ignoredStats = ignoredStats.filter(s => s !== stat);
+            } else if (!ignoredStats.includes(stat)) {
+                ignoredStats.push(stat);
+            }
+
+            if (ignoredStats.length === shortNames.length) {
+                pokemon.ignoreBaseRelation = 'ALL';
             } else {
-                if (ignoredStats.includes(stat)) {
-                    // Remove from ignored
-                    ignoredStats = ignoredStats.filter(s => s !== stat);
-                } else {
-                    // Add to ignored
-                    ignoredStats.push(stat);
-                }
-                // If all stats are ignored, use 'ALL'
-                if (ignoredStats.length === shortNames.length) {
-                    pokemon.ignoreBaseRelation = 'ALL';
-                } else {
-                    pokemon.ignoreBaseRelation = ignoredStats.length === 0 ? undefined : ignoredStats.join(',');
-                }
+                pokemon.ignoreBaseRelation = ignoredStats.length === 0 ? undefined : ignoredStats.join(',');
             }
             saveSelectedPokemon(pokemon);
 
@@ -865,10 +855,8 @@ function loadPokemonDetails() {
                     : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(value => value.trim()) : [])
             );
 
-            statsBreakdownContainer.querySelectorAll('.stat-ignore-btn').forEach(toggle => {
-                const isIgnored = updatedIgnoredStats.has(toggle.dataset.stat);
-                toggle.classList.toggle('ignored', isIgnored);
-                toggle.textContent = isIgnored ? 'Ignored' : 'In Relation';
+            statsBreakdownContainer.querySelectorAll('.stat-relation-checkbox').forEach(toggle => {
+                toggle.checked = !updatedIgnoredStats.has(toggle.dataset.stat);
             });
 
             const baseRelationSummaryElement = document.getElementById('baseRelationSummary');
