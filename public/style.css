@@ -1826,6 +1826,45 @@ button {
     max-height: 800px;
 }
 
+.owlbear-option-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: .85em;
+}
+
+.owlbear-radio-group {
+    display: flex;
+    gap: 8px;
+}
+
+.owlbear-radio-option {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    padding: 7px 9px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--bg-main);
+    cursor: pointer;
+    font-size: .85em;
+    transition: border-color .2s, background-color .2s;
+}
+
+.owlbear-radio-option:hover,
+.owlbear-radio-option:has(input:checked) {
+    border-color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-main));
+}
+
+.owlbear-radio-option input {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: var(--primary-color);
+}
+
 /* Styles pour les cartes Pokémon */
 .pokemon-history-section {
     margin-bottom: 24px;

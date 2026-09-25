@@ -5,6 +5,56 @@
     const panelList = document.getElementById('panelList');
     let tabs = [];
     let activeId = 'home';
+    let currentPlayer = null;
+    let partyPlayers = [];
+
+    function getOwlbearContextMessage() {
+        return {
+            type: 'ptu-owlbear-players',
+            currentPlayer,
+            players: partyPlayers
+        };
+    }
+
+    function sendOwlbearContext(targetWindow) {
+        if (!targetWindow || !currentPlayer) return;
+        targetWindow.postMessage(getOwlbearContextMessage(), window.location.origin);
+    }
+
+    function broadcastOwlbearContext() {
+        document.querySelectorAll('.extension-panel iframe').forEach(frame => {
+            sendOwlbearContext(frame.contentWindow);
+        });
+    }
+
+    async function initializeOwlbearContext() {
+        if (!window.OBR?.isAvailable) return;
+
+        window.OBR.onReady(async () => {
+            try {
+                currentPlayer = {
+                    id: window.OBR.player.id,
+                    name: await window.OBR.player.getName()
+                };
+                partyPlayers = (await window.OBR.party.getPlayers())
+                    .filter(player => player.id !== currentPlayer.id);
+                broadcastOwlbearContext();
+
+                window.OBR.party.onChange(players => {
+                    partyPlayers = players.filter(player => player.id !== currentPlayer.id);
+                    broadcastOwlbearContext();
+                });
+
+                window.OBR.player.onChange(player => {
+                    currentPlayer = { id: player.id, name: player.name };
+                    partyPlayers = partyPlayers.filter(partyPlayer => partyPlayer.id !== player.id);
+                    broadcastOwlbearContext();
+                });
+            } catch (error) {
+                console.warn('Unable to load Owlbear players:', error);
+            }
+        });
+    }
 
     function createId() {
         return typeof crypto.randomUUID === 'function'
@@ -81,6 +131,7 @@
         const frame = document.createElement('iframe');
         frame.src = `details.html?embedded=true&pokemonKey=${encodeURIComponent(tab.storageKey)}`;
         frame.title = `Details for ${tab.title}`;
+        frame.addEventListener('load', () => sendOwlbearContext(frame.contentWindow));
         panel.appendChild(frame);
         panelList.appendChild(panel);
     }
@@ -155,8 +206,16 @@
     });
 
     document.getElementById('tab-home').addEventListener('click', () => switchTab('home'));
+    document.querySelector('#panel-home iframe')?.addEventListener('load', event => {
+        sendOwlbearContext(event.currentTarget.contentWindow);
+    });
     window.addEventListener('message', event => {
         if (event.origin !== window.location.origin) return;
+
+        if (event.data?.type === 'ptu-request-owlbear-players') {
+            sendOwlbearContext(event.source);
+            return;
+        }
 
         if (event.data?.type === 'ptu-open-pokemon') {
             if (!event.data.pokemon || typeof event.data.pokemon !== 'object') return;
@@ -185,4 +244,5 @@
     });
 
     restoreTabs();
+    initializeOwlbearContext();
 })();
