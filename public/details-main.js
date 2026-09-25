@@ -45,6 +45,9 @@ function loadPokemonDetails() {
         pokemon.captureState = {};
     }
 
+    const isEmbeddedDetails = new URLSearchParams(window.location.search).get('embedded') === 'true';
+    const capturePanelOpen = !isEmbeddedDetails;
+
     if (pokemon.tutorPoints === undefined || pokemon.tutorPoints === null) {
         pokemon.tutorPoints = calculateDefaultTutorPoints(pokemon.level);
     }
@@ -208,24 +211,24 @@ function loadPokemonDetails() {
         <div class="details-content">
             <div class="details-left">
                 <div class="pokemon-info">
-                    <div class="info-box">
-                        <div class="flex-between-center">
-                            <div class="info-label">Type(s)</div>
-                            <button id="editTypesBtn" title="Edit types" class="edit-bn">✎ Edit</button>
-                        </div>
-                        <div id="typesDisplay" class="types">
-                            ${(() => {
+                    <div class="info-box pokemon-info-row pokemon-types-row">
+                        <div class="info-label">Type(s)</div>
+                        <div class="pokemon-types-content">
+                            <div id="typesDisplay" class="types">
+                                ${(() => {
             let typesToShow = pokemon.actualTypes || pokemon.types || [];
             if (typesToShow.isFormeVariant) {
                 typesToShow = typesToShow.formes[typesToShow.selectedForme] || [];
             }
             return typesToShow.map(type => `<span class="type-badge type-${type.toLowerCase().replace(' ', '-')}">${type}</span>`).join('');
         })()}
+                            </div>
+                            <button id="editTypesBtn" title="Edit types" class="edit-bn">✎ Edit</button>
                         </div>
                     </div>
 
 
-                    <div class="info-box">
+                    <div class="info-box pokemon-info-row level-hp-info-row">
                         <div class="info-label">Level & HP</div>
                         <div class="level-hp-wrapper">
                             <div class="level-input-group">
@@ -261,7 +264,7 @@ function loadPokemonDetails() {
                         <div id="damagePreview" class="hp-damage-preview"></div>
                     </div>
 
-                    <div class="info-box">
+                    <div class="info-box pokemon-info-row nature-info-row">
                         <div class="info-label">Nature</div>
                         <select id="natureSelect" class="nature-select">
                             <option value="">Loading natures...</option>
@@ -273,7 +276,7 @@ function loadPokemonDetails() {
                     </div>
 
                     ${pokemon.otherInfo ? `
-                        <div class="info-box">
+                        <div class="info-box pokemon-info-row other-info-row">
                             <div class="info-label">Other Information</div>
                             <div class="other-info-grid">
                                 <div><strong>Size:</strong> ${pokemon.otherInfo.sizeCategory || 'Unknown'}</div>
@@ -285,27 +288,26 @@ function loadPokemonDetails() {
                         </div>
                     ` : ''}
 
-                    <!-- Capture Rate Section -->
-                    <div class="info-box capture-rate-summary">
-                        <div class="capture-rate-title-row">
-                            <div class="info-label">Capture Rate</div>
-                        </div>
-                        <div class="capture-rate-display" id="captureRateDisplay">
-                            <div class="capture-rate-value">Base: <span id="baseCapture">100</span></div>
-                            <div class="capture-rate-value">Current: <span id="currentCapture">100</span></div>
-                        </div>
+                    <!-- Unified Capture Rate panel -->
+                    <details id="captureRatePanel" class="info-box capture-rate-panel" ${capturePanelOpen ? 'open' : ''}>
+                        <summary class="advanced-toggle capture-rate-panel-summary">
+                            <span class="info-label">Capture Rate</span>
+                            <span class="capture-rate-display" id="captureRateDisplay">
+                                <span class="capture-rate-value">Base <strong id="baseCapture">100</strong></span>
+                                <span class="capture-rate-value capture-rate-current">Current <strong id="currentCapture">100</strong></span>
+                            </span>
+                            <span class="toggle-icon capture-rate-chevron" aria-hidden="true">▼</span>
+                        </summary>
 
-                        <div>
-                            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85em; cursor: pointer;">
-                                <input type="checkbox" id="errata2015Toggle" style="width: 16px; height: 16px;" />
-                                <span>Erratum Sept 2015</span>
+                        <div class="capture-rate-panel-body">
+                            <label class="capture-rate-mode-toggle">
+                                <input type="checkbox" id="errata2015Toggle" />
+                                <span>Use September 2015 errata</span>
                             </label>
-                        </div>
-                    </div>
 
-                    <!-- Standard Capture Rate Modifiers -->
-                    <div class="info-box capture-rate-calculator" id="standardCaptureModifiers">
-                        <div class="capture-rate-modifiers">
+                            <!-- Standard Capture Rate Modifiers -->
+                            <div class="capture-rate-calculator" id="standardCaptureModifiers">
+                                <div class="capture-rate-modifiers">
                             <div class="modifiers-grid">
                                 <!-- HP (Automatic) -->
                                 <div class="modifier-item" title="Based on current HP percentage">
@@ -353,7 +355,7 @@ function loadPokemonDetails() {
                                 <div class="modifier-item">
                                     <label>
                                         <input type="checkbox" class="status-modifier-checkbox-standard" data-value="10" data-type="stuck" title="Stuck: +10">
-                                        <span style="font-size: 0.9em;">Stuck: +10</span>
+                                        <span>Stuck: +10</span>
                                     </label>
                                 </div>
                                 
@@ -361,32 +363,32 @@ function loadPokemonDetails() {
                                 <div class="modifier-item">
                                     <label>
                                         <input type="checkbox" class="status-modifier-checkbox-standard" data-value="5" data-type="slow" title="Slow: +5">
-                                        <span style="font-size: 0.9em;">Slow: +5</span>
+                                        <span>Slow: +5</span>
                                     </label>
                                 </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                            </div>
 
-                    <!-- Errata 2015 Capture Rate Modifiers -->
-                    <div class="info-box capture-rate-calculator" id="errata2015Modifiers" style="display: none;">
-                        <div class="capture-rate-modifiers">
-                            <div class="errata-container">
+                            <!-- Errata 2015 Capture Rate Modifiers -->
+                            <div class="capture-rate-calculator" id="errata2015Modifiers" style="display: none;">
+                                <div class="capture-rate-modifiers">
+                                    <div class="errata-container">
                                 <!-- <div class="errata-info">
                                     <strong>Base:</strong> 10 + (Level ÷ 10). Subtract 2 for each checkbox below.
                                 </div> -->
                                 
                                 <!-- HP at or under 50% -->
-                                <div class="errata-row">
+                                <label class="errata-row">
                                     <input type="checkbox" class="errata-checkbox" data-type="hp50" />
                                     <span class="errata-row-text">At or under 50% HP?</span>
-                                </div>
+                                </label>
                                 
                                 <!-- HP at or under 25% -->
-                                <div class="errata-row">
+                                <label class="errata-row">
                                     <input type="checkbox" class="errata-checkbox" data-type="hp25" />
                                     <span class="errata-row-text">At or under 25% HP?</span>
-                                </div>
+                                </label>
                                 
                                 <!-- Exactly 2 evolution stages (2 checkboxes) -->
                                 <div class="errata-row">
@@ -398,10 +400,10 @@ function loadPokemonDetails() {
                                 </div>
                                 
                                 <!-- At least 1 Persistent/Volatile Status -->
-                                <div class="errata-row">
+                                <label class="errata-row">
                                     <input type="checkbox" class="errata-checkbox" data-type="status" />
                                     <span class="errata-row-text">Persistent or Volatile Status?</span>
-                                </div>
+                                </label>
                                 
                                 <!-- 5 or more Injuries (2 checkboxes) -->
                                 <div class="errata-row">
@@ -413,22 +415,24 @@ function loadPokemonDetails() {
                                 </div>
                                 
                                 <!-- Exactly 1 evolution stage -->
-                                <div class="errata-row">
+                                <label class="errata-row">
                                     <input type="checkbox" class="errata-checkbox" data-type="evo1" />
                                     <span class="errata-row-text">Exactly 1 evolution stage remaining?</span>
-                                </div>
+                                </label>
 
                                 <!-- Manual Rarity Modifier -->
-                                <div class="errata-row">
-                                    <span style="font-weight: 600; text-align: center;">+</span>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="errata-row errata-rarity-row">
+                                    <span class="errata-rarity-symbol">+</span>
+                                    <label class="errata-rarity-control" for="errata2015RarityBonus">
                                         <span class="errata-row-text">Rarity Bonus:</span>
                                         <input type="number" id="errata2015RarityBonus" min="0" max="20" value="0" class="errata-rarity-input">
+                                    </label>
+                                </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </details>
 
                 </div>
                     

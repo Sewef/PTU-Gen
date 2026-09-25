@@ -441,8 +441,8 @@ button {
 
 .pokemon-info {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
     margin-bottom: 12px;
 }
 
@@ -457,49 +457,192 @@ button {
     text-align: center;
 }
 
-/* Capture Rate Specific Styles */
-.info-box.capture-rate-summary,
-.info-box.capture-rate-calculator {
-    align-self: start;
-    padding: 8px 10px;
+/* Horizontal information rows */
+.pokemon-info-row {
+    display: grid;
+    grid-template-columns: minmax(105px, .3fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 5px 12px;
+    padding: 9px 12px;
+    text-align: left;
 }
 
-.capture-rate-summary {
-    gap: 3px;
+.pokemon-info-row > .info-label {
+    grid-column: 1;
+    margin: 0;
 }
 
-.capture-rate-title-row .info-label {
-    margin-bottom: 0;
+.pokemon-types-row > .pokemon-types-content,
+.level-hp-info-row > :not(.info-label),
+.other-info-row > .other-info-grid {
+    grid-column: 2;
 }
 
-.info-box .capture-rate-display {
+.pokemon-types-content {
     display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.level-hp-info-row > .info-label {
+    grid-row: 1 / span 4;
+}
+
+.level-hp-info-row .level-hp-wrapper {
+    justify-content: flex-start;
+    margin: 0;
+}
+
+.level-hp-info-row .margin-top-8,
+.level-hp-info-row .hp-damage-controls {
+    margin-top: 0;
+}
+
+.level-hp-info-row .hp-damage-controls {
+    width: 100%;
+    grid-template-columns: minmax(58px, 68px) minmax(70px, 88px) minmax(70px, 82px) auto;
+    justify-content: start;
+}
+
+.nature-info-row {
+    grid-template-columns: minmax(105px, .3fr) minmax(0, 1fr) auto;
+}
+
+.nature-info-row .nature-select {
+    grid-column: 2;
+    margin: 0;
+}
+
+.nature-info-row .flex-center-gap-15 {
+    grid-column: 3;
+    margin: 0;
+}
+
+.other-info-row .other-info-grid {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px 10px;
+    text-align: left;
+}
+
+.other-info-row .other-info-grid > div:last-child {
+    grid-column: auto;
+}
+
+/* Unified Capture Rate panel */
+.capture-rate-panel {
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    text-align: left;
+}
+
+.capture-rate-panel-summary.advanced-toggle {
+    position: relative;
     gap: 12px;
-    justify-content: center;
-    margin-bottom: 3px;
+    margin-top: 0;
+    border-radius: 0;
+    list-style: none;
+}
+
+.capture-rate-panel-summary::-webkit-details-marker {
+    display: none;
+}
+
+.capture-rate-panel-summary .info-label {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.capture-rate-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     flex-wrap: wrap;
+    margin-left: auto;
 }
 
 .capture-rate-value {
-    font-size: 1em;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--bg-main);
+    font-size: .8em;
     color: var(--text-primary);
 }
 
-.capture-rate-value span {
+.capture-rate-value strong {
     font-weight: 700;
     color: var(--primary-color);
-    font-size: 1.2em;
+    font-size: 1.15em;
 }
 
-.capture-rate-value span.capture-rate-warning {
+.capture-rate-value strong.capture-rate-warning {
     display: inline-block;
-    padding: 2px 6px;
+    padding: 1px 5px;
     border-radius: 4px;
     background: var(--error-bg);
     color: var(--error-text);
     font-size: 0.82em;
     line-height: 1.2;
     white-space: nowrap;
+}
+
+.capture-rate-chevron {
+    color: var(--text-secondary);
+    text-align: center;
+    flex: 0 0 auto;
+}
+
+.capture-rate-panel[open] .capture-rate-chevron {
+    transform: rotate(180deg);
+}
+
+.capture-rate-panel-body {
+    padding: 8px 12px 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.capture-rate-mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    margin: 0 0 8px;
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-main);
+    font-size: .8em;
+    cursor: pointer;
+    transition: background-color .2s, border-color .2s;
+}
+
+.capture-rate-mode-toggle:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-tertiary);
+}
+
+.capture-rate-mode-toggle:has(input:checked),
+.modifier-item:has(input:checked),
+.errata-row:has(input:checked) {
+    border-color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-main));
+}
+
+.capture-rate-mode-toggle input,
+.modifier-item input[type="checkbox"],
+.errata-checkbox {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--primary-color);
 }
 
 .capture-rate-modifiers {
@@ -509,32 +652,18 @@ button {
 
 .modifiers-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px 4px;
-    /* padding: 8px; */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px 8px;
     border-radius: 4px;
     width: 100%;
     max-width: 100%;
 }
 
-@media (max-width: 768px) {
-    .capture-rate-calculator .modifiers-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        max-width: none;
-    }
-}
-
-@media (max-width: 420px) {
-    .capture-rate-calculator .modifiers-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
 /* Errata 2015 Styles */
 .errata-container {
-    display: flex;
-    flex-direction: column;
-    /* gap: 8px; */
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 8px;
     width: 100%;
     max-width: 100%;
 }
@@ -551,18 +680,55 @@ button {
 .errata-row {
     display: grid;
     grid-template-columns: 30px 1fr;
-    gap: 4px;
+    gap: 8px;
     align-items: center;
-    padding: 3px 4px;
+    min-height: 34px;
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-main);
+    margin: 0;
+    cursor: pointer;
+    transition: background-color .2s, border-color .2s;
+}
+
+.errata-row:hover {
+    border-color: var(--primary-color);
     background: var(--bg-tertiary);
-    border-radius: 3px;
+}
+
+@media (max-width: 520px) {
+    .pokemon-info-row,
+    .nature-info-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pokemon-info-row > .info-label,
+    .pokemon-types-row > .pokemon-types-content,
+    .level-hp-info-row > :not(.info-label),
+    .nature-info-row .nature-select,
+    .nature-info-row .flex-center-gap-15,
+    .other-info-row > .other-info-grid {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .other-info-row .other-info-grid,
+    .errata-container {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .level-hp-info-row .hp-damage-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .level-hp-info-row .hp-damage-btn {
+        grid-column: 1 / -1;
+    }
 }
 
 .errata-checkbox {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: var(--primary-color);
+    justify-self: center;
 }
 
 .errata-checkbox-group {
@@ -576,7 +742,7 @@ button {
 }
 
 .errata-row-text {
-    font-size: 0.85em;
+    font-size: 0.8em;
     color: var(--text-primary);
 }
 
@@ -587,12 +753,36 @@ button {
 
 .errata-rarity-input {
     width: 50px;
-    padding: 4px;
-    border: 1px solid var(--primary-color);
-    border-radius: 3px;
+    min-height: 24px;
+    padding: 3px 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
     background: var(--bg-main);
     color: var(--text-primary);
     font-size: 0.8em;
+}
+
+.errata-rarity-input:focus,
+.status-count-input-standard:focus,
+.status-count-input:focus {
+    border-color: var(--primary-color);
+    outline: 2px solid color-mix(in srgb, var(--primary-color) 22%, transparent);
+    outline-offset: 1px;
+}
+
+.errata-rarity-symbol {
+    justify-self: center;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.errata-rarity-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    cursor: pointer;
 }
 
 /* Modifier grid item inputs */
@@ -605,9 +795,10 @@ button {
 .status-count-input-standard,
 .status-count-input {
     width: 40px;
-    padding: 3px;
-    border: 1px solid var(--primary-color);
-    border-radius: 3px;
+    min-height: 24px;
+    padding: 3px 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
     background: var(--bg-main);
     color: var(--text-primary);
     font-size: 0.8em;
@@ -620,23 +811,26 @@ button {
 .modifier-item {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 0.85em;
+    gap: 8px;
+    min-height: 34px;
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-main);
+    font-size: 0.8em;
     cursor: help;
-    padding: 1px 2px;
-    border-radius: 3px;
-    transition: background-color 0.2s;
+    transition: background-color .2s, border-color .2s;
 }
 
 .modifier-item:hover {
+    border-color: var(--primary-color);
     background: var(--bg-tertiary);
 }
 
 .modifier-label {
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--text-primary);
     min-width: 55px;
-    font-size: 0.85em;
 }
 
 .modifier-value {
@@ -655,9 +849,8 @@ button {
 }
 
 .modifier-item input[type="checkbox"] {
-    cursor: pointer;
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
 }
 
 .status-count-input {
@@ -3413,7 +3606,7 @@ body.details-page {
     margin-bottom: 8px;
 }
 
-.details-page .info-box:not(.capture-rate-summary):not(.capture-rate-calculator) {
+.details-page .info-box:not(.capture-rate-panel) {
     padding: 10px 12px;
 }
 
@@ -3426,9 +3619,20 @@ body.details-page {
     margin-top: 4px;
 }
 
+.details-page .level-hp-info-row .level-hp-wrapper {
+    justify-content: flex-start;
+    margin: 0;
+}
+
 .details-page .margin-top-8,
 .details-page .hp-damage-controls {
     margin-top: 5px;
+}
+
+.details-page .level-hp-info-row .margin-top-8,
+.details-page .level-hp-info-row .hp-damage-controls,
+.details-page .nature-info-row .margin-top-8 {
+    margin-top: 0;
 }
 
 .details-page .hp-damage-preview {
@@ -3443,6 +3647,10 @@ body.details-page {
 .details-page .nature-select {
     padding: 6px;
     margin-bottom: 4px;
+}
+
+.details-page .nature-info-row .nature-select {
+    margin-bottom: 0;
 }
 
 .details-page .other-info-grid {
