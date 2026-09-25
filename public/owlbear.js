@@ -3765,6 +3765,34 @@
       resolveOwlbearReady = resolve;
     });
     const trackedTokenWindows = /* @__PURE__ */ new Map();
+    const tokenSyncTimers = /* @__PURE__ */ new Map();
+    const OWL_TRACKERS_METADATA_KEY = "com.owl-trackers/trackers";
+    function getFiniteNumber(value) {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : null;
+    }
+    function getOwlTrackerState(item) {
+      const trackers = item?.metadata?.[OWL_TRACKERS_METADATA_KEY];
+      if (!Array.isArray(trackers)) return null;
+      const hpTracker = trackers.find((tracker) => String(tracker?.name || "").toLowerCase() === "hp");
+      const injuriesTracker = trackers.find((tracker) => String(tracker?.name || "").toLowerCase() === "injuries");
+      const hpValue = getFiniteNumber(hpTracker?.value);
+      const hpMax = getFiniteNumber(hpTracker?.max);
+      const injuries = getFiniteNumber(injuriesTracker?.value);
+      return {
+        hp: hpValue === null && hpMax === null ? null : { value: hpValue, max: hpMax },
+        injuries: injuries === null ? null : Math.max(0, Math.trunc(injuries))
+      };
+    }
+    function serializeToken(item) {
+      return item ? {
+        id: item.id,
+        name: String(item.name || ""),
+        visible: Boolean(item.visible),
+        createdUserId: String(item.createdUserId || ""),
+        owlTrackers: getOwlTrackerState(item)
+      } : null;
+    }
     function registerTrackedToken(tokenId, targetWindow) {
       if (!tokenId || !targetWindow) return;
       if (!trackedTokenWindows.has(tokenId)) trackedTokenWindows.set(tokenId, /* @__PURE__ */ new Set());
@@ -3775,8 +3803,12 @@
         type: "ptu-owlbear-token-state",
         tokenId,
         exists: Boolean(item),
-        visible: item ? Boolean(item.visible) : null,
-        createdUserId: item ? String(item.createdUserId || "") : null
+        ...serializeToken(item) || {
+          name: null,
+          visible: null,
+          createdUserId: null,
+          owlTrackers: null
+        }
       }, window.location.origin);
     }
     function notifyTrackedTokenStates(items) {
@@ -3855,6 +3887,45 @@
       if (!updated) throw new Error("The linked token could not be read after changing its owner.");
       return updated;
     }
+    async function syncPokemonToSceneToken(pokemon) {
+      const tokenId = String(pokemon?.owlbear?.tokenId || "").trim();
+      if (!tokenId) return;
+      await requireOwlbearScene();
+      const [existing] = await lib_default.scene.items.getItems([tokenId]);
+      if (!existing) return;
+      const desiredName = String(pokemon.nickname || "").trim() || String(pokemon.name || "Pok\xE9mon");
+      const trackersEnabled = pokemon.owlbear?.trackers === "owltrackers";
+      const trackers = existing.metadata?.[OWL_TRACKERS_METADATA_KEY];
+      const hpTracker = Array.isArray(trackers) ? trackers.find((tracker) => String(tracker?.name || "").toLowerCase() === "hp") : null;
+      const desiredHp = getFiniteNumber(pokemon.hitPoints);
+      const desiredHpMax = getFiniteNumber(pokemon.hitPointsMax);
+      const nameChanged = existing.name !== desiredName || existing.text?.plainText !== void 0 && existing.text.plainText !== desiredName;
+      const hpChanged = trackersEnabled && hpTracker && (desiredHp !== null && Number(hpTracker.value) !== desiredHp || desiredHpMax !== null && Number(hpTracker.max) !== desiredHpMax);
+      if (!nameChanged && !hpChanged) return;
+      await lib_default.scene.items.updateItems([tokenId], (items) => {
+        items.forEach((item) => {
+          item.name = desiredName;
+          if (item.text?.plainText !== void 0) item.text.plainText = desiredName;
+          if (!trackersEnabled) return;
+          const itemTrackers = item.metadata?.[OWL_TRACKERS_METADATA_KEY];
+          if (!Array.isArray(itemTrackers)) return;
+          const itemHp = itemTrackers.find((tracker) => String(tracker?.name || "").toLowerCase() === "hp");
+          if (itemHp && desiredHp !== null) itemHp.value = desiredHp;
+          if (itemHp && desiredHpMax !== null) itemHp.max = desiredHpMax;
+        });
+      });
+    }
+    function schedulePokemonTokenSync(pokemon) {
+      const tokenId = String(pokemon?.owlbear?.tokenId || "").trim();
+      if (!tokenId || !trackedTokenWindows.has(tokenId)) return;
+      clearTimeout(tokenSyncTimers.get(tokenId));
+      tokenSyncTimers.set(tokenId, setTimeout(() => {
+        tokenSyncTimers.delete(tokenId);
+        syncPokemonToSceneToken(pokemon).catch((error) => {
+          console.warn("Unable to synchronize the Owlbear token:", error);
+        });
+      }, 300));
+    }
     async function handleOwlbearCommand(event) {
       const { requestId, command, payload = {} } = event.data;
       if (!requestId || !command) return;
@@ -3875,11 +3946,7 @@
           type: "ptu-owlbear-command-result",
           requestId,
           ok: true,
-          token: item ? {
-            id: item.id,
-            visible: Boolean(item.visible),
-            createdUserId: String(item.createdUserId || "")
-          } : null
+          token: serializeToken(item)
         }, window.location.origin);
       } catch (error) {
         event.source?.postMessage({
@@ -4092,6 +4159,7 @@
         const frame = document.querySelector(`[data-panel-id="${CSS.escape(tab.id)}"] iframe`);
         if (frame) frame.title = `Details for ${tab.title}`;
         persistTabs();
+        schedulePokemonTokenSync(pokemon);
       }
     });
     restoreTabs();
