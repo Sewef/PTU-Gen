@@ -47,6 +47,21 @@ function loadPokemonDetails() {
 
     const isEmbeddedDetails = new URLSearchParams(window.location.search).get('embedded') === 'true';
     const capturePanelOpen = !isEmbeddedDetails;
+    const otherInfoPanelOpen = !isEmbeddedDetails;
+
+    const storedGender = pokemon.otherInfo?.gender || pokemon.gender || 'Unknown';
+    const currentGender = storedGender === 'Genderless' ? 'No Gender' : storedGender;
+    const genderOptions = [
+        ...(currentGender === 'Unknown' ? [{ value: 'Unknown', label: 'Unknown' }] : []),
+        { value: 'Male', label: 'Male' },
+        { value: 'Female', label: 'Female' },
+        { value: 'No Gender', label: 'Genderless' }
+    ];
+
+    if (pokemon.otherInfo) {
+        pokemon.otherInfo.gender = currentGender;
+    }
+    pokemon.gender = currentGender;
 
     if (pokemon.tutorPoints === undefined || pokemon.tutorPoints === null) {
         pokemon.tutorPoints = calculateDefaultTutorPoints(pokemon.level);
@@ -266,32 +281,48 @@ function loadPokemonDetails() {
 
                     <div class="info-box pokemon-info-row nature-info-row">
                         <div class="info-label">Nature</div>
-                        <select id="natureSelect" class="nature-select">
-                            <option value="">Loading natures...</option>
-                        </select>
-                        <div class="flex-center-gap-15 margin-top-8">
-                            <span class="nature-raise" id="natureRaise">+${pokemon.nature.raise}</span>
-                            <span class="nature-lower" id="natureLower">-${pokemon.nature.lower}</span>
+                        <div class="nature-control">
+                            <select id="natureSelect" class="nature-select">
+                                <option value="">Loading natures...</option>
+                            </select>
+                            <div class="nature-modifiers">
+                                <span class="nature-raise" id="natureRaise">+${pokemon.nature.raise}</span>
+                                <span class="nature-lower" id="natureLower">-${pokemon.nature.lower}</span>
+                            </div>
                         </div>
                     </div>
 
                     ${pokemon.otherInfo ? `
-                        <div class="info-box pokemon-info-row other-info-row">
-                            <div class="info-label">Other Information</div>
+                        <details class="info-box other-info-panel" ${otherInfoPanelOpen ? 'open' : ''}>
+                            <summary class="advanced-toggle collapsible-info-summary">
+                                <span class="info-label">Other Information</span>
+                                <span class="toggle-icon collapsible-info-chevron" aria-hidden="true">▼</span>
+                            </summary>
                             <div class="other-info-grid">
                                 <div><strong>Size:</strong> ${pokemon.otherInfo.sizeCategory || 'Unknown'}</div>
                                 <div><strong>Weight Class:</strong> ${pokemon.otherInfo.weightClass || 'Unknown'}</div>
-                                <div><strong>Gender:</strong> ${pokemon.otherInfo.gender || 'Unknown'}</div>
+                                <label class="other-info-gender">
+                                    <strong>Gender:</strong>
+                                    <select id="genderSelect" class="gender-select">
+                                        ${genderOptions.map(gender => `<option value="${gender.value}" ${gender.value === currentGender ? 'selected' : ''}>${gender.label}</option>`).join('')}
+                                    </select>
+                                </label>
                                 <div><strong>Diet:</strong> ${pokemon.otherInfo.diet || 'Unknown'}</div>
                                 <div><strong>Habitat:</strong> ${pokemon.otherInfo.habitat || 'Unknown'}</div>
                             </div>
-                        </div>
+                        </details>
                     ` : ''}
 
                     <!-- Unified Capture Rate panel -->
                     <details id="captureRatePanel" class="info-box capture-rate-panel" ${capturePanelOpen ? 'open' : ''}>
                         <summary class="advanced-toggle capture-rate-panel-summary">
-                            <span class="info-label">Capture Rate</span>
+                            <span class="capture-rate-heading">
+                                <span class="info-label">Capture Rate</span>
+                                <label class="capture-rate-mode-toggle capture-rate-mode-toggle-header">
+                                    <input type="checkbox" id="errata2015Toggle" />
+                                    <span>Use September 2015 errata</span>
+                                </label>
+                            </span>
                             <span class="capture-rate-display" id="captureRateDisplay">
                                 <span class="capture-rate-value">Base <strong id="baseCapture">100</strong></span>
                                 <span class="capture-rate-value capture-rate-current">Current <strong id="currentCapture">100</strong></span>
@@ -300,11 +331,6 @@ function loadPokemonDetails() {
                         </summary>
 
                         <div class="capture-rate-panel-body">
-                            <label class="capture-rate-mode-toggle">
-                                <input type="checkbox" id="errata2015Toggle" />
-                                <span>Use September 2015 errata</span>
-                            </label>
-
                             <!-- Standard Capture Rate Modifiers -->
                             <div class="capture-rate-calculator" id="standardCaptureModifiers">
                                 <div class="capture-rate-modifiers">
@@ -926,6 +952,16 @@ function loadPokemonDetails() {
         });
     }
 
+    // Setup gender dropdown
+    const genderSelect = document.getElementById('genderSelect');
+    if (genderSelect) {
+        genderSelect.addEventListener('change', function () {
+            pokemon.otherInfo.gender = this.value;
+            pokemon.gender = this.value;
+            saveSelectedPokemon(pokemon);
+        });
+    }
+
     // Setup export buttons
     const exportBtn = document.getElementById('exportBtn');
     const exportDropdown = document.getElementById('exportDropdown');
@@ -1245,6 +1281,11 @@ async function setupCaptureRateCalculator(pokemon) {
     const errataDoubleCheckboxes = document.querySelectorAll('.errata-checkbox.errata-double');
     const errataRarityInput = document.getElementById('errata2015RarityBonus');
     const savedCaptureState = pokemon.captureState || {};
+
+    // The mode control lives inside <summary>; using it must not toggle the panel.
+    errata2015Toggle.closest('.capture-rate-mode-toggle')?.addEventListener('click', event => {
+        event.stopPropagation();
+    });
 
     errata2015Toggle.checked = Boolean(savedCaptureState.useErrata);
     statusCountInputs.forEach(input => {

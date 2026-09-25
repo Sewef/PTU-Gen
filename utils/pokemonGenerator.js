@@ -701,13 +701,24 @@ class PokemonGenerator {
     const weightMatch = weightStr.match(/Weight Class (\d+)/);
     const weightClass = weightMatch ? parseInt(weightMatch[1]) : 0;
     
-    // Determine gender
+    // Determine gender and retain the choices allowed by the species.
     const gendersStr = otherInfo.Genders || 'Unknown';
-    let gender = 'Unknown';
-    if (gendersStr !== 'Unknown') {
-      const maleMatch = gendersStr.match(/(\d+(?:\.\d+)?)\%\s*Male/);
-      const malePercent = maleMatch ? parseFloat(maleMatch[1]) : 0;
-      gender = Math.random() * 100 < malePercent ? 'Male' : 'Female';
+    const maleMatch = gendersStr.match(/(\d+(?:\.\d+)?)\%\s*Male/i);
+    const femaleMatch = gendersStr.match(/(\d+(?:\.\d+)?)\%\s*Female/i);
+    const malePercent = maleMatch ? parseFloat(maleMatch[1]) : 0;
+    const femalePercent = femaleMatch ? parseFloat(femaleMatch[1]) : 0;
+    const genderOptions = [];
+
+    if (malePercent > 0 || (!maleMatch && /\bMale\b/i.test(gendersStr))) genderOptions.push('Male');
+    if (femalePercent > 0 || (!femaleMatch && /\bFemale\b/i.test(gendersStr))) genderOptions.push('Female');
+    if (/No Gender|Genderless/i.test(gendersStr)) genderOptions.push('No Gender');
+    if (genderOptions.length === 0) genderOptions.push('Unknown');
+
+    let gender = genderOptions[0];
+    if (genderOptions.includes('Male') && genderOptions.includes('Female')) {
+      const totalGenderPercent = malePercent + femalePercent;
+      const maleChance = totalGenderPercent > 0 ? malePercent / totalGenderPercent : 0.5;
+      gender = Math.random() < maleChance ? 'Male' : 'Female';
     }
     
     // Calculate baseWithNature for proper level points calculation on frontend.

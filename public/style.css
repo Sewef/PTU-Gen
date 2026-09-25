@@ -473,8 +473,7 @@ button {
 }
 
 .pokemon-types-row > .pokemon-types-content,
-.level-hp-info-row > :not(.info-label),
-.other-info-row > .other-info-grid {
+.level-hp-info-row > :not(.info-label) {
     grid-column: 2;
 }
 
@@ -502,44 +501,33 @@ button {
 
 .level-hp-info-row .hp-damage-controls {
     width: 100%;
-    grid-template-columns: minmax(58px, 68px) minmax(70px, 88px) minmax(70px, 82px) auto;
+    grid-template-columns: minmax(76px, 82px) minmax(70px, 88px) minmax(70px, 82px) auto;
     justify-content: start;
 }
 
 .nature-info-row {
-    grid-template-columns: minmax(105px, .3fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(105px, .3fr) minmax(0, 1fr);
 }
 
-.nature-info-row .nature-select {
+.nature-info-row .nature-control {
     grid-column: 2;
-    margin: 0;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 8px;
 }
 
-.nature-info-row .flex-center-gap-15 {
-    grid-column: 3;
-    margin: 0;
-}
-
-.other-info-row .other-info-grid {
-    width: 100%;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px 10px;
-    text-align: left;
-}
-
-.other-info-row .other-info-grid > div:last-child {
-    grid-column: auto;
-}
-
-/* Unified Capture Rate panel */
-.capture-rate-panel {
+/* Collapsible information panels */
+.capture-rate-panel,
+.other-info-panel {
     display: block;
     padding: 0;
     overflow: hidden;
     text-align: left;
 }
 
-.capture-rate-panel-summary.advanced-toggle {
+.capture-rate-panel-summary.advanced-toggle,
+.collapsible-info-summary.advanced-toggle {
     position: relative;
     gap: 12px;
     margin-top: 0;
@@ -547,13 +535,23 @@ button {
     list-style: none;
 }
 
-.capture-rate-panel-summary::-webkit-details-marker {
+.capture-rate-panel-summary::-webkit-details-marker,
+.collapsible-info-summary::-webkit-details-marker {
     display: none;
 }
 
-.capture-rate-panel-summary .info-label {
+.capture-rate-panel-summary .info-label,
+.collapsible-info-summary .info-label {
     margin: 0;
     white-space: nowrap;
+}
+
+.capture-rate-heading {
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
 }
 
 .capture-rate-display {
@@ -602,6 +600,50 @@ button {
     transform: rotate(180deg);
 }
 
+.collapsible-info-chevron {
+    color: var(--text-secondary);
+    flex: 0 0 auto;
+}
+
+.other-info-panel[open] .collapsible-info-chevron {
+    transform: rotate(180deg);
+}
+
+.other-info-panel .other-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px 12px;
+    padding: 8px 12px 10px;
+    border-top: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.other-info-panel .other-info-grid > :last-child {
+    grid-column: 1 / -1;
+}
+
+.other-info-gender {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+}
+
+.gender-select {
+    min-width: 0;
+    padding: 4px 24px 4px 7px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.gender-select:focus {
+    border-color: var(--primary-color);
+    outline: 2px solid color-mix(in srgb, var(--primary-color) 22%, transparent);
+    outline-offset: 1px;
+}
+
 .capture-rate-panel-body {
     padding: 8px 12px 10px;
     border-top: 1px solid var(--border-color);
@@ -632,6 +674,19 @@ button {
 .errata-row:has(input:checked) {
     border-color: var(--primary-color);
     background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-main));
+}
+
+.capture-rate-mode-toggle-header,
+.capture-rate-mode-toggle-header:hover,
+.capture-rate-mode-toggle-header:has(input:checked) {
+    min-height: 0;
+    margin: 2px 0 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: .68em;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .capture-rate-mode-toggle input,
@@ -706,16 +761,18 @@ button {
     .pokemon-info-row > .info-label,
     .pokemon-types-row > .pokemon-types-content,
     .level-hp-info-row > :not(.info-label),
-    .nature-info-row .nature-select,
-    .nature-info-row .flex-center-gap-15,
-    .other-info-row > .other-info-grid {
+    .nature-info-row .nature-control {
         grid-column: 1;
         grid-row: auto;
     }
 
-    .other-info-row .other-info-grid,
+    .other-info-panel .other-info-grid,
     .errata-container {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .other-info-panel .other-info-grid > :last-child {
+        grid-column: auto;
     }
 
     .level-hp-info-row .hp-damage-controls {
@@ -2034,18 +2091,20 @@ button {
 
 .details-content {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 30px;
 }
 
 .details-left {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .details-right {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 @media (max-width: 768px) {
@@ -3215,6 +3274,16 @@ pre {
     font-size: 0.78em;
 }
 
+.hp-damage-input {
+    appearance: textfield;
+}
+
+.hp-damage-input::-webkit-inner-spin-button,
+.hp-damage-input::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+}
+
 .hp-damage-input:focus,
 .hp-damage-select:focus {
     outline: none;
@@ -3450,6 +3519,42 @@ pre {
     outline-offset: 2px;
 }
 
+.type-effectiveness-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(64px, 100%), 1fr));
+    gap: 5px;
+    width: 100%;
+    min-width: 0;
+}
+
+.type-effectiveness-item {
+    display: grid;
+    grid-template-rows: auto minmax(24px, auto);
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--bg-secondary);
+}
+
+.type-effectiveness-item .type-effectiveness-button {
+    width: 100%;
+    min-width: 0;
+    border-radius: 0;
+}
+
+.type-effectiveness-item .type-eff-value-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 3px;
+    border: 0;
+    font-size: .78em;
+    font-weight: 700;
+}
+
 .details-table-type-cell.damage-type-selected-top {
     position: relative;
     z-index: 1;
@@ -3466,21 +3571,64 @@ pre {
         inset -2px 0 0 var(--primary-color);
 }
 
-/* Nature Select */
-.nature-select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    margin-bottom: 8px;
-    background: var(--bg-main);
-    color: var(--text-primary);
+.type-effectiveness-item.damage-type-selected-top {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color);
 }
 
-.nature-select:focus {
+.type-effectiveness-item .type-eff-value-cell.damage-type-selected-bottom {
+    box-shadow: inset 0 2px 0 var(--primary-color);
+}
+
+/* Nature Select */
+.nature-select,
+.gender-select {
+    width: 100%;
+    min-width: 0;
+    min-height: 30px;
+    padding: 5px 28px 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    margin: 0;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font: inherit;
+    transition: border-color .2s, background-color .2s;
+}
+
+.nature-select:hover,
+.gender-select:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-secondary);
+}
+
+.nature-select:focus,
+.gender-select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 18%, transparent);
+}
+
+.nature-control .nature-select {
+    flex: 1 1 auto;
+}
+
+.nature-modifiers {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 5px;
+}
+
+.nature-info-row .nature-raise,
+.nature-info-row .nature-lower {
+    padding: 3px 7px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    background: var(--bg-main);
+    font-size: .75em;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 /* Capabilities Container */
@@ -3578,10 +3726,9 @@ pre {
 
 /* Type Effectiveness Display */
 .type-effectiveness-display {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
+    display: block;
+    width: 100%;
+    min-width: 0;
 }
 
 /* Compact density for the details page */
@@ -3606,7 +3753,7 @@ body.details-page {
     margin-bottom: 8px;
 }
 
-.details-page .info-box:not(.capture-rate-panel) {
+.details-page .info-box:not(.capture-rate-panel):not(.other-info-panel) {
     padding: 10px 12px;
 }
 
@@ -3642,15 +3789,6 @@ body.details-page {
 
 .details-page .hp-damage-preview:empty {
     display: none;
-}
-
-.details-page .nature-select {
-    padding: 6px;
-    margin-bottom: 4px;
-}
-
-.details-page .nature-info-row .nature-select {
-    margin-bottom: 0;
 }
 
 .details-page .other-info-grid {
@@ -3751,7 +3889,15 @@ body.details-page {
 }
 
 .details-page .type-effectiveness-display {
+    width: 100%;
+}
+
+.details-page .type-effectiveness-grid {
     gap: 3px;
+}
+
+.details-page .type-effectiveness-item {
+    padding: 0;
 }
 
 .details-page .details-table {

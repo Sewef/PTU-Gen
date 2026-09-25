@@ -98,94 +98,44 @@ function displayTypeEffectiveness(pokemon) {
     container.innerHTML = '';
 
     const allTypes = ['Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'];
-    const midpoint = Math.ceil(allTypes.length / 2);
-    const firstHalf = allTypes.slice(0, midpoint);
-    const secondHalf = allTypes.slice(midpoint);
-
-    // Create function to render a table half
-    const renderHalf = (types) => {
-        let html = `
-            <table class="details-table">
-                <tbody>
-                    <tr class="details-table-header-row">
-        `;
-
-        // First row: Type badges
-        types.forEach(type => {
-            const damageType = type.toLowerCase();
-            html += `
-                <td class="details-table-type-cell" data-damage-type="${damageType}">
-                    <button
-                        type="button"
-                        class="type-badge type-badge-table type-effectiveness-button type-${damageType.replace(' ', '-')}"
-                        data-damage-type="${damageType}"
-                        aria-pressed="false"
-                        aria-label="Use ${type} as damage type"
-                        title="Use ${type} as damage type"
-                    >${type}</button>
-                </td>
-            `;
-        });
-
-        html += `
-                    </tr>
-                    <tr class="details-table-body-row">
-        `;
-
-        // Second row: Effectiveness values
-        types.forEach(type => {
-            const damageType = type.toLowerCase();
-            let eff = effectiveness[damageType];
-            
-            let effClass = 'eff-neutral'; // Default
-            let effText = '1x';
-            
-            // Format effectiveness with minimal decimals
-            const formatEff = (value) => {
-                if (value === 0) return '0x';
-                if (value === 1) return '1x';
-                if (Number.isInteger(value)) return value + 'x';
-                // Show minimal decimals (remove trailing zeros)
-                return parseFloat(value.toFixed(2)).toString() + 'x';
-            };
-
-            if (eff === 0) {
-                effClass = 'eff-immune';
-                effText = '0x';
-            } else if (eff <= 0.25) {
-                effClass = 'eff-strong-resist';
-                effText = formatEff(eff);
-            } else if (eff <= 0.5) {
-                effClass = 'eff-resist';
-                effText = formatEff(eff);
-            } else if (eff === 1) {
-                effClass = 'eff-neutral';
-                effText = '1x';
-            } else if (eff <= 2) {
-                effClass = 'eff-weak';
-                effText = formatEff(eff);
-            } else {
-                effClass = 'eff-strong-weak';
-                effText = formatEff(eff);
-            }
-
-            html += `
-                <td class="type-eff-value-cell ${effClass}" data-damage-type="${damageType}">
-                    ${effText}
-                </td>
-            `;
-        });
-
-        html += `
-                    </tr>
-                </tbody>
-            </table>
-        `;
-
-        return html;
+    const formatEff = (value) => {
+        if (value === 0) return '0x';
+        if (value === 1) return '1x';
+        if (Number.isInteger(value)) return value + 'x';
+        return parseFloat(value.toFixed(2)).toString() + 'x';
     };
 
-    container.innerHTML = renderHalf(firstHalf) + renderHalf(secondHalf);
+    container.innerHTML = `
+        <div class="type-effectiveness-grid" role="list" aria-label="Type effectiveness">
+            ${allTypes.map(type => {
+                const damageType = type.toLowerCase();
+                const eff = effectiveness[damageType] ?? 1;
+                let effClass = 'eff-neutral';
+
+                if (eff === 0) effClass = 'eff-immune';
+                else if (eff <= 0.25) effClass = 'eff-strong-resist';
+                else if (eff <= 0.5) effClass = 'eff-resist';
+                else if (eff <= 2 && eff !== 1) effClass = 'eff-weak';
+                else if (eff > 2) effClass = 'eff-strong-weak';
+
+                return `
+                    <div class="details-table-type-cell type-effectiveness-item" data-damage-type="${damageType}" role="listitem">
+                        <button
+                            type="button"
+                            class="type-badge type-badge-table type-effectiveness-button type-${damageType.replace(' ', '-')}"
+                            data-damage-type="${damageType}"
+                            aria-pressed="false"
+                            aria-label="Use ${type} as damage type"
+                            title="Use ${type} as damage type"
+                        >${type}</button>
+                        <span class="type-eff-value-cell ${effClass}" data-damage-type="${damageType}">
+                            ${formatEff(eff)}
+                        </span>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
 
     container.querySelectorAll('.type-effectiveness-button').forEach(typeButton => {
         typeButton.addEventListener('click', () => {
