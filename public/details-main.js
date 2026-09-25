@@ -251,7 +251,17 @@ function loadPokemonDetails() {
                     <div class="owlbear-utilities-panel" aria-label="Owlbear scene utilities">
                         <div class="owlbear-utilities-header">
                             <div class="owlbear-utilities-title">Owlbear Scene</div>
-                            <div id="owlbearTokenStatus" class="owlbear-token-status" aria-live="polite">Not inserted</div>
+                            <div class="owlbear-utilities-header-actions">
+                                <div id="owlbearTokenStatus" class="owlbear-token-status" aria-live="polite">Not inserted</div>
+                                <div class="owlbear-header-export">
+                                    <button id="exportBtn" type="button" class="owlbear-header-export-btn" title="Export options">Export <span class="dropdown-arrow">▼</span></button>
+                                    <div id="exportDropdown" class="export-dropdown">
+                                        <button id="exportJsonBtn" class="export-dropdown-item">📄 Export PTU-Gen JSON</button>
+                                        <button id="exportRoll20Btn" class="export-dropdown-item">🎲 Export Roll20</button>
+                                        <button id="exportPokesheetsBtn" class="export-dropdown-item">📊 Export Pokésheets</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="owlbear-utilities-actions">
                             <button id="insertOwlbearTokenBtn" type="button" class="export-btn-main owlbear-insert-btn">Insert token in scene</button>
@@ -269,13 +279,13 @@ function loadPokemonDetails() {
                         <button id="exportOwlbearBtn" class="export-btn-main owlbear-copy-btn"><img src="https://www.owlbear.rodeo/assets/logo-DZfycRP_.svg" alt="Owlbear" height="20" width="20" /> Owlbear Token</button>
                         <button id="owlbearConfigBtn" title="Owlbear token settings" class="export-btn-main owlbear-settings-btn">⚙️</button>
                     </div>
-                    `}
                     <button id="exportBtn" title="Export options" class="export-btn-main">📥 Export <span class="dropdown-arrow">▼</span></button>
                     <div id="exportDropdown" class="export-dropdown">
                         <button id="exportJsonBtn" class="export-dropdown-item">📄 Export PTU-Gen JSON</button>
                         <button id="exportRoll20Btn" class="export-dropdown-item">🎲 Export Roll20</button>
                         <button id="exportPokesheetsBtn" class="export-dropdown-item">📊 Export Pokésheets</button>
                     </div>
+                    `}
                 </div>
                 <div id="owlbearConfigModal" class="modal-overlay" style="display: none;">
                     <div class="modal-content" style="max-width: 420px;">

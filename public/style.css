@@ -3249,6 +3249,40 @@ pre {
     gap: 8px;
 }
 
+.owlbear-utilities-header-actions {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.owlbear-header-export {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.export-button-wrapper .owlbear-header-export-btn {
+    min-height: 23px;
+    margin: 0;
+    padding: 2px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: .68em;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.export-button-wrapper .owlbear-header-export-btn:hover,
+.export-button-wrapper .owlbear-header-export-btn:focus-visible {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    outline: none;
+}
+
 .owlbear-utilities-title {
     color: var(--text-secondary);
     font-size: .72em;
@@ -3360,11 +3394,6 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     flex: 1 1 390px;
     flex-wrap: wrap;
     justify-content: flex-end;
-}
-
-body.details-page.owlbear-embedded #exportBtn,
-body.details-page.owlbear-embedded #exportDropdown {
-    display: none !important;
 }
 
 @media (max-width: 768px) {
