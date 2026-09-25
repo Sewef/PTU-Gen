@@ -786,7 +786,27 @@ function loadPokemonDetails() {
                 }
             }
             saveSelectedPokemon(pokemon);
-            loadPokemonDetails();
+
+            const updatedIgnoredStats = new Set(
+                (pokemon.ignoreBaseRelation === 'ALL' || pokemon.ignoreBaseRelation === 'IGNORE')
+                    ? shortNames
+                    : (pokemon.ignoreBaseRelation ? pokemon.ignoreBaseRelation.split(',').map(value => value.trim()) : [])
+            );
+
+            statsBreakdownContainer.querySelectorAll('.stat-ignore-btn').forEach(toggle => {
+                const isIgnored = updatedIgnoredStats.has(toggle.dataset.stat);
+                toggle.classList.toggle('ignored', isIgnored);
+                toggle.textContent = isIgnored ? 'Ignored' : 'In Relation';
+            });
+
+            const baseRelationSummaryElement = document.getElementById('baseRelationSummary');
+            if (baseRelationSummaryElement) {
+                baseRelationSummaryElement.innerHTML = naturalGroups
+                    .map(group => group.stats
+                        .map(groupStat => `<span class="br-stat${updatedIgnoredStats.has(groupStat) ? ' br-stat-ignored' : ''}">${groupStat}</span>`)
+                        .join(' <span class="br-sep">=</span> '))
+                    .join(' <span class="br-sep br-gt">&gt;</span> ');
+            }
         });
     });
 
