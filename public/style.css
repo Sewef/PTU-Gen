@@ -1023,6 +1023,8 @@ button {
     flex-direction: column;
     gap: 8px;
     margin: 15px 0;
+    min-width: 0;
+    container-type: inline-size;
 }
 
 .stat-breakdown-row {
@@ -1030,26 +1032,25 @@ button {
     border: 1px solid var(--border-color);
     border-radius: 5px;
     padding: 8px;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(82px, 1.25fr) minmax(66px, .8fr) minmax(52px, .7fr) minmax(46px, .6fr) minmax(54px, .7fr);
     align-items: center;
-    gap: 12px;
-    flex-wrap: nowrap;
+    gap: 8px;
+    min-width: 0;
 }
 
 .stat-breakdown-label {
     font-weight: 600;
     color: var(--primary-color);
-    min-width: 100px;
+    min-width: 0;
     font-size: 0.85em;
-    flex-shrink: 0;
 }
 
 .stat-breakdown-component {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 75px;
-    flex: 0 0 auto;
+    min-width: 0;
 }
 
 .stat-breakdown-component label {
@@ -1063,6 +1064,8 @@ button {
     display: flex;
     align-items: center;
     gap: 4px;
+    min-width: 0;
+    flex-wrap: wrap;
 }
 
 .base-stat-value {
@@ -1100,7 +1103,10 @@ button {
 }
 
 .stat-breakdown-component input {
-    width: 60px;
+    width: 100%;
+    max-width: 60px;
+    min-width: 0;
+    box-sizing: border-box;
     padding: 4px;
     border: 1px solid var(--border-color);
     border-radius: 3px;
@@ -1122,17 +1128,35 @@ button {
 }
 
 .stat-breakdown-component.total {
-    margin-left: auto;
+    grid-column: 5;
+    margin-left: 0;
     background: var(--bg-tertiary);
     padding: 4px 10px;
     border-radius: 3px;
     border: 1px solid var(--primary-color);
     text-align: center;
-    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 75px;
+    min-width: 0;
+}
+
+@container (max-width: 430px) {
+    .stat-breakdown-row {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .stat-breakdown-label {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .stat-breakdown-component.total {
+        grid-column: 4;
+    }
 }
 
 .stat-breakdown-component.total label {
@@ -2126,10 +2150,6 @@ button {
     }
 
     .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .stat-breakdown-row {
         grid-template-columns: 1fr;
     }
 
