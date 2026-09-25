@@ -3228,6 +3228,161 @@ pre {
     padding-right: 10px;
 }
 
+.owlbear-utilities-panel {
+    display: flex;
+    flex: 1 1 360px;
+    min-width: 0;
+    max-width: 440px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-main);
+}
+
+.owlbear-utilities-header {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.owlbear-utilities-title {
+    color: var(--text-secondary);
+    font-size: .72em;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.owlbear-utilities-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 4px;
+}
+
+.owlbear-utilities-actions .owlbear-insert-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 0;
+    justify-content: center;
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: .76em;
+}
+
+.owlbear-owner-btn,
+.owlbear-owner-editor button {
+    min-height: 30px;
+    margin: 0;
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: .76em;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.owlbear-owner-btn:hover:not(:disabled),
+.owlbear-owner-editor button:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.owlbear-owner-btn:disabled,
+.owlbear-owner-editor button:disabled {
+    cursor: default;
+    opacity: .65;
+}
+
+.owlbear-owner-editor {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) auto auto;
+    gap: 4px;
+}
+
+.owlbear-owner-editor[hidden] {
+    display: none;
+}
+
+.owlbear-owner-editor select {
+    min-width: 0;
+    min-height: 30px;
+    padding: 3px 7px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: .76em;
+}
+
+.owlbear-visibility-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 30px;
+    margin: 0;
+    padding: 3px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.owlbear-visibility-toggle span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-size: .78em;
+    font-weight: 700;
+}
+
+.owlbear-visibility-toggle[data-visible="true"] .owlbear-visible-label,
+.owlbear-visibility-toggle[data-visible="false"] .owlbear-hidden-label {
+    background: var(--primary-color);
+    color: white;
+}
+
+.owlbear-visibility-toggle:disabled,
+.owlbear-insert-btn[data-busy="true"] {
+    cursor: wait;
+}
+
+.owlbear-insert-btn:disabled:not([data-busy="true"]) {
+    cursor: default;
+}
+
+.owlbear-visibility-toggle:disabled,
+.owlbear-insert-btn:disabled {
+    opacity: .65;
+}
+
+.owlbear-token-status {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    font-family: monospace;
+    font-size: .68em;
+}
+
+.owlbear-token-status.is-error {
+    color: #dc3545;
+}
+
+body.details-page.owlbear-embedded .export-button-wrapper {
+    flex: 1 1 390px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 @media (max-width: 768px) {
     .pokemon-header-content {
         flex-wrap: wrap;
@@ -3258,6 +3413,15 @@ pre {
 
     .owlbear-settings-btn {
         justify-content: center;
+    }
+
+    .owlbear-utilities-panel {
+        width: 100%;
+        max-width: none;
+    }
+
+    .owlbear-owner-editor {
+        grid-template-columns: minmax(0, 1fr) auto auto;
     }
 }
 

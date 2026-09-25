@@ -1,4 +1,57 @@
 const pokemonStorageKey = new URLSearchParams(window.location.search).get('pokemonKey') || 'selectedPokemon';
+const pendingOwlbearCommands = new Map();
+let owlbearCurrentPlayer = null;
+let owlbearRoomPlayers = [];
+
+function createOwlbearRequestId() {
+    return typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function requestOwlbearCommand(command, payload = {}) {
+    if (window.parent === window) return Promise.reject(new Error('This action is only available inside Owlbear Rodeo.'));
+
+    const requestId = createOwlbearRequestId();
+    return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            pendingOwlbearCommands.delete(requestId);
+            reject(new Error('Owlbear did not respond in time.'));
+        }, 10000);
+
+        pendingOwlbearCommands.set(requestId, { resolve, reject, timeoutId });
+        window.parent.postMessage({
+            type: 'ptu-owlbear-command',
+            requestId,
+            command,
+            payload
+        }, window.location.origin);
+    });
+}
+
+window.addEventListener('message', event => {
+    if (event.origin !== window.location.origin) return;
+
+    if (event.data?.type === 'ptu-owlbear-players') {
+        owlbearCurrentPlayer = event.data.currentPlayer?.id
+            ? { id: String(event.data.currentPlayer.id), name: String(event.data.currentPlayer.name || 'Player') }
+            : null;
+        owlbearRoomPlayers = (Array.isArray(event.data.players) ? event.data.players : [])
+            .filter(player => player?.id && player.id !== owlbearCurrentPlayer?.id)
+            .map(player => ({ id: String(player.id), name: String(player.name || 'Unnamed player') }));
+        window.dispatchEvent(new CustomEvent('ptu-owlbear-players-updated'));
+        return;
+    }
+
+    if (event.data?.type !== 'ptu-owlbear-command-result') return;
+    const pending = pendingOwlbearCommands.get(event.data.requestId);
+    if (!pending) return;
+
+    clearTimeout(pending.timeoutId);
+    pendingOwlbearCommands.delete(event.data.requestId);
+    if (event.data.ok) pending.resolve(event.data);
+    else pending.reject(new Error(event.data.error || 'The Owlbear command failed.'));
+});
 
 function saveSelectedPokemon(pokemon) {
     PTUPokemonStorage.save(pokemon);
@@ -194,10 +247,34 @@ function loadPokemonDetails() {
                     <div class="pokemon-meta" id="headerLevel">Level ${pokemon.level} • ${pokemon.dataset ? pokemon.dataset.charAt(0).toUpperCase() + pokemon.dataset.slice(1) : 'Core'} Dataset • ${pokemon._fandex ? `${pokemon._fandex.charAt(0).toUpperCase() + pokemon._fandex.slice(1)}` : ''}</div>
                 </div>
                 <div class="export-button-wrapper">
+                    ${isEmbeddedDetails ? `
+                    <div class="owlbear-utilities-panel" aria-label="Owlbear scene utilities">
+                        <div class="owlbear-utilities-header">
+                            <div class="owlbear-utilities-title">Owlbear Scene</div>
+                            <div id="owlbearTokenStatus" class="owlbear-token-status" aria-live="polite">Not inserted</div>
+                        </div>
+                        <div class="owlbear-utilities-actions">
+                            <button id="insertOwlbearTokenBtn" type="button" class="export-btn-main owlbear-insert-btn">Insert token in scene</button>
+                            <button id="owlbearVisibilityToggle" type="button" class="owlbear-visibility-toggle" data-visible="true" aria-pressed="true" aria-label="Token visibility">
+                                <span class="owlbear-visible-label">Visible</span>
+                                <span class="owlbear-hidden-label">Hidden</span>
+                            </button>
+                            <button id="owlbearChangeOwnerBtn" type="button" class="owlbear-owner-btn">Change owner</button>
+                        </div>
+                        <div id="owlbearOwnerEditor" class="owlbear-owner-editor" hidden>
+                            <select id="owlbearOwnerSelect" aria-label="Token owner" disabled>
+                                <option value="">Loading players…</option>
+                            </select>
+                            <button id="owlbearSaveOwnerBtn" type="button">Apply</button>
+                            <button id="owlbearCancelOwnerBtn" type="button">Cancel</button>
+                        </div>
+                    </div>
+                    ` : `
                     <div class="owlbear-export-group" aria-label="Owlbear token actions">
                         <button id="exportOwlbearBtn" class="export-btn-main owlbear-copy-btn"><img src="https://www.owlbear.rodeo/assets/logo-DZfycRP_.svg" alt="Owlbear" height="20" width="20" /> Owlbear Token</button>
                         <button id="owlbearConfigBtn" title="Owlbear token settings" class="export-btn-main owlbear-settings-btn">⚙️</button>
                     </div>
+                    `}
                     <button id="exportBtn" title="Export options" class="export-btn-main">📥 Export <span class="dropdown-arrow">▼</span></button>
                     <div id="exportDropdown" class="export-dropdown">
                         <button id="exportJsonBtn" class="export-dropdown-item">📄 Export PTU-Gen JSON</button>
@@ -994,6 +1071,14 @@ function loadPokemonDetails() {
     const exportPokesheetsBtn = document.getElementById('exportPokesheetsBtn');
     const exportOwlbearBtn = document.getElementById('exportOwlbearBtn');
     const owlbearConfigBtn = document.getElementById('owlbearConfigBtn');
+    const insertOwlbearTokenBtn = document.getElementById('insertOwlbearTokenBtn');
+    const owlbearVisibilityToggle = document.getElementById('owlbearVisibilityToggle');
+    const owlbearTokenStatus = document.getElementById('owlbearTokenStatus');
+    const owlbearChangeOwnerBtn = document.getElementById('owlbearChangeOwnerBtn');
+    const owlbearOwnerEditor = document.getElementById('owlbearOwnerEditor');
+    const owlbearOwnerSelect = document.getElementById('owlbearOwnerSelect');
+    const owlbearSaveOwnerBtn = document.getElementById('owlbearSaveOwnerBtn');
+    const owlbearCancelOwnerBtn = document.getElementById('owlbearCancelOwnerBtn');
     const owlbearConfigModal = document.getElementById('owlbearConfigModal');
     const detailsOwlbearVisible = document.getElementById('detailsOwlbearVisible');
     const detailsOwlbearPlayerId = document.getElementById('detailsOwlbearPlayerId');
@@ -1004,7 +1089,8 @@ function loadPokemonDetails() {
         visible: pokemon.owlbear?.visible !== undefined ? Boolean(pokemon.owlbear.visible) : true,
         playerId: String(pokemon.owlbear?.playerId || '').trim(),
         trackers: pokemon.owlbear?.trackers === 'owltrackers' ? 'owltrackers' : 'none',
-        initiative: pokemon.owlbear?.initiative === 'prettysordid' ? 'prettysordid' : 'none'
+        initiative: pokemon.owlbear?.initiative === 'prettysordid' ? 'prettysordid' : 'none',
+        tokenId: String(pokemon.owlbear?.tokenId || '').trim()
     };
 
     const syncOwlbearConfigFromControls = () => {
@@ -1012,7 +1098,8 @@ function loadPokemonDetails() {
             visible: detailsOwlbearVisible ? detailsOwlbearVisible.checked : true,
             playerId: detailsOwlbearPlayerId ? detailsOwlbearPlayerId.value.trim() : '',
             trackers: pokemon.owlbear?.trackers === 'owltrackers' ? 'owltrackers' : 'none',
-            initiative: pokemon.owlbear?.initiative === 'prettysordid' ? 'prettysordid' : 'none'
+            initiative: pokemon.owlbear?.initiative === 'prettysordid' ? 'prettysordid' : 'none',
+            tokenId: String(pokemon.owlbear?.tokenId || '').trim()
         };
         saveSelectedPokemon(pokemon);
     };
@@ -1084,6 +1171,229 @@ function loadPokemonDetails() {
 
         syncOwlbearConfigFromControls();
     };
+
+    let linkedTokenExists = false;
+    let owlbearUtilityBusy = false;
+
+    const getOwlbearOwnerOptions = () => {
+        const players = new Map();
+        if (owlbearCurrentPlayer?.id) {
+            players.set(owlbearCurrentPlayer.id, {
+                id: owlbearCurrentPlayer.id,
+                label: `Me (${owlbearCurrentPlayer.name})`
+            });
+        }
+        owlbearRoomPlayers.forEach(player => {
+            if (player.id && !players.has(player.id)) {
+                players.set(player.id, { id: player.id, label: player.name });
+            }
+        });
+        return [...players.values()];
+    };
+
+    const renderOwlbearOwnerOptions = () => {
+        if (!owlbearOwnerSelect) return;
+        const players = getOwlbearOwnerOptions();
+        const preferredPlayerId = pokemon.owlbear.playerId;
+        owlbearOwnerSelect.replaceChildren(...players.map(player => {
+            const option = document.createElement('option');
+            option.value = player.id;
+            option.textContent = player.label;
+            return option;
+        }));
+        owlbearOwnerSelect.disabled = owlbearUtilityBusy || players.length === 0;
+        owlbearOwnerSelect.value = players.some(player => player.id === preferredPlayerId)
+            ? preferredPlayerId
+            : (owlbearCurrentPlayer?.id || players[0]?.id || '');
+        if (owlbearSaveOwnerBtn) owlbearSaveOwnerBtn.disabled = owlbearUtilityBusy || !owlbearOwnerSelect.value;
+    };
+
+    const renderOwlbearUtilities = () => {
+        if (!isEmbeddedDetails || !insertOwlbearTokenBtn || !owlbearVisibilityToggle || !owlbearTokenStatus) return;
+
+        const visible = pokemon.owlbear.visible !== false;
+        owlbearVisibilityToggle.dataset.visible = String(visible);
+        owlbearVisibilityToggle.setAttribute('aria-pressed', String(visible));
+        owlbearVisibilityToggle.disabled = owlbearUtilityBusy;
+        if (owlbearChangeOwnerBtn) owlbearChangeOwnerBtn.disabled = owlbearUtilityBusy || getOwlbearOwnerOptions().length === 0;
+        if (owlbearSaveOwnerBtn) owlbearSaveOwnerBtn.disabled = owlbearUtilityBusy || !owlbearOwnerSelect?.value;
+        if (owlbearCancelOwnerBtn) owlbearCancelOwnerBtn.disabled = owlbearUtilityBusy;
+        insertOwlbearTokenBtn.disabled = owlbearUtilityBusy || linkedTokenExists;
+        insertOwlbearTokenBtn.dataset.busy = String(owlbearUtilityBusy);
+        insertOwlbearTokenBtn.textContent = owlbearUtilityBusy
+            ? 'Working...'
+            : linkedTokenExists
+                ? 'Token inserted'
+                : 'Insert token in scene';
+
+        if (linkedTokenExists && pokemon.owlbear.tokenId) {
+            const shortTokenId = pokemon.owlbear.tokenId.length > 12
+                ? `${pokemon.owlbear.tokenId.slice(0, 8)}…`
+                : pokemon.owlbear.tokenId;
+            owlbearTokenStatus.textContent = `Token · ${shortTokenId}`;
+            owlbearTokenStatus.title = `Token UUID: ${pokemon.owlbear.tokenId}`;
+            owlbearTokenStatus.classList.remove('is-error');
+        } else if (!owlbearTokenStatus.classList.contains('is-error')) {
+            owlbearTokenStatus.textContent = 'Not inserted';
+            owlbearTokenStatus.removeAttribute('title');
+        }
+
+        renderOwlbearOwnerOptions();
+    };
+
+    const setOwlbearUtilityError = error => {
+        if (!owlbearTokenStatus) return;
+        owlbearTokenStatus.textContent = error instanceof Error ? error.message : String(error);
+        owlbearTokenStatus.classList.add('is-error');
+    };
+
+    const saveConfirmedTokenState = token => {
+        if (!token) {
+            linkedTokenExists = false;
+            pokemon.owlbear.tokenId = '';
+        } else {
+            linkedTokenExists = true;
+            pokemon.owlbear.tokenId = token.id;
+            pokemon.owlbear.visible = Boolean(token.visible);
+            if (token.createdUserId) pokemon.owlbear.playerId = String(token.createdUserId);
+        }
+        if (detailsOwlbearVisible) detailsOwlbearVisible.checked = pokemon.owlbear.visible;
+        if (detailsOwlbearPlayerId) detailsOwlbearPlayerId.value = pokemon.owlbear.playerId;
+        saveSelectedPokemon(pokemon);
+        renderOwlbearUtilities();
+    };
+
+    if (isEmbeddedDetails) {
+        window.addEventListener('message', event => {
+            if (event.origin !== window.location.origin || event.data?.type !== 'ptu-owlbear-token-state') return;
+            if (!pokemon.owlbear.tokenId || event.data.tokenId !== pokemon.owlbear.tokenId) return;
+
+            if (!event.data.exists) {
+                saveConfirmedTokenState(null);
+                return;
+            }
+
+            linkedTokenExists = true;
+            pokemon.owlbear.visible = Boolean(event.data.visible);
+            if (event.data.createdUserId) pokemon.owlbear.playerId = String(event.data.createdUserId);
+            if (detailsOwlbearVisible) detailsOwlbearVisible.checked = pokemon.owlbear.visible;
+            if (detailsOwlbearPlayerId) detailsOwlbearPlayerId.value = pokemon.owlbear.playerId;
+            saveSelectedPokemon(pokemon);
+            renderOwlbearUtilities();
+        });
+
+        window.addEventListener('ptu-owlbear-players-updated', renderOwlbearUtilities);
+
+        if (owlbearChangeOwnerBtn && owlbearOwnerEditor) {
+            owlbearChangeOwnerBtn.addEventListener('click', () => {
+                owlbearOwnerEditor.hidden = !owlbearOwnerEditor.hidden;
+                if (!owlbearOwnerEditor.hidden) {
+                    renderOwlbearOwnerOptions();
+                    owlbearOwnerSelect?.focus();
+                }
+            });
+        }
+
+        if (owlbearCancelOwnerBtn && owlbearOwnerEditor) {
+            owlbearCancelOwnerBtn.addEventListener('click', () => {
+                owlbearOwnerEditor.hidden = true;
+                renderOwlbearOwnerOptions();
+            });
+        }
+
+        if (owlbearSaveOwnerBtn && owlbearOwnerSelect && owlbearOwnerEditor) {
+            owlbearSaveOwnerBtn.addEventListener('click', async () => {
+                const createdUserId = owlbearOwnerSelect.value;
+                if (!createdUserId) return;
+
+                owlbearUtilityBusy = true;
+                owlbearTokenStatus?.classList.remove('is-error');
+                renderOwlbearUtilities();
+                try {
+                    if (linkedTokenExists && pokemon.owlbear.tokenId) {
+                        const result = await requestOwlbearCommand('set-token-owner', {
+                            tokenId: pokemon.owlbear.tokenId,
+                            createdUserId
+                        });
+                        if (!result.token) throw new Error('The linked token no longer exists.');
+                        saveConfirmedTokenState(result.token);
+                    } else {
+                        pokemon.owlbear.playerId = createdUserId;
+                        if (detailsOwlbearPlayerId) detailsOwlbearPlayerId.value = createdUserId;
+                        saveSelectedPokemon(pokemon);
+                    }
+                    owlbearOwnerEditor.hidden = true;
+                } catch (error) {
+                    setOwlbearUtilityError(error);
+                } finally {
+                    owlbearUtilityBusy = false;
+                    renderOwlbearUtilities();
+                }
+            });
+        }
+
+        if (insertOwlbearTokenBtn) {
+            insertOwlbearTokenBtn.addEventListener('click', async () => {
+                owlbearUtilityBusy = true;
+                owlbearTokenStatus?.classList.remove('is-error');
+                renderOwlbearUtilities();
+                try {
+                    syncPokemonBeforeExport();
+                    const { item } = buildOwlbearItem(pokemon);
+                    const result = await requestOwlbearCommand('insert-token', { item });
+                    if (!result.token?.id) throw new Error('Owlbear returned no token UUID.');
+                    saveConfirmedTokenState(result.token);
+                } catch (error) {
+                    setOwlbearUtilityError(error);
+                } finally {
+                    owlbearUtilityBusy = false;
+                    renderOwlbearUtilities();
+                }
+            });
+        }
+
+        if (owlbearVisibilityToggle) {
+            owlbearVisibilityToggle.addEventListener('click', async () => {
+                const nextVisible = pokemon.owlbear.visible === false;
+                owlbearUtilityBusy = true;
+                owlbearTokenStatus?.classList.remove('is-error');
+                renderOwlbearUtilities();
+                try {
+                    if (linkedTokenExists && pokemon.owlbear.tokenId) {
+                        const result = await requestOwlbearCommand('set-token-visibility', {
+                            tokenId: pokemon.owlbear.tokenId,
+                            visible: nextVisible
+                        });
+                        if (!result.token) throw new Error('The linked token no longer exists.');
+                        saveConfirmedTokenState(result.token);
+                    } else {
+                        pokemon.owlbear.visible = nextVisible;
+                        if (detailsOwlbearVisible) detailsOwlbearVisible.checked = nextVisible;
+                        saveSelectedPokemon(pokemon);
+                    }
+                } catch (error) {
+                    setOwlbearUtilityError(error);
+                } finally {
+                    owlbearUtilityBusy = false;
+                    renderOwlbearUtilities();
+                }
+            });
+        }
+
+        renderOwlbearUtilities();
+        window.parent.postMessage({ type: 'ptu-request-owlbear-players' }, window.location.origin);
+        if (pokemon.owlbear.tokenId) {
+            owlbearUtilityBusy = true;
+            renderOwlbearUtilities();
+            requestOwlbearCommand('get-token-state', { tokenId: pokemon.owlbear.tokenId })
+                .then(result => saveConfirmedTokenState(result.token))
+                .catch(setOwlbearUtilityError)
+                .finally(() => {
+                    owlbearUtilityBusy = false;
+                    renderOwlbearUtilities();
+                });
+        }
+    }
 
     if (owlbearConfigBtn && owlbearConfigModal) {
         owlbearConfigBtn.onclick = (e) => {
