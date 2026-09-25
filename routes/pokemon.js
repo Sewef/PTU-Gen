@@ -101,6 +101,8 @@ router.get('/generate', async (req, res) => {
       forceevolution: req.query.forceevolution,
       owlbearvisible: req.query.owlbearvisible,
       owlbearplayerid: req.query.owlbearplayerid,
+      owlbeartrackers: req.query.owlbeartrackers,
+      owlbearinitiative: req.query.owlbearinitiative,
       fandex: splitFandex(req.query)
     };
 
@@ -122,7 +124,9 @@ router.get('/generateBlank', (req, res) => {
       hpformula: req.query.hpformula,
       dataset: req.query.dataset,
       owlbearvisible: req.query.owlbearvisible,
-      owlbearplayerid: req.query.owlbearplayerid
+      owlbearplayerid: req.query.owlbearplayerid,
+      owlbeartrackers: req.query.owlbeartrackers,
+      owlbearinitiative: req.query.owlbearinitiative
     });
     res.json(pokemon);
   } catch (error) {
@@ -158,6 +162,8 @@ router.get('/generateWild/:level', async (req, res) => {
       nature: req.query.nature,
       owlbearvisible: req.query.owlbearvisible,
       owlbearplayerid: req.query.owlbearplayerid,
+      owlbeartrackers: req.query.owlbeartrackers,
+      owlbearinitiative: req.query.owlbearinitiative,
       fandex
     });
     res.json(pokemon);
@@ -220,7 +226,9 @@ router.get('/team', async (req, res) => {
       naturemode: req.query.naturemode,
       nature: req.query.nature,
       owlbearvisible: req.query.owlbearvisible,
-      owlbearplayerid: req.query.owlbearplayerid
+      owlbearplayerid: req.query.owlbearplayerid,
+      owlbeartrackers: req.query.owlbeartrackers,
+      owlbearinitiative: req.query.owlbearinitiative
     };
 
     if (options.level < 1 || options.level > 100) {

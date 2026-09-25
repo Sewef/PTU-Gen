@@ -575,6 +575,8 @@ class PokemonGenerator {
    * @param {string} options.hpFormula - Custom HP formula. Default: 'LEVEL + (HP * 3) + 10'
    * @param {boolean|string} options.owlbearvisible - Owlbear token visibility
    * @param {string} options.owlbearplayerid - Owlbear created user id
+   * @param {string} options.owlbeartrackers - Owlbear tracker integration: 'none' or 'owltrackers'
+   * @param {string} options.owlbearinitiative - Owlbear initiative integration: 'none' or 'prettysordid'
    * @param {string} options.dataset - Dataset to use: 'core', 'community', 'homebrew'. Default: 'core'
    * @param {string|string[]} options.fandex - FanDexes to apply as overrides. Comma-separated or array.
    * @param {string} options.naturemode - random, optimal, or fixed
@@ -656,7 +658,9 @@ class PokemonGenerator {
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
     const owlbear = {
       visible: options.owlbearvisible === undefined ? true : options.owlbearvisible === true || options.owlbearvisible === 'true',
-      playerId: String(options.owlbearplayerid || '').trim()
+      playerId: String(options.owlbearplayerid || '').trim(),
+      trackers: String(options.owlbeartrackers || 'none').toLowerCase() === 'owltrackers' ? 'owltrackers' : 'none',
+      initiative: String(options.owlbearinitiative || 'none').toLowerCase() === 'prettysordid' ? 'prettysordid' : 'none'
     };
     
     // Extract base stats, handling variants like Pumpkaboo (Small/Average/Large/Super Size)
@@ -811,7 +815,9 @@ class PokemonGenerator {
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
     const owlbear = {
       visible: options.owlbearvisible === undefined ? true : options.owlbearvisible === true || options.owlbearvisible === 'true',
-      playerId: String(options.owlbearplayerid || '').trim()
+      playerId: String(options.owlbearplayerid || '').trim(),
+      trackers: String(options.owlbeartrackers || 'none').toLowerCase() === 'owltrackers' ? 'owltrackers' : 'none',
+      initiative: String(options.owlbearinitiative || 'none').toLowerCase() === 'prettysordid' ? 'prettysordid' : 'none'
     };
     const zeroBaseStats = {
       HP: 0,
@@ -1012,7 +1018,9 @@ class PokemonGenerator {
         naturemode: options.naturemode,
         nature: options.nature,
         owlbearvisible: options.owlbearvisible,
-        owlbearplayerid: options.owlbearplayerid
+        owlbearplayerid: options.owlbearplayerid,
+        owlbeartrackers: options.owlbeartrackers,
+        owlbearinitiative: options.owlbearinitiative
       }));
     }
 

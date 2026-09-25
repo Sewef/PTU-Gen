@@ -37,12 +37,16 @@ function getStoredPokemons() {
 function getBulkOwlbearSettings() {
     const visibleInput = document.getElementById('owlbearVisible');
     const playerIdInput = document.getElementById('owlbearPlayerId');
+    const trackersInput = document.querySelector('input[name="owlbearTrackers"]:checked');
+    const initiativeInput = document.querySelector('input[name="owlbearInitiative"]:checked');
 
-    if (!visibleInput && !playerIdInput) return null;
+    if (!visibleInput && !playerIdInput && !trackersInput && !initiativeInput) return null;
 
     return {
         visible: visibleInput ? visibleInput.checked : true,
-        playerId: playerIdInput ? playerIdInput.value.trim() : ''
+        playerId: playerIdInput ? playerIdInput.value.trim() : '',
+        trackers: trackersInput?.value === 'owltrackers' ? 'owltrackers' : 'none',
+        initiative: initiativeInput?.value === 'prettysordid' ? 'prettysordid' : 'none'
     };
 }
 

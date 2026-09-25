@@ -1832,6 +1832,14 @@ button {
     font-size: .85em;
 }
 
+.owlbear-embed-only {
+    display: none;
+}
+
+body.owlbear-embedded .owlbear-embed-only {
+    display: block;
+}
+
 .owlbear-radio-group {
     display: flex;
     gap: 8px;

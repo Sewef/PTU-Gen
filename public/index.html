@@ -318,6 +318,48 @@
                                     </label>
                                 </div>
                             </div>
+
+                            <div class="form-group">
+                                <label class="owlbear-option-label">Trackers</label>
+                                <div class="owlbear-radio-group" role="radiogroup" aria-label="Token trackers">
+                                    <label class="owlbear-radio-option">
+                                        <input type="radio" name="owlbearTrackers" id="owlbearTrackersNone" value="none" checked>
+                                        <span>None</span>
+                                    </label>
+                                    <label class="owlbear-radio-option">
+                                        <input type="radio" name="owlbearTrackers" id="owlbearTrackersOwlTrackers" value="owltrackers">
+                                        <span>OwlTrackers</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="owlbear-option-label">Initiative</label>
+                                <div class="owlbear-radio-group" role="radiogroup" aria-label="Token initiative">
+                                    <label class="owlbear-radio-option">
+                                        <input type="radio" name="owlbearInitiative" id="owlbearInitiativeNone" value="none" checked>
+                                        <span>None</span>
+                                    </label>
+                                    <label class="owlbear-radio-option">
+                                        <input type="radio" name="owlbearInitiative" id="owlbearInitiativePrettySordid" value="prettysordid">
+                                        <span>Pretty Sordid</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group owlbear-embed-only">
+                                <label class="owlbear-option-label">Dice Roller</label>
+                                <div class="owlbear-radio-group" role="radiogroup" aria-label="Dice roller">
+                                    <label class="owlbear-radio-option">
+                                        <input type="radio" name="owlbearDiceRoller" id="owlbearDiceRollerNone" value="none" checked>
+                                        <span>None</span>
+                                    </label>
+                                    <label class="owlbear-radio-option">
+                                        <input type="radio" name="owlbearDiceRoller" id="owlbearDiceRollerJustDices" value="justdices">
+                                        <span>JustDices</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -465,7 +507,10 @@
             ignoreBaseRelation: '',
             hpFormula: 'LEVEL + (HP * 3) + 10',
             owlbearVisible: true,
-            owlbearPlayerId: ''
+            owlbearPlayerId: '',
+            owlbearTrackers: 'none',
+            owlbearInitiative: 'none',
+            owlbearDiceRoller: 'none'
         };
         const isOwlbearEmbed = new URLSearchParams(window.location.search).get('owlbear') === 'true';
 
@@ -634,7 +679,10 @@
                 ignoreBaseRelation: (document.getElementById('ignoreBaseRelation').value || '').trim(),
                 hpFormula: (document.getElementById('hpFormula').value || '').trim(),
                 owlbearVisible: document.getElementById('owlbearVisible').checked,
-                owlbearPlayerId: (document.getElementById('owlbearPlayerId').value || '').trim()
+                owlbearPlayerId: (document.getElementById('owlbearPlayerId').value || '').trim(),
+                owlbearTrackers: document.querySelector('input[name="owlbearTrackers"]:checked')?.value || SETTINGS_DEFAULTS.owlbearTrackers,
+                owlbearInitiative: document.querySelector('input[name="owlbearInitiative"]:checked')?.value || SETTINGS_DEFAULTS.owlbearInitiative,
+                owlbearDiceRoller: document.querySelector('input[name="owlbearDiceRoller"]:checked')?.value || SETTINGS_DEFAULTS.owlbearDiceRoller
             };
 
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
@@ -642,6 +690,13 @@
 
         function setControlChangedState(control, changed) {
             if (!control) return;
+
+            if (control instanceof HTMLInputElement && control.type === 'radio' && control.name) {
+                document.getElementsByName(control.name).forEach(radio => {
+                    radio.classList.remove('pref-changed-control');
+                });
+            }
+
             control.classList.toggle('pref-changed-control', Boolean(changed));
             const group = control.closest('.form-group');
             if (group) {
@@ -662,6 +717,9 @@
             const hpFormula = document.getElementById('hpFormula');
             const owlbearVisible = document.getElementById('owlbearVisible');
             const owlbearPlayerId = document.getElementById('owlbearPlayerId');
+            const owlbearTrackers = document.querySelector('input[name="owlbearTrackers"]:checked');
+            const owlbearInitiative = document.querySelector('input[name="owlbearInitiative"]:checked');
+            const owlbearDiceRoller = document.querySelector('input[name="owlbearDiceRoller"]:checked');
 
             const selectedFandex = Array.from(document.querySelectorAll('.fandex-checkbox:checked')).map(cb => cb.value);
             const hasFandexChanges = selectedFandex.length > 0;
@@ -673,6 +731,9 @@
                 ? (owlbearPlayerId.dataset.defaultPlayerId || '')
                 : SETTINGS_DEFAULTS.owlbearPlayerId;
             const hasOwlbearPlayerIdChanges = (owlbearPlayerId.value || '').trim() !== defaultOwlbearPlayerId;
+            const hasOwlbearTrackersChanges = owlbearTrackers.value !== SETTINGS_DEFAULTS.owlbearTrackers;
+            const hasOwlbearInitiativeChanges = owlbearInitiative.value !== SETTINGS_DEFAULTS.owlbearInitiative;
+            const hasOwlbearDiceRollerChanges = isOwlbearEmbed && owlbearDiceRoller.value !== SETTINGS_DEFAULTS.owlbearDiceRoller;
 
             setControlChangedState(dataset, dataset.value !== SETTINGS_DEFAULTS.dataset);
             setControlChangedState(randomForm, randomForm.checked !== SETTINGS_DEFAULTS.randomForm);
@@ -683,6 +744,9 @@
             setControlChangedState(hpFormula, hasHpFormulaChanges);
             setControlChangedState(owlbearVisible, hasOwlbearVisibleChanges);
             setControlChangedState(owlbearPlayerId, hasOwlbearPlayerIdChanges);
+            setControlChangedState(owlbearTrackers, hasOwlbearTrackersChanges);
+            setControlChangedState(owlbearInitiative, hasOwlbearInitiativeChanges);
+            setControlChangedState(owlbearDiceRoller, hasOwlbearDiceRollerChanges);
 
             includeLegendaries.classList.toggle('pref-changed-control', includeLegendaries.checked !== SETTINGS_DEFAULTS.includeLegendaries);
             forceEvolution.classList.toggle('pref-changed-control', forceEvolution.checked !== SETTINGS_DEFAULTS.forceEvolution);
@@ -712,7 +776,7 @@
             const owlbearSection = document.getElementById('owlbearSection');
             const owlbearToggle = document.querySelector('.advanced-toggle[onclick="toggleOwlbear()"]');
             const owlbearToggleIcon = document.getElementById('owlbearToggleIcon');
-            const hasOwlbearChanges = hasOwlbearVisibleChanges || hasOwlbearPlayerIdChanges;
+            const hasOwlbearChanges = hasOwlbearVisibleChanges || hasOwlbearPlayerIdChanges || hasOwlbearTrackersChanges || hasOwlbearInitiativeChanges || hasOwlbearDiceRollerChanges;
             const owlbearCollapsed = !owlbearSection.classList.contains('open');
 
             if (owlbearToggle) {
@@ -744,6 +808,15 @@
             const storedVisibility = Boolean(stored.owlbearVisible);
             document.getElementById('owlbearVisible').checked = storedVisibility;
             document.getElementById('owlbearHidden').checked = !storedVisibility;
+            const storedTrackers = stored.owlbearTrackers === 'owltrackers' ? 'owltrackers' : 'none';
+            const storedTrackersControl = document.querySelector(`input[name="owlbearTrackers"][value="${storedTrackers}"]`);
+            if (storedTrackersControl) storedTrackersControl.checked = true;
+            const storedInitiative = stored.owlbearInitiative === 'prettysordid' ? 'prettysordid' : 'none';
+            const storedInitiativeControl = document.querySelector(`input[name="owlbearInitiative"][value="${storedInitiative}"]`);
+            if (storedInitiativeControl) storedInitiativeControl.checked = true;
+            const storedDiceRoller = stored.owlbearDiceRoller === 'justdices' ? 'justdices' : 'none';
+            const storedDiceRollerControl = document.querySelector(`input[name="owlbearDiceRoller"][value="${storedDiceRoller}"]`);
+            if (storedDiceRollerControl) storedDiceRollerControl.checked = true;
             const owlbearPlayerControl = document.getElementById('owlbearPlayerId');
             if (isOwlbearEmbed) {
                 owlbearPlayerControl.dataset.preferredPlayerId = stored.owlbearPlayerId || '';
@@ -1175,6 +1248,12 @@
             document.getElementById('hpFormula'),
             document.getElementById('owlbearVisible'),
             document.getElementById('owlbearHidden'),
+            document.getElementById('owlbearTrackersNone'),
+            document.getElementById('owlbearTrackersOwlTrackers'),
+            document.getElementById('owlbearInitiativeNone'),
+            document.getElementById('owlbearInitiativePrettySordid'),
+            document.getElementById('owlbearDiceRollerNone'),
+            document.getElementById('owlbearDiceRollerJustDices'),
             document.getElementById('owlbearPlayerId')
         ].forEach(control => {
             const eventName = control.tagName === 'INPUT' && control.type === 'text' ? 'input' : 'change';
@@ -1229,6 +1308,8 @@
                     params.set('nature', document.getElementById('nature').value);
                 }
                 params.set('owlbearVisible', document.getElementById('owlbearVisible').checked ? 'true' : 'false');
+                params.set('owlbearTrackers', document.querySelector('input[name="owlbearTrackers"]:checked')?.value || 'none');
+                params.set('owlbearInitiative', document.querySelector('input[name="owlbearInitiative"]:checked')?.value || 'none');
                 const owlbearPlayerId = document.getElementById('owlbearPlayerId').value.trim();
                 if (owlbearPlayerId) {
                     params.set('owlbearPlayerId', owlbearPlayerId);
@@ -1384,6 +1465,8 @@
                         }
 
                         params.append('owlbearVisible', document.getElementById('owlbearVisible').checked ? 'true' : 'false');
+                        params.append('owlbearTrackers', document.querySelector('input[name="owlbearTrackers"]:checked')?.value || 'none');
+                        params.append('owlbearInitiative', document.querySelector('input[name="owlbearInitiative"]:checked')?.value || 'none');
                         const owlbearPlayerId = document.getElementById('owlbearPlayerId').value.trim();
                         if (owlbearPlayerId) {
                             params.append('owlbearPlayerId', owlbearPlayerId);

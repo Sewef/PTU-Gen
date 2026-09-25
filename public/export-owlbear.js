@@ -76,6 +76,37 @@ function buildOwlbearItem(pokemon, position = { x: 0, y: 0 }) {
     const scale = OWLBEAR_SIZE_SCALES[pokemon.otherInfo?.sizeCategory] || 1;
     const visible = pokemon.owlbear?.visible !== undefined ? Boolean(pokemon.owlbear.visible) : true;
     const createdUserId = String(pokemon.owlbear?.playerId || '').trim();
+    const metadata = {};
+
+    if (String(pokemon.owlbear?.initiative || 'none').toLowerCase() === 'prettysordid') {
+        metadata['com.pretty-initiative/metadata'] = {
+            count: speed,
+            active: false,
+            group: 1
+        };
+    }
+
+    if (String(pokemon.owlbear?.trackers || 'none').toLowerCase() === 'owltrackers') {
+        metadata['com.owl-trackers/trackers'] = [
+            {
+                id: generateOwlTrackersUUID(),
+                variant: 'value-max',
+                color: 2,
+                value: hpValue,
+                max: hpMax,
+                name: 'HP'
+            },
+            {
+                id: generateOwlTrackersUUID(),
+                variant: 'counter',
+                color: 2,
+                inlineMath: true,
+                value: 0,
+                name: 'Injuries'
+            }
+        ];
+        metadata['com.owl-trackers/hidden'] = true;
+    }
 
     const item = {
         type: 'IMAGE',
@@ -89,32 +120,7 @@ function buildOwlbearItem(pokemon, position = { x: 0, y: 0 }) {
         scale: { x: scale, y: scale },
         visible,
         locked: false,
-        metadata: {
-            'com.owl-trackers/trackers': [
-                {
-                    id: generateOwlTrackersUUID(),
-                    variant: 'value-max',
-                    color: 2,
-                    value: hpValue,
-                    max: hpMax,
-                    name: 'HP'
-                },
-                {
-                    id: generateOwlTrackersUUID(),
-                    variant: 'counter',
-                    color: 2,
-                    inlineMath: true,
-                    value: 0,
-                    name: 'Injuries'
-                }
-            ],
-            'com.owl-trackers/hidden': true,
-            'com.pretty-initiative/metadata': {
-                count: speed,
-                active: false,
-                group: 1
-            }
-        },
+        metadata,
         image: {
             width: W,
             height: W,

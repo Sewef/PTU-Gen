@@ -1002,13 +1002,17 @@ function loadPokemonDetails() {
 
     pokemon.owlbear = {
         visible: pokemon.owlbear?.visible !== undefined ? Boolean(pokemon.owlbear.visible) : true,
-        playerId: String(pokemon.owlbear?.playerId || '').trim()
+        playerId: String(pokemon.owlbear?.playerId || '').trim(),
+        trackers: pokemon.owlbear?.trackers === 'owltrackers' ? 'owltrackers' : 'none',
+        initiative: pokemon.owlbear?.initiative === 'prettysordid' ? 'prettysordid' : 'none'
     };
 
     const syncOwlbearConfigFromControls = () => {
         pokemon.owlbear = {
             visible: detailsOwlbearVisible ? detailsOwlbearVisible.checked : true,
-            playerId: detailsOwlbearPlayerId ? detailsOwlbearPlayerId.value.trim() : ''
+            playerId: detailsOwlbearPlayerId ? detailsOwlbearPlayerId.value.trim() : '',
+            trackers: pokemon.owlbear?.trackers === 'owltrackers' ? 'owltrackers' : 'none',
+            initiative: pokemon.owlbear?.initiative === 'prettysordid' ? 'prettysordid' : 'none'
         };
         saveSelectedPokemon(pokemon);
     };
