@@ -3670,8 +3670,9 @@ body.details-page.owlbear-embedded #exportDropdown {
 }
 
 .db-adjust-btn {
+    min-width: 25px;
+    min-height: 25px;
     padding: 2px 6px;
-    /* margin-left: 8px; */
     background: var(--bg-secondary);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
@@ -3687,8 +3688,8 @@ body.details-page.owlbear-embedded #exportDropdown {
 }
 
 .copy-roll-formula-btn {
+    min-height: 25px;
     padding: 3px 8px;
-    /* margin-left: 8px; */
     background: var(--bg-secondary);
     color: var(--primary-color);
     border: 1px solid var(--border-color);
@@ -3703,6 +3704,104 @@ body.details-page.owlbear-embedded #exportDropdown {
     background: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
+}
+
+.db-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 10px;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-main);
+}
+
+.db-summary,
+.db-actions,
+.db-identity,
+.db-range,
+.db-stepper {
+    display: inline-flex;
+    align-items: center;
+}
+
+.db-summary {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    min-width: 0;
+}
+
+.db-identity {
+    gap: 4px;
+    color: var(--primary-color);
+    white-space: nowrap;
+}
+
+.db-stab-badge {
+    padding: 1px 4px;
+    border: 1px solid color-mix(in srgb, var(--primary-color) 45%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    font-size: .68em;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.db-formula {
+    color: var(--text-primary);
+    font-family: monospace;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.db-attack-bonus {
+    color: var(--primary-color);
+}
+
+.db-range {
+    gap: 4px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-tertiary);
+    font-size: .78em;
+    white-space: nowrap;
+}
+
+.db-range strong {
+    color: var(--text-primary);
+}
+
+.db-range-separator {
+    opacity: .55;
+}
+
+.db-actions {
+    flex: 0 0 auto;
+    gap: 4px;
+}
+
+.db-stepper {
+    gap: 2px;
+}
+
+@media (max-width: 640px) {
+    .db-field {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .db-actions {
+        width: 100%;
+    }
+
+    .db-actions .copy-roll-formula-btn {
+        flex: 1 1 auto;
+    }
 }
 
 

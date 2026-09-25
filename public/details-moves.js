@@ -94,6 +94,31 @@ function adjustMoveDB(pokemon, moveName, delta) {
     updateMovesDisplay(pokemon);
 }
 
+function synchronizeMoveStab(pokemon) {
+    let currentTypes = pokemon.actualTypes || pokemon.types || [];
+    if (currentTypes?.isFormeVariant) {
+        currentTypes = currentTypes.formes[currentTypes.selectedForme] || [];
+    }
+    const normalizedTypes = new Set(
+        (Array.isArray(currentTypes) ? currentTypes : []).map(type => String(type).toLowerCase())
+    );
+    let changed = false;
+
+    (pokemon.moves || []).forEach(move => {
+        if (!move.damageBase || !move.type) return;
+        const hadStab = Boolean(move.damageBase.stab);
+        const hasStab = normalizedTypes.has(String(move.type).toLowerCase());
+        if (hadStab === hasStab) return;
+
+        move.damageBase.stab = hasStab;
+        adjustMoveDB(pokemon, move.name, hasStab ? 2 : -2);
+        changed = true;
+    });
+
+    if (changed) updateMovesDisplay(pokemon);
+    return changed;
+}
+
 // Toggle move usage tracking
 function toggleMoveUsage(pokemon, moveName, usageIndex) {
     const move = pokemon.moves.find(m => m.name === moveName);
@@ -205,6 +230,17 @@ function getMoveCritRollFormula(pokemon, move) {
         : `${move.damageBase.dmg}+${move.damageBase.dmg}+${attackValue}`;
 }
 
+function getMoveDamageRange(pokemon, move) {
+    if (!move.damageBase) return null;
+    const attackValue = getMoveAttackValue(pokemon, move);
+    const bonus = attackValue === null ? 0 : attackValue;
+    return {
+        min: Number(move.damageBase.min) + bonus,
+        avg: Number(move.damageBase.avg) + bonus,
+        max: Number(move.damageBase.max) + bonus
+    };
+}
+
 async function copyMoveRollFormula(button) {
     const command = `/r ${button.dataset.rollFormula}`;
 
@@ -262,6 +298,7 @@ function updateMovesDisplay(pokemon) {
         && pokemon.owlbear?.diceRoller === 'justdices';
     movesList.innerHTML = pokemon.moves.map((move, moveIndex) => {
         const isCustom = move.editable === true;
+        const damageRange = getMoveDamageRange(pokemon, move);
         if (isCustom) {
             return `
                 <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-index="${moveIndex}" data-move-name="${move.name}">
@@ -303,11 +340,20 @@ function updateMovesDisplay(pokemon) {
                         <strong>Frequency:</strong> ${move.frequency || 'N/A'}
                         ${move.frequency ? `<span class="usage-tracker" data-move-name="${move.name}"><span class="usage-label">Uses:</span><div class="usage-boxes">${Array.from({ length: /\d+/.test(move.frequency) ? parseInt(move.frequency.match(/\d+/)[0]) : 1 }, (_, i) => `<button class="usage-checkbox ${move.usageCount && move.usageCount > i ? 'checked' : ''}" data-index="${i}" title="Use #${i + 1}"></button>`).join('')}</div></span>` : ''}
                     </div>
-                    ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}"><strong>${move.damageBase.short}${move.damageBase.stab ? ' (STAB)' : ''}:</strong> ${move.damageBase.dmg}${getMoveAttackValue(pokemon, move) !== null ? ` + ${getMoveAttackValue(pokemon, move)}` : ''} (${move.damageBase.min} | <strong>${move.damageBase.avg}</strong> | ${move.damageBase.max})
-                        <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
-                        <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
-                        ${getMoveRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn" data-roll-formula="${getMoveRollFormula(pokemon, move)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll' : 'Copy'} /r ${getMoveRollFormula(pokemon, move)}">${useJustDices ? 'Roll' : 'Copy roll'}</button>` : ''}
-                        ${getMoveCritRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn crit-roll-formula-btn" data-roll-formula="${getMoveCritRollFormula(pokemon, move)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll critical' : 'Copy'} /r ${getMoveCritRollFormula(pokemon, move)}">${isOwlbearEmbedded ? 'Crit' : 'Copy crit'}</button>` : ''}
+                    ${move.damageBase ? `<div class="section-card-field db-field" data-move-name="${move.name}">
+                        <div class="db-summary">
+                            <span class="db-identity"><strong>${move.damageBase.short}</strong>${move.damageBase.stab ? '<span class="db-stab-badge">STAB</span>' : ''}</span>
+                            <span class="db-formula" title="Damage formula">${move.damageBase.dmg}${getMoveAttackValue(pokemon, move) !== null ? `<span class="db-attack-bonus"> + ${getMoveAttackValue(pokemon, move)}</span>` : ''}</span>
+                            <span class="db-range" title="Minimum | Average | Maximum, including attack stat"><span>${damageRange.min}</span><span class="db-range-separator">|</span><strong>${damageRange.avg}</strong><span class="db-range-separator">|</span><span>${damageRange.max}</span></span>
+                        </div>
+                        <div class="db-actions">
+                            <div class="db-stepper" aria-label="Adjust Damage Base">
+                                <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
+                                <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
+                            </div>
+                            ${getMoveRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn" data-roll-formula="${getMoveRollFormula(pokemon, move)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll' : 'Copy'} /r ${getMoveRollFormula(pokemon, move)}">${useJustDices ? 'Roll' : 'Copy roll'}</button>` : ''}
+                            ${getMoveCritRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn crit-roll-formula-btn" data-roll-formula="${getMoveCritRollFormula(pokemon, move)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll critical' : 'Copy'} /r ${getMoveCritRollFormula(pokemon, move)}">${isOwlbearEmbedded ? 'Crit' : 'Copy crit'}</button>` : ''}
+                        </div>
                     </div>` : ''}
                     ${move.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                 </div>

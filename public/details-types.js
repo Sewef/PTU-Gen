@@ -317,6 +317,7 @@ function showTypeModal(pokemon) {
         }
         pokemon.types = selectedTypes;
         pokemon.actualTypes = selectedTypes; // Correction pour affichage
+        if (typeof synchronizeMoveStab === 'function') synchronizeMoveStab(pokemon);
         saveSelectedPokemon(pokemon);
         updateTypesDisplay(pokemon);
         modal.remove();
@@ -380,6 +381,7 @@ function updateTypesDisplay(pokemon) {
             formeSelect.addEventListener('change', function () {
                 pokemon.types.selectedForme = this.value;
                 pokemon.actualTypes = pokemon.types.formes[this.value] || [];
+                if (typeof synchronizeMoveStab === 'function') synchronizeMoveStab(pokemon);
                 saveSelectedPokemon(pokemon);
                 updateTypesDisplay(pokemon);
             });
