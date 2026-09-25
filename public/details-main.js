@@ -462,7 +462,7 @@ function loadPokemonDetails() {
 
                 </div>
                     
-                <div>
+                <div class="stats-section">
                     <div class="stats-section-header">
                         <h3 class="section-title">📈 Stats</h3>
                         <div class="stats-buttons-group">

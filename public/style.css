@@ -3440,13 +3440,43 @@ pre {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
     margin-bottom: 7px;
 }
 
+.stats-section {
+    container-type: inline-size;
+}
+
 .stats-buttons-group {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, auto));
     gap: 5px;
     align-items: center;
+    max-width: 100%;
+}
+
+@container (max-width: 480px) {
+    .stats-section-header {
+        align-items: stretch;
+    }
+
+    .stats-section-header .section-title,
+    .stats-buttons-group {
+        flex: 1 0 100%;
+    }
+
+    .stats-buttons-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .distribution-button,
+    .remaining-points-display {
+        width: 100%;
+        min-width: 0;
+        text-align: center;
+    }
 }
 
 .level-number-input {
