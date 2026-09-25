@@ -3666,7 +3666,7 @@ body.details-page.owlbear-embedded .export-button-wrapper {
 
 .db-adjust-btn {
     padding: 2px 6px;
-    margin-left: 8px;
+    /* margin-left: 8px; */
     background: var(--bg-secondary);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
@@ -3683,7 +3683,7 @@ body.details-page.owlbear-embedded .export-button-wrapper {
 
 .copy-roll-formula-btn {
     padding: 3px 8px;
-    margin-left: 8px;
+    /* margin-left: 8px; */
     background: var(--bg-secondary);
     color: var(--primary-color);
     border: 1px solid var(--border-color);

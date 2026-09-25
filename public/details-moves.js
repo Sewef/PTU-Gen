@@ -197,6 +197,14 @@ function getMoveRollFormula(pokemon, move) {
     return attackValue === null ? null : `${move.damageBase.dmg}+${attackValue}`;
 }
 
+function getMoveCritRollFormula(pokemon, move) {
+    if (!move.damageBase?.dmg) return null;
+    const attackValue = getMoveAttackValue(pokemon, move);
+    return attackValue === null
+        ? null
+        : `${move.damageBase.dmg}+${move.damageBase.dmg}+${attackValue}`;
+}
+
 async function copyMoveRollFormula(button) {
     const command = `/r ${button.dataset.rollFormula}`;
 
@@ -249,7 +257,8 @@ async function rollMoveWithJustDices(button) {
 // Update moves display
 function updateMovesDisplay(pokemon) {
     const movesList = document.getElementById('movesList');
-    const useJustDices = document.body.classList.contains('owlbear-embedded')
+    const isOwlbearEmbedded = document.body.classList.contains('owlbear-embedded');
+    const useJustDices = isOwlbearEmbedded
         && pokemon.owlbear?.diceRoller === 'justdices';
     movesList.innerHTML = pokemon.moves.map((move, moveIndex) => {
         const isCustom = move.editable === true;
@@ -298,6 +307,7 @@ function updateMovesDisplay(pokemon) {
                         <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
                         <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
                         ${getMoveRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn" data-roll-formula="${getMoveRollFormula(pokemon, move)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll' : 'Copy'} /r ${getMoveRollFormula(pokemon, move)}">${useJustDices ? 'Roll' : 'Copy roll'}</button>` : ''}
+                        ${getMoveCritRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn crit-roll-formula-btn" data-roll-formula="${getMoveCritRollFormula(pokemon, move)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll critical' : 'Copy'} /r ${getMoveCritRollFormula(pokemon, move)}">${isOwlbearEmbedded ? 'Crit' : 'Copy crit'}</button>` : ''}
                     </div>` : ''}
                     ${move.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                 </div>
