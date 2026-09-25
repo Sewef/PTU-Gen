@@ -1,5 +1,20 @@
+const pokemonStorageKey = new URLSearchParams(window.location.search).get('pokemonKey') || 'selectedPokemon';
+
+function saveSelectedPokemon(pokemon) {
+    PTUPokemonStorage.save(pokemon);
+    localStorage.setItem(pokemonStorageKey, JSON.stringify(pokemon));
+
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: 'ptu-pokemon-updated',
+            storageKey: pokemonStorageKey,
+            pokemon
+        }, window.location.origin);
+    }
+}
+
 function loadPokemonDetails() {
-    const pokemon = JSON.parse(localStorage.getItem('selectedPokemon'));
+    const pokemon = JSON.parse(localStorage.getItem(pokemonStorageKey));
 
     if (!pokemon) {
         document.getElementById('pokemonDisplay').innerHTML = '<div class="error">❌ No Pokémon data found. Please generate a Pokémon first.</div>';
@@ -9,7 +24,7 @@ function loadPokemonDetails() {
     // Clean up Pokémon saved before the multiplier switch was removed.
     if (Object.prototype.hasOwnProperty.call(pokemon, 'typeMultiplierMode')) {
         delete pokemon.typeMultiplierMode;
-        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        saveSelectedPokemon(pokemon);
     }
 
 
@@ -20,6 +35,14 @@ function loadPokemonDetails() {
 
     if (!pokemon.pokeEdges) {
         pokemon.pokeEdges = [];
+    }
+
+    if (!pokemon.combatStages || typeof pokemon.combatStages !== 'object') {
+        pokemon.combatStages = {};
+    }
+
+    if (!pokemon.captureState || typeof pokemon.captureState !== 'object') {
+        pokemon.captureState = {};
     }
 
     if (pokemon.tutorPoints === undefined || pokemon.tutorPoints === null) {
@@ -45,6 +68,9 @@ function loadPokemonDetails() {
             pokemon.hitPoints = pokemon.hitPointsMax;
         }
     }
+
+    // Keep every opened sheet restorable, including imported legacy Pokémon.
+    saveSelectedPokemon(pokemon);
 
     // Debug: log the pokemon object structure
     console.log('Pokemon object:', pokemon);
@@ -294,13 +320,13 @@ function loadPokemonDetails() {
                                 </div>
                                 
                                 <!-- Shiny (Automatic) -->
-                                <div class="modifier-item" id="shinyItem" style="display: none;" title="Pokemon is Shiny">
+                                <div class="modifier-item" id="shinyItem" style="display: none;" title="Pokémon is Shiny">
                                     <span class="modifier-label">Shiny:</span>
                                     <span class="modifier-value">-10</span>
                                 </div>
                                 
                                 <!-- Legendary (Automatic) -->
-                                <div class="modifier-item" id="legendaryItem" style="display: none;" title="Pokemon is Legendary">
+                                <div class="modifier-item" id="legendaryItem" style="display: none;" title="Pokémon is Legendary">
                                     <span class="modifier-label">Legendary:</span>
                                     <span class="modifier-value">-30</span>
                                 </div>
@@ -688,7 +714,7 @@ function loadPokemonDetails() {
                 ${!isHP ? `
                     <div class="stat-breakdown-component">
                         <label>CS</label>
-                        <input type="number" class="cs-input" data-stat="${statName}" min="-6" max="6" value="0" />
+                        <input type="number" class="cs-input" data-stat="${statName}" min="-6" max="6" value="${pokemon.combatStages[statName] || 0}" />
                     </div>
                 ` : ''}
                 <div class="stat-breakdown-component total">
@@ -726,7 +752,7 @@ function loadPokemonDetails() {
                     pokemon.ignoreBaseRelation = ignoredStats.length === 0 ? undefined : ignoredStats.join(',');
                 }
             }
-            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            saveSelectedPokemon(pokemon);
             loadPokemonDetails();
         });
     });
@@ -737,13 +763,10 @@ function loadPokemonDetails() {
             updateStatTotal(e);
             updateRemainingPoints(pokemon);
         });
-        // Also listen to 'input' event for real-time updates of remaining points
-        if (input.classList.contains('level-points-input')) {
-            input.addEventListener('input', function (e) {
-                updateStatTotal(e);
-                updateRemainingPoints(pokemon);
-            });
-        }
+        input.addEventListener('input', function (e) {
+            updateStatTotal(e);
+            updateRemainingPoints(pokemon);
+        });
     });
 
     // Initial update of remaining points
@@ -770,7 +793,8 @@ function loadPokemonDetails() {
 
         // Keep the model and move damage rolls synchronized with edited stats.
         pokemon.stats[statName] = subtotal;
-        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        if (csInput) pokemon.combatStages[statName] = Math.max(-6, Math.min(6, cs));
+        saveSelectedPokemon(pokemon);
         if ((statName === 'atk' || statName === 'spA') && document.getElementById('movesList')) {
             updateMovesDisplay(pokemon);
         }
@@ -778,10 +802,17 @@ function loadPokemonDetails() {
 
     // Handle capability value changes
     document.querySelectorAll('.capability-value-input').forEach(input => {
-        input.addEventListener('change', function () {
-            // Just update the value - it's already modifiable
-            // Values persist in the input element
-        });
+        const persistCapability = function () {
+            const index = Number(this.dataset.index);
+            const capability = pokemon.capabilities[index];
+            const match = capability?.match(/^(.+?)\s+[\d/]+$/);
+            if (match) {
+                pokemon.capabilities[index] = `${match[1]} ${this.value}`;
+                saveSelectedPokemon(pokemon);
+            }
+        };
+        input.addEventListener('input', persistCapability);
+        input.addEventListener('change', persistCapability);
     });
 
     // Handle capability without value changes
@@ -792,13 +823,16 @@ function loadPokemonDetails() {
             capNoValueInput.style.height = `${capNoValueInput.scrollHeight}px`;
         };
 
-        capNoValueInput.addEventListener('input', resizeCapNoValueInput);
-        capNoValueInput.addEventListener('change', function () {
+        const persistCapabilities = function () {
+            resizeCapNoValueInput();
             // Accept comma-separated capabilities as well as one capability per line.
             const capabilitiesWithValues = pokemon.capabilities.filter(cap => /^.+\s+[\d/]+$/.test(cap));
             const newCapNoValues = this.value.split(/[,\n]+/).map(s => s.trim()).filter(s => s.length > 0);
             pokemon.capabilities = [...capabilitiesWithValues, ...newCapNoValues];
-        });
+            saveSelectedPokemon(pokemon);
+        };
+        capNoValueInput.addEventListener('input', persistCapabilities);
+        capNoValueInput.addEventListener('change', persistCapabilities);
 
         resizeCapNoValueInput();
     }
@@ -851,7 +885,7 @@ function loadPokemonDetails() {
     if (hpCurrentInput) {
         hpCurrentInput.addEventListener('change', function () {
             pokemon.hitPoints = parseIntegerInputValue(this.value, 0);
-            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            saveSelectedPokemon(pokemon);
         });
     }
 
@@ -884,6 +918,7 @@ function loadPokemonDetails() {
         nicknameInput.addEventListener('input', function () {
             pokemon.nickname = this.value;
             updateDisplayName(pokemon);
+            saveSelectedPokemon(pokemon);
         });
     }
 
@@ -911,7 +946,7 @@ function loadPokemonDetails() {
             visible: detailsOwlbearVisible ? detailsOwlbearVisible.checked : true,
             playerId: detailsOwlbearPlayerId ? detailsOwlbearPlayerId.value.trim() : ''
         };
-        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        saveSelectedPokemon(pokemon);
     };
 
     const hydrateOwlbearConfigControls = () => {
@@ -930,9 +965,11 @@ function loadPokemonDetails() {
             if (!row) return;
             const baseStatEl = row.querySelector('.base-stat-value');
             const levelInput = row.querySelector('.level-points-input');
+            const csInput = row.querySelector('.cs-input');
             const effectiveBase = parseInt(baseStatEl?.textContent) || 0;
             const levelPts = parseInt(levelInput?.value) || 0;
             pokemon.stats[statName] = effectiveBase + levelPts;
+            if (csInput) pokemon.combatStages[statName] = Math.max(-6, Math.min(6, parseInt(csInput.value) || 0));
         });
         // Sync current HP from input (don't overwrite with calculated max)
         const hpCurrentInput = document.getElementById('hpCurrentInput');
@@ -1169,7 +1206,7 @@ function setupDamageControls(pokemon) {
         const currentHp = parseIntegerInputValue(hpCurrentInput.value, 0);
         pokemon.hitPoints = currentHp - damage.finalDamage;
         hpCurrentInput.value = pokemon.hitPoints;
-        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        saveSelectedPokemon(pokemon);
         hpCurrentInput.dispatchEvent(new Event('input', { bubbles: true }));
         hpCurrentInput.dispatchEvent(new Event('change', { bubbles: true }));
         updatePreview();
@@ -1203,6 +1240,30 @@ async function setupCaptureRateCalculator(pokemon) {
     const errataCheckboxes = document.querySelectorAll('.errata-checkbox:not(.errata-double)');
     const errataDoubleCheckboxes = document.querySelectorAll('.errata-checkbox.errata-double');
     const errataRarityInput = document.getElementById('errata2015RarityBonus');
+    const savedCaptureState = pokemon.captureState || {};
+
+    errata2015Toggle.checked = Boolean(savedCaptureState.useErrata);
+    statusCountInputs.forEach(input => {
+        input.value = savedCaptureState.standardCounts?.[input.dataset.type] ?? 0;
+    });
+    statusCheckboxes.forEach(checkbox => {
+        checkbox.checked = Boolean(savedCaptureState.standardFlags?.[checkbox.dataset.type]);
+    });
+    errataCheckboxes.forEach(checkbox => {
+        checkbox.checked = Boolean(savedCaptureState.errataFlags?.[checkbox.dataset.type]);
+    });
+    if (errataRarityInput) errataRarityInput.value = savedCaptureState.rarityBonus ?? 0;
+
+    const persistCaptureState = () => {
+        pokemon.captureState = {
+            useErrata: errata2015Toggle.checked,
+            standardCounts: Object.fromEntries(Array.from(statusCountInputs, input => [input.dataset.type, parseInt(input.value) || 0])),
+            standardFlags: Object.fromEntries(Array.from(statusCheckboxes, checkbox => [checkbox.dataset.type, checkbox.checked])),
+            errataFlags: Object.fromEntries(Array.from(errataCheckboxes, checkbox => [checkbox.dataset.type, checkbox.checked])),
+            rarityBonus: parseInt(errataRarityInput?.value) || 0
+        };
+        saveSelectedPokemon(pokemon);
+    };
 
     // Determine evolution stages remaining
     let evolutionStagesRemaining = 0;
@@ -1410,21 +1471,32 @@ async function setupCaptureRateCalculator(pokemon) {
         }
     };
 
-    errata2015Toggle.addEventListener('change', toggleSystem);
+    errata2015Toggle.addEventListener('change', () => {
+        toggleSystem();
+        persistCaptureState();
+    });
 
     // Attach listeners for standard system
     statusCountInputs.forEach(input => {
-        input.addEventListener('input', updateCaptureRateStandard);
-        input.addEventListener('change', updateCaptureRateStandard);
+        input.addEventListener('input', () => {
+            updateCaptureRateStandard();
+            persistCaptureState();
+        });
     });
 
     statusCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateCaptureRateStandard);
+        checkbox.addEventListener('change', () => {
+            updateCaptureRateStandard();
+            persistCaptureState();
+        });
     });
 
     // Attach listeners for errata 2015 system
     errataCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateCaptureRateErrata2015);
+        checkbox.addEventListener('change', () => {
+            updateCaptureRateErrata2015();
+            persistCaptureState();
+        });
     });
 
     errataDoubleCheckboxes.forEach(checkbox => {
@@ -1432,8 +1504,10 @@ async function setupCaptureRateCalculator(pokemon) {
     });
 
     if (errataRarityInput) {
-        errataRarityInput.addEventListener('input', updateCaptureRateErrata2015);
-        errataRarityInput.addEventListener('change', updateCaptureRateErrata2015);
+        errataRarityInput.addEventListener('input', () => {
+            updateCaptureRateErrata2015();
+            persistCaptureState();
+        });
     }
 
     // Listen to HP changes
@@ -1441,6 +1515,7 @@ async function setupCaptureRateCalculator(pokemon) {
     if (hpCurrentInput) {
         hpCurrentInput.addEventListener('input', function () {
             pokemon.hitPoints = parseIntegerInputValue(this.value, 0);
+            saveSelectedPokemon(pokemon);
             const updateFn = errata2015Toggle.checked ? updateCaptureRateErrata2015 : updateCaptureRateStandard;
             updateFn();
         });
@@ -1451,8 +1526,8 @@ async function setupCaptureRateCalculator(pokemon) {
         });
     }
 
-    // Initial calculation
-    updateCaptureRateStandard();
+    // Initial calculation and restored calculator mode.
+    toggleSystem();
 }
 
 window.addEventListener('load', function () {

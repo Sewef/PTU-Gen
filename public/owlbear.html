@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <title>PTU Pokémon Generator</title>
+    <link rel="icon" href="owlbear-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="owlbear.css">
+</head>
+<body>
+    <main class="extension-shell">
+        <header class="extension-header">
+            <div class="extension-brand" aria-label="PTU Pokémon Generator">
+                <img src="owlbear-icon.svg" alt="" width="24" height="24">
+                <span>PTU Gen</span>
+            </div>
+            <nav id="tabList" class="tab-list" aria-label="Pokémon tabs" role="tablist">
+                <button class="extension-tab is-active" id="tab-home" data-tab-id="home" role="tab" aria-selected="true">
+                    <span class="tab-home-icon" aria-hidden="true">⌂</span>
+                    <span>Home</span>
+                </button>
+            </nav>
+        </header>
+
+        <section id="panelList" class="panel-list">
+            <div class="extension-panel is-active" id="panel-home" data-panel-id="home" role="tabpanel" aria-labelledby="tab-home">
+                <iframe src="index.html?owlbear=true" title="PTU Pokémon generator"></iframe>
+            </div>
+        </section>
+    </main>
+    <script src="pokemon-storage.js"></script>
+    <script src="owlbear.js"></script>
+</body>
+</html>

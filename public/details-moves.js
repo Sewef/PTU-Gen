@@ -174,7 +174,7 @@ function addBlankMove(pokemon) {
     };
 
     pokemon.moves.push(blankMove);
-    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    saveSelectedPokemon(pokemon);
     updateMovesDisplay(pokemon);
 }
 
@@ -289,13 +289,13 @@ function updateMovesDisplay(pokemon) {
             move.name = this.value;
             card.setAttribute('data-move-name', move.name);
             card.querySelector('.usage-tracker')?.setAttribute('data-move-name', move.name);
-            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            saveSelectedPokemon(pokemon);
         });
 
         card.querySelectorAll('.custom-move-field-input').forEach(input => {
             input.addEventListener('input', function () {
                 move[this.getAttribute('data-field')] = this.value;
-                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+                saveSelectedPokemon(pokemon);
             });
         });
     });

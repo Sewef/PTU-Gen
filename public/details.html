@@ -7,6 +7,7 @@
     <title id="pageTitle">Pokémon Details</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" id="dynamicFavicon" type="image/png" href="" crossOrigin="anonymous">
+    <script src="pokemon-storage.js"></script>
     <script src="theme.js" defer></script>
     <script src="export.js"></script>
     <script src="export-roll20.js"></script>
@@ -15,6 +16,11 @@
 </head>
 
 <body class="details-page">
+    <script>
+        if (new URLSearchParams(window.location.search).get('embedded') === 'true') {
+            document.body.classList.add('owlbear-embedded');
+        }
+    </script>
     <div class="container">
         <div class="header">
             <div class="header-top">

@@ -55,13 +55,16 @@ function setupPokeEdgesEditor(pokemon) {
         tutorPointsInput.value = pokemon.tutorPoints;
         updateTutorPointsCounter(pokemon);
         tutorPointsInput.addEventListener('input', function () {
+            pokemon.tutorPoints = parseInt(this.value, 10) || 0;
+            pokemon.tutorPointsManual = true;
             updateTutorPointsCounter(pokemon);
+            saveSelectedPokemon(pokemon);
         });
         tutorPointsInput.addEventListener('change', function () {
             pokemon.tutorPoints = parseInt(this.value, 10) || 0;
             pokemon.tutorPointsManual = true;
             updateTutorPointsCounter(pokemon);
-            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            saveSelectedPokemon(pokemon);
         });
     }
 
@@ -143,7 +146,7 @@ function addPokeEdge(pokemon, edgeData) {
         removePokeEdge(pokemon, edgeData.name);
     } else {
         pokemon.pokeEdges.push(edgeData);
-        localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+        saveSelectedPokemon(pokemon);
         updatePokeEdgesDisplay(pokemon);
     }
 
@@ -178,13 +181,13 @@ function addBlankPokeEdge(pokemon) {
         effect: '',
         editable: true
     });
-    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    saveSelectedPokemon(pokemon);
     updatePokeEdgesDisplay(pokemon);
 }
 
 function removePokeEdge(pokemon, edgeName) {
     pokemon.pokeEdges = pokemon.pokeEdges.filter(edge => edge.name !== edgeName);
-    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    saveSelectedPokemon(pokemon);
     updatePokeEdgesDisplay(pokemon);
 }
 
@@ -241,7 +244,7 @@ function updatePokeEdgesDisplay(pokemon) {
             const edge = pokemon.pokeEdges.find(item => item.name === previousName);
             if (!edge) return;
             edge.name = input.value.trim() || previousName;
-            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            saveSelectedPokemon(pokemon);
             updatePokeEdgesDisplay(pokemon);
         });
     });
@@ -253,7 +256,7 @@ function updatePokeEdgesDisplay(pokemon) {
             if (!edge) return;
             edge[input.dataset.field] = input.value.trim();
             updateTutorPointsCounter(pokemon);
-            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            saveSelectedPokemon(pokemon);
         });
     });
 

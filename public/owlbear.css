@@ -1,0 +1,164 @@
+:root {
+    color-scheme: dark;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #11131a;
+    color: #f1f5f9;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+.extension-shell {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+.extension-shell {
+    display: grid;
+    grid-template-rows: 48px minmax(0, 1fr);
+    background: #171a23;
+}
+
+.extension-header {
+    display: flex;
+    min-width: 0;
+    align-items: stretch;
+    gap: 8px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #343947;
+    background: #20242f;
+    box-shadow: 0 2px 10px rgb(0 0 0 / 25%);
+    z-index: 2;
+}
+
+.extension-brand {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    padding: 0 8px 0 2px;
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 750;
+    letter-spacing: .01em;
+    border-right: 1px solid #3a3f4e;
+}
+
+.tab-list {
+    display: flex;
+    min-width: 0;
+    align-items: stretch;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.extension-tab {
+    display: inline-flex;
+    flex: 0 0 auto;
+    max-width: 190px;
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #aeb6c7;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.extension-tab:hover {
+    background: #2a2f3c;
+    color: #fff;
+}
+
+.extension-tab.is-active {
+    border-color: #5369c9;
+    background: #303b6b;
+    color: #fff;
+}
+
+.tab-icon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+
+.tab-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tab-close {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    margin-right: -5px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.tab-close:hover {
+    background: rgb(255 255 255 / 16%);
+}
+
+.panel-list,
+.extension-panel,
+.extension-panel iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.extension-panel {
+    display: none;
+    background: #fff;
+}
+
+.extension-panel.is-active {
+    display: block;
+}
+
+.extension-panel iframe {
+    display: block;
+    border: 0;
+    background: #fff;
+}
+
+@media (max-width: 560px) {
+    .extension-header {
+        gap: 4px;
+    }
+
+    .extension-brand span {
+        display: none;
+    }
+
+    .extension-brand {
+        padding-right: 6px;
+    }
+
+    .extension-tab {
+        max-width: 150px;
+        padding-inline: 8px;
+    }
+}

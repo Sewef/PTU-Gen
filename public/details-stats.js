@@ -173,7 +173,7 @@ function setupLevelEditor(pokemon) {
             }
 
             // Save to localStorage
-            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            saveSelectedPokemon(pokemon);
         } else {
             this.value = pokemon.level;
         }
@@ -222,7 +222,7 @@ function setupHPFormulaEditor(pokemon) {
             if (hpCurrentInput) hpCurrentInput.value = newHP;
             const hpMaxDisplay = document.getElementById('hpMaxDisplay');
             if (hpMaxDisplay) hpMaxDisplay.textContent = newHP;
-            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            saveSelectedPokemon(pokemon);
             hpFormulaInput.style.borderColor = '#28a745';
             hpFormulaInput.style.backgroundColor = '#f0fff4';
             setTimeout(() => {
@@ -288,6 +288,7 @@ function recalculateStatsWithDistribution(pokemon, distribution) {
     updateStatsDisplay(pokemon);
     updateRemainingPoints(pokemon);
     updateHPDisplay(pokemon);
+    saveSelectedPokemon(pokemon);
 }
 
 // Update stats display after recalculation

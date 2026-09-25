@@ -4,13 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTU Pokemon Generator</title>
+    <title>PTU Pokémon Generator</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="style.css">
     <script src="theme.js" defer></script>
 </head>
 
 <body>
+    <script>
+        if (new URLSearchParams(window.location.search).get('owlbear') === 'true') {
+            document.body.classList.add('owlbear-embedded');
+        }
+    </script>
     <div class="container">
         <div class="header">
             <h1 class="header-title">
@@ -321,6 +326,17 @@
             <!-- Pokémon Display -->
             <div class="panel">
 
+                <section id="pokemonHistorySection" class="pokemon-history-section" hidden>
+                    <div class="pokemon-history-header">
+                        <div>
+                            <h3>Recent Pokémon</h3>
+                            <p>Reopen your generated and edited Pokémon.</p>
+                        </div>
+                        <button type="button" id="clearPokemonHistoryBtn" class="history-clear-btn">Clear history</button>
+                    </div>
+                    <div id="pokemonHistoryDisplay" class="pokemon-history-grid"></div>
+                </section>
+
                 <!-- Import Section with Drag and Drop -->
                 <div style="margin-bottom: 30px;">
                     <h3 class="import-section-title">📥 Import Pokémon</h3>
@@ -406,6 +422,7 @@
         </div>
     </div>
 
+    <script src="pokemon-storage.js"></script>
     <script src="export.js"></script>
     <script src="export-roll20.js"></script>
     <script src="export-pokesheets.js"></script>
@@ -426,6 +443,9 @@
         const datasetSelect = document.getElementById('dataset');
         const fandexContainer = document.getElementById('fandexContainer');
         const fandexCheckboxes = document.getElementById('fandexCheckboxes');
+        const pokemonHistorySection = document.getElementById('pokemonHistorySection');
+        const pokemonHistoryDisplay = document.getElementById('pokemonHistoryDisplay');
+        const clearPokemonHistoryBtn = document.getElementById('clearPokemonHistoryBtn');
         const SETTINGS_STORAGE_KEY = 'ptu-generator-preferences-v1';
         const SETTINGS_DEFAULTS = {
             dataset: 'core',
@@ -442,6 +462,74 @@
             owlbearVisible: true,
             owlbearPlayerId: ''
         };
+
+        function openStoredPokemon(recordId) {
+            const pokemon = PTUPokemonStorage.load(recordId);
+            if (!pokemon) {
+                renderPokemonHistory();
+                return;
+            }
+
+            if (new URLSearchParams(window.location.search).get('owlbear') === 'true' && window.parent !== window) {
+                window.parent.postMessage({ type: 'ptu-open-pokemon', pokemon }, window.location.origin);
+                return;
+            }
+
+            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            window.open('details.html', '_blank');
+        }
+
+        function renderPokemonHistory() {
+            const history = PTUPokemonStorage.list();
+            pokemonHistorySection.hidden = history.length === 0;
+            pokemonHistoryDisplay.replaceChildren();
+
+            history.slice(0, 12).forEach(entry => {
+                const card = document.createElement('article');
+                card.className = 'pokemon-history-card';
+
+                const openButton = document.createElement('button');
+                openButton.type = 'button';
+                openButton.className = 'pokemon-history-open';
+                openButton.addEventListener('click', () => openStoredPokemon(entry.id));
+
+                const icon = document.createElement('img');
+                icon.src = entry.icon;
+                icon.alt = '';
+                icon.className = 'pokemon-history-icon';
+
+                const text = document.createElement('span');
+                text.className = 'pokemon-history-text';
+
+                const title = document.createElement('strong');
+                title.textContent = entry.nickname ? `${entry.nickname} (${entry.name})` : entry.name;
+
+                const meta = document.createElement('small');
+                meta.textContent = `Lv. ${entry.level}`;
+                text.append(title, meta);
+                openButton.append(icon, text);
+
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'pokemon-history-remove';
+                removeButton.setAttribute('aria-label', `Remove ${title.textContent} from history`);
+                removeButton.textContent = '×';
+                removeButton.addEventListener('click', () => PTUPokemonStorage.remove(entry.id));
+
+                card.append(openButton, removeButton);
+                pokemonHistoryDisplay.appendChild(card);
+            });
+        }
+
+        clearPokemonHistoryBtn.addEventListener('click', () => {
+            if (confirm('Clear the entire Pokémon history? Open Owlbear tabs will not be closed.')) {
+                PTUPokemonStorage.clear();
+            }
+        });
+        window.addEventListener('ptu-history-updated', renderPokemonHistory);
+        window.addEventListener('storage', event => {
+            if (event.key === PTUPokemonStorage.HISTORY_KEY) renderPokemonHistory();
+        });
 
         function readStoredSettings() {
             try {
@@ -1357,6 +1445,11 @@
             const pokemon = JSON.parse(sessionStorage.getItem(`pokemon_${index}`));
             if (pokemon) {
                 delete pokemon.typeMultiplierMode;
+                PTUPokemonStorage.save(pokemon);
+                if (new URLSearchParams(window.location.search).get('owlbear') === 'true' && window.parent !== window) {
+                    window.parent.postMessage({ type: 'ptu-open-pokemon', pokemon }, window.location.origin);
+                    return;
+                }
                 // Store in localStorage for the new tab
                 localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
                 window.open('details.html', '_blank');
@@ -1680,6 +1773,7 @@
             loadTypeList(selectedDataset);
             loadNatures();
             loadFandexList();
+            renderPokemonHistory();
             // Optional: auto-generate
             // generatePokemon();
         });

@@ -1,11 +1,12 @@
 function setupSkillsEditor(pokemon) {
     document.querySelectorAll('.skill-input').forEach(input => {
-        input.addEventListener('change', function () {
+        input.addEventListener('input', function () {
             const skillName = this.getAttribute('data-skill-name');
             const newValue = this.value.trim();
             
             if (skillName && pokemon.skills) {
                 pokemon.skills[skillName] = newValue;
+                saveSelectedPokemon(pokemon);
             }
         });
     });
@@ -14,7 +15,7 @@ function setupSkillsEditor(pokemon) {
 // Update capabilities display
 function updateCapabilitiesDisplay(pokemon) {
     // Save the updated pokemon to localStorage before reloading
-    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    saveSelectedPokemon(pokemon);
     
     // Simply reload the entire pokemon details
     loadPokemonDetails();
@@ -138,7 +139,7 @@ function addBlankAbility(pokemon) {
     };
     
     pokemon.abilities.push(blankAbility);
-    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    saveSelectedPokemon(pokemon);
     updateAbilitiesDisplay(pokemon);
 }
 
@@ -244,13 +245,13 @@ function updateAbilitiesDisplay(pokemon) {
         nameInput?.addEventListener('input', function () {
             ability.name = this.value;
             card.setAttribute('data-ability-name', ability.name);
-            localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+            saveSelectedPokemon(pokemon);
         });
 
         card.querySelectorAll('.custom-ability-field-input').forEach(input => {
             input.addEventListener('input', function () {
                 ability[this.getAttribute('data-field')] = this.value;
-                localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+                saveSelectedPokemon(pokemon);
             });
         });
     });
