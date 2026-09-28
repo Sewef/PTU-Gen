@@ -1025,10 +1025,14 @@ button {
     margin: 15px 0;
     min-width: 0;
     container-type: inline-size;
+    padding: 8px 10px;
+    background: var(--bg-tertiary);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 5px;
 }
 
 .stat-breakdown-row {
-    background: var(--bg-tertiary);
+    background: var(--bg-main);
     border: 1px solid var(--border-color);
     border-radius: 5px;
     padding: 8px;
@@ -4251,6 +4255,7 @@ body.details-page {
 .details-page .stats-breakdown {
     gap: 2px;
     margin: 3px 0;
+    padding: 8px 10px;
 }
 
 .details-page .stat-breakdown-row {

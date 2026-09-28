@@ -82,11 +82,15 @@ function getCapabilityName(capability) {
     return String(capability || '').replace(/\s+[\d/]+$/, '').trim();
 }
 
-function getStruggleTypeCapability(pokemon) {
+function getStruggleTypeCapabilities(pokemon) {
     const capabilities = Array.isArray(pokemon.capabilities) ? pokemon.capabilities : [];
-    return STRUGGLE_CAPABILITY_TYPES.find(option =>
+    return STRUGGLE_CAPABILITY_TYPES.filter(option =>
         capabilities.some(capability => getCapabilityName(capability).toLowerCase() === option.capability.toLowerCase())
-    ) || null;
+    );
+}
+
+function getStruggleTypeOptions(pokemon) {
+    return ['Normal', ...getStruggleTypeCapabilities(pokemon).map(option => option.type)];
 }
 
 function getDefaultStruggleClass(pokemon) {
@@ -101,15 +105,16 @@ function getDefaultStruggleClass(pokemon) {
 
 function ensureStruggleMove(pokemon) {
     const defaults = getDefaultStruggleValues(pokemon);
-    const typeCapability = getStruggleTypeCapability(pokemon);
+    const typeCapabilities = getStruggleTypeCapabilities(pokemon);
+    const defaultTypedCapability = typeCapabilities[0];
     const struggle = pokemon.struggle && typeof pokemon.struggle === 'object'
         ? pokemon.struggle
         : {};
 
-    if (!struggle.class || (typeCapability && !struggle.classModified)) {
-        struggle.class = typeCapability ? getDefaultStruggleClass(pokemon) : 'physical';
+    if (!struggle.class || (typeCapabilities.length > 0 && !struggle.classModified)) {
+        struggle.class = typeCapabilities.length > 0 ? getDefaultStruggleClass(pokemon) : 'physical';
     }
-    if (!struggle.typeModified) struggle.type = typeCapability?.type || 'Normal';
+    if (!struggle.typeModified) struggle.type = defaultTypedCapability?.type || 'Normal';
     if (!struggle.acModified) struggle.ac = defaults.ac;
     if (!struggle.damageBase || !struggle.dbModified) struggle.damageBase = createDamageBase(defaults.db);
 
@@ -140,13 +145,14 @@ function toggleStruggleClass(pokemon) {
 }
 
 function toggleStruggleType(pokemon) {
-    const typeCapability = getStruggleTypeCapability(pokemon);
-    if (!typeCapability) return;
+    const typeOptions = getStruggleTypeOptions(pokemon);
+    if (typeOptions.length <= 1) return;
 
     const struggle = ensureStruggleMove(pokemon);
-    struggle.type = String(struggle.type || 'Normal').toLowerCase() === typeCapability.type.toLowerCase()
-        ? 'Normal'
-        : typeCapability.type;
+    const currentIndex = typeOptions.findIndex(type =>
+        type.toLowerCase() === String(struggle.type || 'Normal').toLowerCase()
+    );
+    struggle.type = typeOptions[(currentIndex + 1) % typeOptions.length];
     struggle.typeModified = true;
     saveSelectedPokemon(pokemon);
     updateMovesDisplay(pokemon);
@@ -183,13 +189,14 @@ function renderMoveClassBadge(move) {
 }
 
 function renderStruggleTypeBadge(pokemon, struggle) {
-    const typeCapability = getStruggleTypeCapability(pokemon);
+    const typeCapabilities = getStruggleTypeCapabilities(pokemon);
     const typeClass = String(struggle.type || 'Normal').toLowerCase().replace(' ', '-');
-    if (!typeCapability) {
+    if (typeCapabilities.length === 0) {
         return `<span class="move-badge type-${typeClass}">${struggle.type || 'Normal'}</span>`;
     }
 
-    return `<button class="move-badge struggle-type-toggle struggle-type-modifiable type-${typeClass}" type="button" title="${typeCapability.capability}: switch Normal/${typeCapability.type}">${struggle.type || 'Normal'}</button>`;
+    const typeList = getStruggleTypeOptions(pokemon).join(' / ');
+    return `<button class="move-badge struggle-type-toggle struggle-type-modifiable type-${typeClass}" type="button" title="Cycle Struggle type: ${typeList}">${struggle.type || 'Normal'}</button>`;
 }
 
 function shouldDisplayMoveEffect(effect) {

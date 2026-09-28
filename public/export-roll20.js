@@ -122,14 +122,14 @@ function getRoll20Struggle(pokemon) {
     const defaultDB = combatRank >= 5 ? 5 : 4;
     const defaultAC = combatRank >= 5 ? 3 : 4;
     const stored = pokemon.struggle || {};
-    const typeCapability = getRoll20StruggleTypeCapability(pokemon);
+    const typeCapabilities = getRoll20StruggleTypeCapabilities(pokemon);
     const dbMatch = String(stored.damageBase?.short || '').match(/DB(\d+)/i);
-    const defaultClass = typeCapability && Number(pokemon.stats?.spA || 0) > Number(pokemon.stats?.atk || 0)
+    const defaultClass = typeCapabilities.length > 0 && Number(pokemon.stats?.spA || 0) > Number(pokemon.stats?.atk || 0)
         ? 'Special'
         : 'Physical';
 
     return {
-        type: stored.typeModified ? (stored.type || 'Normal') : (typeCapability?.type || 'Normal'),
+        type: stored.typeModified ? (stored.type || 'Normal') : (typeCapabilities[0]?.type || 'Normal'),
         class: String(stored.classModified ? stored.class : defaultClass).toLowerCase() === 'special' ? 'Special' : 'Physical',
         db: dbMatch ? parseInt(dbMatch[1], 10) : defaultDB,
         ac: stored.ac || defaultAC,
@@ -137,7 +137,7 @@ function getRoll20Struggle(pokemon) {
     };
 }
 
-function getRoll20StruggleTypeCapability(pokemon) {
+function getRoll20StruggleTypeCapabilities(pokemon) {
     const options = [
         { capability: 'Zapper', type: 'Electric' },
         { capability: 'Firestarter', type: 'Fire' },
@@ -147,11 +147,11 @@ function getRoll20StruggleTypeCapability(pokemon) {
         { capability: 'Materializer', type: 'Rock' }
     ];
     const capabilities = Array.isArray(pokemon.capabilities) ? pokemon.capabilities : [];
-    return options.find(option =>
+    return options.filter(option =>
         capabilities.some(capability =>
             String(capability || '').replace(/\s+[\d/]+$/, '').trim().toLowerCase() === option.capability.toLowerCase()
         )
-    ) || null;
+    );
 }
 
 /**
