@@ -1500,6 +1500,7 @@
         }
 
         function displayMultiplePokemon(pokemons) {
+            pokemonDisplay.classList.remove('no-pokemon');
             let html = '<div class="pokemon-cards-grid">';
 
             pokemons.forEach((pokemon, index) => {

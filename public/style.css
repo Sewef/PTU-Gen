@@ -2036,15 +2036,15 @@ body.owlbear-embedded .owlbear-embed-only {
 
 .pokemon-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
-    padding: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: 7px;
+    padding: 7px;
 }
 
 .pokemon-card {
     background: var(--bg-main);
-    border-radius: 8px;
-    padding: 8px;
+    border-radius: 6px;
+    padding: 6px;
     box-shadow: 0 2px 6px var(--shadow-color);
     cursor: pointer;
     transition: all 0.3s;
@@ -2059,14 +2059,14 @@ body.owlbear-embedded .owlbear-embed-only {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    margin-bottom: 6px;
+    gap: 4px;
+    margin-bottom: 4px;
     width: 100%;
 }
 
 .pokemon-card-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     object-fit: none;
     flex-shrink: 0;
 }
@@ -2078,26 +2078,26 @@ body.owlbear-embedded .owlbear-embed-only {
 }
 
 .pokemon-card-number {
-    font-size: 0.75em;
+    font-size: 0.68em;
     color: var(--text-tertiary);
     font-weight: 500;
 }
 
 .pokemon-card-name {
-    font-size: 0.9em;
+    font-size: 0.8em;
     font-weight: bold;
     color: var(--text-primary);
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     line-height: 1.2;
 }
 
 .pokemon-card-info {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
     justify-content: center;
-    margin-bottom: 4px;
-    font-size: 0.75em;
+    margin-bottom: 3px;
+    font-size: 0.68em;
 }
 
 .pokemon-card-level {
@@ -2107,15 +2107,15 @@ body.owlbear-embedded .owlbear-embed-only {
 
 .pokemon-card-types {
     display: flex;
-    gap: 3px;
+    gap: 2px;
     flex-wrap: wrap;
     justify-content: center;
     width: 100%;
 }
 
 .pokemon-card-type {
-    font-size: 0.65em;
-    padding: 2px 6px;
+    font-size: 0.58em;
+    padding: 2px 5px;
     border-radius: 10px;
     color: white;
     font-weight: 600;
@@ -2198,6 +2198,13 @@ body.owlbear-embedded .owlbear-embed-only {
     padding: 40px 20px;
     color: var(--text-tertiary);
     font-size: 1.1em;
+}
+
+.no-pokemon:has(.pokemon-cards-grid) {
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+    text-align: initial;
 }
 
 .details-content {
