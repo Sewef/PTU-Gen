@@ -14,7 +14,7 @@
   "permissions": [
     {
       "name": "clipboard-write",
-      "reason": "Copy generated Owlbear token data to the clipboard."
+      "reason": "Copy generated Owlbear token data and rolls to the clipboard."
     }
   ]
 }
