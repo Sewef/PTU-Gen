@@ -932,6 +932,9 @@ function loadPokemonDetails() {
             if (match) {
                 pokemon.capabilities[index] = `${match[1]} ${this.value}`;
                 saveSelectedPokemon(pokemon);
+                if (document.getElementById('movesList') && typeof updateMovesDisplay === 'function') {
+                    updateMovesDisplay(pokemon);
+                }
             }
         };
         input.addEventListener('input', persistCapability);
@@ -953,6 +956,9 @@ function loadPokemonDetails() {
             const newCapNoValues = this.value.split(/[,\n]+/).map(s => s.trim()).filter(s => s.length > 0);
             pokemon.capabilities = [...capabilitiesWithValues, ...newCapNoValues];
             saveSelectedPokemon(pokemon);
+            if (document.getElementById('movesList') && typeof updateMovesDisplay === 'function') {
+                updateMovesDisplay(pokemon);
+            }
         };
         capNoValueInput.addEventListener('input', persistCapabilities);
         capNoValueInput.addEventListener('change', persistCapabilities);

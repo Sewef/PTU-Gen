@@ -7,6 +7,9 @@ function setupSkillsEditor(pokemon) {
             if (skillName && pokemon.skills) {
                 pokemon.skills[skillName] = newValue;
                 saveSelectedPokemon(pokemon);
+                if (skillName.toLowerCase() === 'combat' && document.getElementById('movesList') && typeof updateMovesDisplay === 'function') {
+                    updateMovesDisplay(pokemon);
+                }
             }
         });
     });

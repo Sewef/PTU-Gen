@@ -17,6 +17,185 @@ function setupMovesEditor(pokemon) {
     }
 }
 
+const DAMAGE_BASE_TABLE = {
+    1: { dmg: '1d6+1', min: 2, avg: 5, max: 7 },
+    2: { dmg: '1d6+3', min: 4, avg: 7, max: 9 },
+    3: { dmg: '1d6+5', min: 6, avg: 9, max: 11 },
+    4: { dmg: '1d8+6', min: 7, avg: 11, max: 14 },
+    5: { dmg: '1d8+8', min: 9, avg: 13, max: 16 },
+    6: { dmg: '2d6+8', min: 10, avg: 15, max: 20 },
+    7: { dmg: '2d6+10', min: 12, avg: 17, max: 22 },
+    8: { dmg: '2d8+10', min: 12, avg: 19, max: 26 },
+    9: { dmg: '2d10+10', min: 12, avg: 21, max: 30 },
+    10: { dmg: '3d8+10', min: 13, avg: 24, max: 34 },
+    11: { dmg: '3d10+10', min: 13, avg: 27, max: 40 },
+    12: { dmg: '3d12+10', min: 13, avg: 30, max: 46 },
+    13: { dmg: '4d10+10', min: 14, avg: 35, max: 50 },
+    14: { dmg: '4d10+15', min: 19, avg: 40, max: 55 },
+    15: { dmg: '4d10+20', min: 24, avg: 45, max: 60 },
+    16: { dmg: '5d10+20', min: 25, avg: 50, max: 70 },
+    17: { dmg: '5d12+25', min: 30, avg: 60, max: 85 },
+    18: { dmg: '6d12+25', min: 31, avg: 65, max: 97 },
+    19: { dmg: '6d12+30', min: 36, avg: 70, max: 102 },
+    20: { dmg: '6d12+35', min: 41, avg: 75, max: 107 },
+    21: { dmg: '6d12+40', min: 46, avg: 80, max: 112 },
+    22: { dmg: '6d12+45', min: 51, avg: 85, max: 117 },
+    23: { dmg: '6d12+50', min: 56, avg: 90, max: 122 },
+    24: { dmg: '6d12+55', min: 61, avg: 95, max: 127 },
+    25: { dmg: '6d12+60', min: 66, avg: 100, max: 132 },
+    26: { dmg: '7d12+65', min: 72, avg: 110, max: 149 },
+    27: { dmg: '8d12+70', min: 78, avg: 120, max: 166 },
+    28: { dmg: '8d12+80', min: 88, avg: 130, max: 176 }
+};
+
+const STRUGGLE_CAPABILITY_TYPES = [
+    { capability: 'Zapper', type: 'Electric' },
+    { capability: 'Firestarter', type: 'Fire' },
+    { capability: 'Guster', type: 'Flying' },
+    { capability: 'Fountain', type: 'Water' },
+    { capability: 'Freezer', type: 'Ice' },
+    { capability: 'Materializer', type: 'Rock', label: 'Roche' }
+];
+
+function createDamageBase(dbNumber) {
+    const clampedDB = Math.max(1, Math.min(28, parseInt(dbNumber, 10) || 4));
+    return {
+        short: 'DB' + clampedDB,
+        ...DAMAGE_BASE_TABLE[clampedDB],
+        stab: false
+    };
+}
+
+function getCombatSkillRank(pokemon) {
+    const combat = pokemon.skills?.Combat || pokemon.skills?.combat || '';
+    const match = String(combat).match(/^\s*(\d+)\s*d6/i);
+    return match ? parseInt(match[1], 10) : 0;
+}
+
+function getDefaultStruggleValues(pokemon) {
+    return getCombatSkillRank(pokemon) >= 5
+        ? { ac: 3, db: 5 }
+        : { ac: 4, db: 4 };
+}
+
+function getCapabilityName(capability) {
+    return String(capability || '').replace(/\s+[\d/]+$/, '').trim();
+}
+
+function getStruggleTypeCapability(pokemon) {
+    const capabilities = Array.isArray(pokemon.capabilities) ? pokemon.capabilities : [];
+    return STRUGGLE_CAPABILITY_TYPES.find(option =>
+        capabilities.some(capability => getCapabilityName(capability).toLowerCase() === option.capability.toLowerCase())
+    ) || null;
+}
+
+function getDefaultStruggleClass(pokemon) {
+    const attack = typeof getCurrentDisplayedStat === 'function'
+        ? getCurrentDisplayedStat('atk', Number(pokemon.stats?.atk) || 0)
+        : Number(pokemon.stats?.atk) || 0;
+    const specialAttack = typeof getCurrentDisplayedStat === 'function'
+        ? getCurrentDisplayedStat('spA', Number(pokemon.stats?.spA) || 0)
+        : Number(pokemon.stats?.spA) || 0;
+    return specialAttack > attack ? 'special' : 'physical';
+}
+
+function ensureStruggleMove(pokemon) {
+    const defaults = getDefaultStruggleValues(pokemon);
+    const typeCapability = getStruggleTypeCapability(pokemon);
+    const struggle = pokemon.struggle && typeof pokemon.struggle === 'object'
+        ? pokemon.struggle
+        : {};
+
+    if (!struggle.class || (typeCapability && !struggle.classModified)) {
+        struggle.class = typeCapability ? getDefaultStruggleClass(pokemon) : 'physical';
+    }
+    if (!struggle.typeModified) struggle.type = typeCapability?.type || 'Normal';
+    if (!struggle.acModified) struggle.ac = defaults.ac;
+    if (!struggle.damageBase || !struggle.dbModified) struggle.damageBase = createDamageBase(defaults.db);
+
+    struggle.name = 'Struggle';
+    struggle.range = 'Melee, 1 Target';
+    pokemon.struggle = struggle;
+    return struggle;
+}
+
+function adjustStruggleDB(pokemon, delta) {
+    const struggle = ensureStruggleMove(pokemon);
+    const currentDB = parseInt(String(struggle.damageBase?.short || 'DB4').replace('DB', ''), 10) || 4;
+    const newDB = Math.max(1, Math.min(28, currentDB + delta));
+    if (newDB === currentDB) return;
+
+    struggle.damageBase = createDamageBase(newDB);
+    struggle.dbModified = true;
+    saveSelectedPokemon(pokemon);
+    updateMovesDisplay(pokemon);
+}
+
+function toggleStruggleClass(pokemon) {
+    const struggle = ensureStruggleMove(pokemon);
+    struggle.class = String(struggle.class).toLowerCase() === 'special' ? 'physical' : 'special';
+    struggle.classModified = true;
+    saveSelectedPokemon(pokemon);
+    updateMovesDisplay(pokemon);
+}
+
+function toggleStruggleType(pokemon) {
+    const typeCapability = getStruggleTypeCapability(pokemon);
+    if (!typeCapability) return;
+
+    const struggle = ensureStruggleMove(pokemon);
+    struggle.type = String(struggle.type || 'Normal').toLowerCase() === typeCapability.type.toLowerCase()
+        ? 'Normal'
+        : typeCapability.type;
+    struggle.typeModified = true;
+    saveSelectedPokemon(pokemon);
+    updateMovesDisplay(pokemon);
+}
+
+function updateStruggleAC(pokemon, value) {
+    const struggle = ensureStruggleMove(pokemon);
+    struggle.ac = value;
+    struggle.acModified = true;
+    saveSelectedPokemon(pokemon);
+}
+
+function canToggleMoveClass(move) {
+    const moveClass = String(move.class || '').toLowerCase();
+    return moveClass === 'physical' || moveClass === 'special';
+}
+
+function toggleMoveClass(pokemon, moveName) {
+    const move = pokemon.moves.find(m => m.name === moveName);
+    if (!move || !canToggleMoveClass(move)) return;
+
+    move.class = String(move.class).toLowerCase() === 'special' ? 'physical' : 'special';
+    saveSelectedPokemon(pokemon);
+    updateMovesDisplay(pokemon);
+}
+
+function renderMoveClassBadge(move) {
+    if (!move.class) return '';
+    const moveClass = String(move.class).toLowerCase();
+    if (!canToggleMoveClass(move)) {
+        return `<span class="move-badge move-class-${moveClass}">${move.class}</span>`;
+    }
+    return `<button class="move-badge move-class-toggle move-class-${moveClass}" type="button" data-move-name="${move.name}" title="Switch Physical/Special">${move.class}</button>`;
+}
+
+function renderStruggleTypeBadge(pokemon, struggle) {
+    const typeCapability = getStruggleTypeCapability(pokemon);
+    const typeClass = String(struggle.type || 'Normal').toLowerCase().replace(' ', '-');
+    if (!typeCapability) {
+        return `<span class="move-badge type-${typeClass}">${struggle.type || 'Normal'}</span>`;
+    }
+
+    return `<button class="move-badge struggle-type-toggle struggle-type-modifiable type-${typeClass}" type="button" title="${typeCapability.capability}: switch Normal/${typeCapability.type}">${struggle.type || 'Normal'}</button>`;
+}
+
+function shouldDisplayMoveEffect(effect) {
+    return effect && String(effect).trim().toLowerCase() !== 'none';
+}
+
 // Remove a move from the pokemon
 function removeMove(pokemon, moveName) {
     pokemon.moves = pokemon.moves.filter(m => m.name !== moveName);
@@ -27,38 +206,6 @@ function removeMove(pokemon, moveName) {
 function adjustMoveDB(pokemon, moveName, delta) {
     const move = pokemon.moves.find(m => m.name === moveName);
     if (!move || !move.damageBase) return;
-
-    // Damage Base conversion table
-    const DAMAGE_BASE_TABLE = {
-        1: { dmg: '1d6+1', min: 2, avg: 5, max: 7 },
-        2: { dmg: '1d6+3', min: 4, avg: 7, max: 9 },
-        3: { dmg: '1d6+5', min: 6, avg: 9, max: 11 },
-        4: { dmg: '1d8+6', min: 7, avg: 11, max: 14 },
-        5: { dmg: '1d8+8', min: 9, avg: 13, max: 16 },
-        6: { dmg: '2d6+8', min: 10, avg: 15, max: 20 },
-        7: { dmg: '2d6+10', min: 12, avg: 17, max: 22 },
-        8: { dmg: '2d8+10', min: 12, avg: 19, max: 26 },
-        9: { dmg: '2d10+10', min: 12, avg: 21, max: 30 },
-        10: { dmg: '3d8+10', min: 13, avg: 24, max: 34 },
-        11: { dmg: '3d10+10', min: 13, avg: 27, max: 40 },
-        12: { dmg: '3d12+10', min: 13, avg: 30, max: 46 },
-        13: { dmg: '4d10+10', min: 14, avg: 35, max: 50 },
-        14: { dmg: '4d10+15', min: 19, avg: 40, max: 55 },
-        15: { dmg: '4d10+20', min: 24, avg: 45, max: 60 },
-        16: { dmg: '5d10+20', min: 25, avg: 50, max: 70 },
-        17: { dmg: '5d12+25', min: 30, avg: 60, max: 85 },
-        18: { dmg: '6d12+25', min: 31, avg: 65, max: 97 },
-        19: { dmg: '6d12+30', min: 36, avg: 70, max: 102 },
-        20: { dmg: '6d12+35', min: 41, avg: 75, max: 107 },
-        21: { dmg: '6d12+40', min: 46, avg: 80, max: 112 },
-        22: { dmg: '6d12+45', min: 51, avg: 85, max: 117 },
-        23: { dmg: '6d12+50', min: 56, avg: 90, max: 122 },
-        24: { dmg: '6d12+55', min: 61, avg: 95, max: 127 },
-        25: { dmg: '6d12+60', min: 66, avg: 100, max: 132 },
-        26: { dmg: '7d12+65', min: 72, avg: 110, max: 149 },
-        27: { dmg: '8d12+70', min: 78, avg: 120, max: 166 },
-        28: { dmg: '8d12+80', min: 88, avg: 130, max: 176 }
-    };
 
     // Get current DB - it's stored as 'DB11', 'DB12', etc.
     let currentDB = move.damageBase.short;
@@ -296,7 +443,36 @@ function updateMovesDisplay(pokemon) {
     const isOwlbearEmbedded = document.body.classList.contains('owlbear-embedded');
     const useJustDices = isOwlbearEmbedded
         && pokemon.owlbear?.diceRoller === 'justdices';
-    movesList.innerHTML = pokemon.moves.map((move, moveIndex) => {
+    const struggle = ensureStruggleMove(pokemon);
+    const struggleRange = getMoveDamageRange(pokemon, struggle);
+    const struggleHTML = `
+        <div class="section-card move struggle-card type-${String(struggle.type || 'Normal').toLowerCase().replace(' ', '-')}" data-struggle-card="true">
+            <div class="section-card-header">
+                <div class="section-card-name">Struggle${renderStruggleTypeBadge(pokemon, struggle)}<button class="move-badge move-class-toggle struggle-class-toggle move-class-${String(struggle.class).toLowerCase()}" type="button" title="Switch Physical/Special">${struggle.class}</button></div>
+            </div>
+            <div class="move-meta-row">
+                <div class="section-card-field"><strong>Range:</strong> ${struggle.range}</div>
+                <div class="section-card-field"><strong>AC:</strong> <input id="struggleAcInput" class="struggle-ac-input" type="number" min="1" max="20" value="${struggle.ac}" /></div>
+            </div>
+            <div class="section-card-field db-field struggle-db-field" data-struggle-db="true">
+                <div class="db-summary">
+                    <span class="db-identity"><strong>${struggle.damageBase.short}</strong></span>
+                    <span class="db-formula" title="Damage formula">${struggle.damageBase.dmg}<span class="db-attack-bonus"> + ${getMoveAttackValue(pokemon, struggle) || 0}</span></span>
+                    <span class="db-range" title="Minimum | Average | Maximum, including attack stat"><span>${struggleRange.min}</span><span class="db-range-separator">|</span><strong>${struggleRange.avg}</strong><span class="db-range-separator">|</span><span>${struggleRange.max}</span></span>
+                </div>
+                <div class="db-actions">
+                    <div class="db-stepper" aria-label="Adjust Struggle Damage Base">
+                        <button class="db-adjust-btn struggle-db-decrease" title="Decrease DB">-</button>
+                        <button class="db-adjust-btn struggle-db-increase" title="Increase DB">+</button>
+                    </div>
+                    ${getMoveRollFormula(pokemon, struggle) ? `<button class="copy-roll-formula-btn" data-roll-formula="${getMoveRollFormula(pokemon, struggle)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll' : 'Copy'} /r ${getMoveRollFormula(pokemon, struggle)}">${useJustDices ? 'Roll' : 'Copy roll'}</button>` : ''}
+                    ${getMoveCritRollFormula(pokemon, struggle) ? `<button class="copy-roll-formula-btn crit-roll-formula-btn" data-roll-formula="${getMoveCritRollFormula(pokemon, struggle)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll critical' : 'Copy'} /r ${getMoveCritRollFormula(pokemon, struggle)}">${isOwlbearEmbedded ? 'Crit' : 'Copy crit'}</button>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+
+    movesList.innerHTML = struggleHTML + pokemon.moves.map((move, moveIndex) => {
         const isCustom = move.editable === true;
         const damageRange = getMoveDamageRange(pokemon, move);
         if (isCustom) {
@@ -327,12 +503,10 @@ function updateMovesDisplay(pokemon) {
             return `
                 <div class="section-card move type-${(move.type || 'normal').toLowerCase().replace(' ', '-')}" data-move-name="${move.name}">
                     <div class="section-card-header">
-                        <div class="section-card-name">${move.name}${move.type ? `<span class="move-badge type-${move.type.toLowerCase().replace(' ', '-')}">${move.type}</span>` : ''}${move.class ? `<span class="move-badge move-class-${move.class.toLowerCase()}">${move.class}</span>` : ''}</div>
+                        <div class="section-card-name">${move.name}${move.type ? `<span class="move-badge type-${move.type.toLowerCase().replace(' ', '-')}">${move.type}</span>` : ''}${renderMoveClassBadge(move)}</div>
                         <button class="remove-move-btn" title="Remove this move">✕ Remove</button>
                     </div>
                     <div class="move-meta-row">
-                        <div class="section-card-field"><strong>Type:</strong> ${move.type || 'N/A'}</div>
-                        <div class="section-card-field"><strong>Class:</strong> ${move.class || 'N/A'}</div>
                         <div class="section-card-field"><strong>Range:</strong> ${move.range || 'N/A'}</div>
                         ${move.ac ? `<div class="section-card-field"><strong>AC:</strong> ${move.ac}</div>` : ''}
                     </div>
@@ -348,18 +522,44 @@ function updateMovesDisplay(pokemon) {
                         </div>
                         <div class="db-actions">
                             <div class="db-stepper" aria-label="Adjust Damage Base">
-                                <button class="db-adjust-btn db-decrease" title="Decrease DB">−</button>
+                                <button class="db-adjust-btn db-decrease" title="Decrease DB">-</button>
                                 <button class="db-adjust-btn db-increase" title="Increase DB">+</button>
                             </div>
                             ${getMoveRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn" data-roll-formula="${getMoveRollFormula(pokemon, move)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll' : 'Copy'} /r ${getMoveRollFormula(pokemon, move)}">${useJustDices ? 'Roll' : 'Copy roll'}</button>` : ''}
                             ${getMoveCritRollFormula(pokemon, move) ? `<button class="copy-roll-formula-btn crit-roll-formula-btn" data-roll-formula="${getMoveCritRollFormula(pokemon, move)}" data-roll-action="${useJustDices ? 'justdices' : 'copy'}" title="${useJustDices ? 'Roll critical' : 'Copy'} /r ${getMoveCritRollFormula(pokemon, move)}">${isOwlbearEmbedded ? 'Crit' : 'Copy crit'}</button>` : ''}
                         </div>
                     </div>` : ''}
-                    ${move.effect ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
+                    ${shouldDisplayMoveEffect(move.effect) ? `<div class="section-card-field"><strong>Effect:</strong> ${move.effect}</div>` : ''}
                 </div>
             `;
         }
     }).join('');
+
+    document.querySelector('.struggle-class-toggle')?.addEventListener('click', function () {
+        toggleStruggleClass(pokemon);
+    });
+
+    document.querySelector('.struggle-type-toggle')?.addEventListener('click', function () {
+        toggleStruggleType(pokemon);
+    });
+
+    document.getElementById('struggleAcInput')?.addEventListener('input', function () {
+        updateStruggleAC(pokemon, parseInt(this.value, 10) || '');
+    });
+
+    document.querySelector('.struggle-db-decrease')?.addEventListener('click', function () {
+        adjustStruggleDB(pokemon, -1);
+    });
+
+    document.querySelector('.struggle-db-increase')?.addEventListener('click', function () {
+        adjustStruggleDB(pokemon, 1);
+    });
+
+    document.querySelectorAll('.move-class-toggle[data-move-name]').forEach(btn => {
+        btn.addEventListener('click', function () {
+            toggleMoveClass(pokemon, btn.getAttribute('data-move-name'));
+        });
+    });
 
     // Keep editable cards in sync with the model. Without this, their values only
     // live in the DOM and are lost whenever adding/removing a move rerenders the list.
@@ -397,6 +597,7 @@ function updateMovesDisplay(pokemon) {
     document.querySelectorAll('.db-adjust-btn').forEach(btn => {
         btn.addEventListener('click', function () {
             const dbField = btn.closest('.db-field');
+            if (dbField?.hasAttribute('data-struggle-db')) return;
             const moveName = dbField.getAttribute('data-move-name');
             const isIncrease = btn.classList.contains('db-increase');
             adjustMoveDB(pokemon, moveName, isIncrease ? 1 : -1);

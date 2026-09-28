@@ -27,6 +27,7 @@ function getExpForLevel(level) {
 function convertToRoll20Format(pokemon) {
     // Get EXP for current level
     const expData = getExpForLevel(pokemon.level || 1);
+    const struggle = getRoll20Struggle(pokemon);
     
     // Map stats to Roll20 format
     const roll20Data = {
@@ -69,12 +70,12 @@ function convertToRoll20Format(pokemon) {
         TutorPoints: Math.floor(pokemon.level / 5) + 1,
         TutorPoints_max: Math.floor(pokemon.level / 5) + 1,
         
-        // Struggle move (default)
-        Struggle_Type: "Normal",
-        Struggle_DType: "Physical",
-        Struggle_DB: 4,
-        Struggle_AC: 4,
-        Struggle_Range: "Melee, 1 Target",
+        // Struggle move
+        Struggle_Type: struggle.type,
+        Struggle_DType: struggle.class,
+        Struggle_DB: struggle.db,
+        Struggle_AC: struggle.ac,
+        Struggle_Range: struggle.range,
         
         // Flags for special abilities
 
@@ -113,6 +114,44 @@ function convertToRoll20Format(pokemon) {
     // });
     
     return roll20Data;
+}
+
+function getRoll20Struggle(pokemon) {
+    const combat = pokemon.skills?.Combat || pokemon.skills?.combat || '';
+    const combatRank = parseInt(String(combat).match(/^\s*(\d+)\s*d6/i)?.[1] || '0', 10);
+    const defaultDB = combatRank >= 5 ? 5 : 4;
+    const defaultAC = combatRank >= 5 ? 3 : 4;
+    const stored = pokemon.struggle || {};
+    const typeCapability = getRoll20StruggleTypeCapability(pokemon);
+    const dbMatch = String(stored.damageBase?.short || '').match(/DB(\d+)/i);
+    const defaultClass = typeCapability && Number(pokemon.stats?.spA || 0) > Number(pokemon.stats?.atk || 0)
+        ? 'Special'
+        : 'Physical';
+
+    return {
+        type: stored.typeModified ? (stored.type || 'Normal') : (typeCapability?.type || 'Normal'),
+        class: String(stored.classModified ? stored.class : defaultClass).toLowerCase() === 'special' ? 'Special' : 'Physical',
+        db: dbMatch ? parseInt(dbMatch[1], 10) : defaultDB,
+        ac: stored.ac || defaultAC,
+        range: stored.range || 'Melee, 1 Target'
+    };
+}
+
+function getRoll20StruggleTypeCapability(pokemon) {
+    const options = [
+        { capability: 'Zapper', type: 'Electric' },
+        { capability: 'Firestarter', type: 'Fire' },
+        { capability: 'Guster', type: 'Flying' },
+        { capability: 'Fountain', type: 'Water' },
+        { capability: 'Freezer', type: 'Ice' },
+        { capability: 'Materializer', type: 'Rock' }
+    ];
+    const capabilities = Array.isArray(pokemon.capabilities) ? pokemon.capabilities : [];
+    return options.find(option =>
+        capabilities.some(capability =>
+            String(capability || '').replace(/\s+[\d/]+$/, '').trim().toLowerCase() === option.capability.toLowerCase()
+        )
+    ) || null;
 }
 
 /**
