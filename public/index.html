@@ -523,7 +523,7 @@
             playerSelect.className = playerInput.className;
             playerSelect.disabled = true;
             playerSelect.dataset.owlbearPlayers = 'true';
-            document.getElementById('owlbearPlayerLabel').textContent = 'Player';
+            document.getElementById('owlbearPlayerLabel').textContent = 'Owner';
 
             const loadingOption = document.createElement('option');
             loadingOption.value = '';
@@ -578,7 +578,7 @@
             }
 
             if (new URLSearchParams(window.location.search).get('owlbear') === 'true' && window.parent !== window) {
-                window.parent.postMessage({ type: 'ptu-open-pokemon', pokemon }, window.location.origin);
+                window.parent.postMessage({ type: 'ptu-open-pokemon', pokemon, activate: false }, window.location.origin);
                 return;
             }
 
@@ -1608,7 +1608,7 @@
                 delete pokemon.typeMultiplierMode;
                 PTUPokemonStorage.save(pokemon);
                 if (new URLSearchParams(window.location.search).get('owlbear') === 'true' && window.parent !== window) {
-                    window.parent.postMessage({ type: 'ptu-open-pokemon', pokemon }, window.location.origin);
+                    window.parent.postMessage({ type: 'ptu-open-pokemon', pokemon, activate: false }, window.location.origin);
                     return;
                 }
                 // Store in localStorage for the new tab

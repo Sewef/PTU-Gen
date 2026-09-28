@@ -4083,7 +4083,7 @@
       panel.appendChild(frame);
       panelList.appendChild(panel);
     }
-    function openPokemon(pokemon) {
+    function openPokemon(pokemon, { activate = true } = {}) {
       const id = createId();
       const storageKey = `${POKEMON_KEY_PREFIX}${id}`;
       PTUPokemonStorage.save(pokemon);
@@ -4092,7 +4092,8 @@
       localStorage.setItem(storageKey, JSON.stringify(pokemon));
       tabs.push(tab);
       createTabElements(tab);
-      switchTab(id);
+      if (activate) switchTab(id);
+      else persistTabs();
     }
     function closeTab(id) {
       const index = tabs.findIndex((tab2) => tab2.id === id);
@@ -4154,7 +4155,7 @@
       }
       if (event.data?.type === "ptu-open-pokemon") {
         if (!event.data.pokemon || typeof event.data.pokemon !== "object") return;
-        openPokemon(event.data.pokemon);
+        openPokemon(event.data.pokemon, { activate: event.data.activate !== false });
         return;
       }
       if (event.data?.type === "ptu-pokemon-updated") {

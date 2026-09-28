@@ -408,7 +408,7 @@ import OBR, { buildImage } from '@owlbear-rodeo/sdk';
         panelList.appendChild(panel);
     }
 
-    function openPokemon(pokemon) {
+    function openPokemon(pokemon, { activate = true } = {}) {
         const id = createId();
         const storageKey = `${POKEMON_KEY_PREFIX}${id}`;
         PTUPokemonStorage.save(pokemon);
@@ -418,7 +418,8 @@ import OBR, { buildImage } from '@owlbear-rodeo/sdk';
         localStorage.setItem(storageKey, JSON.stringify(pokemon));
         tabs.push(tab);
         createTabElements(tab);
-        switchTab(id);
+        if (activate) switchTab(id);
+        else persistTabs();
     }
 
     function closeTab(id) {
@@ -496,7 +497,7 @@ import OBR, { buildImage } from '@owlbear-rodeo/sdk';
 
         if (event.data?.type === 'ptu-open-pokemon') {
             if (!event.data.pokemon || typeof event.data.pokemon !== 'object') return;
-            openPokemon(event.data.pokemon);
+            openPokemon(event.data.pokemon, { activate: event.data.activate !== false });
             return;
         }
 

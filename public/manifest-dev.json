@@ -1,0 +1,20 @@
+{
+  "name": "PTU Pokémon Generator DEV",
+  "version": "1.0.0-dev",
+  "manifest_version": 1,
+  "description": "Generate and manage PTU Pokémon sheets directly inside Owlbear Rodeo.",
+  "icon": "/owlbear-icon.svg",
+  "action": {
+    "title": "PTU Pokémon Generator",
+    "icon": "/owlbear-icon.svg",
+    "popover": "/owlbear.html",
+    "width": 900,
+    "height": 720
+  },
+  "permissions": [
+    {
+      "name": "clipboard-write",
+      "reason": "Copy generated Owlbear token data to the clipboard."
+    }
+  ]
+}
