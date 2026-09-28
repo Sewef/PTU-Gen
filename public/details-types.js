@@ -23,14 +23,14 @@ function calculateTypeEffectiveness(types) {
             const defendingTypeData = typeEffectiveness[defendingTypeLower];
             
             if (!defendingTypeData) {
-                console.warn(`No type data for defending type: ${defendingTypeLower}`);
+                console.error(`No type data for defending type: ${defendingTypeLower}`);
                 return;
             }
             
             const eff = defendingTypeData[attackingType];
             
             if (eff === undefined) {
-                console.warn(`No effectiveness data for ${attackingType} vs ${defendingTypeLower}`);
+                console.error(`No effectiveness data for ${attackingType} vs ${defendingTypeLower}`);
                 return;
             }
             
@@ -220,18 +220,15 @@ function setupTypeEffectivenessEditor(pokemon) {
 
 function setupTypeEditor(pokemon) {
     const editTypesBtn = document.getElementById('editTypesBtn');
-    // console.log('setupTypeEditor called, editTypesBtn:', editTypesBtn);
     if (!editTypesBtn) return;
 
     editTypesBtn.addEventListener('click', function () {
-        console.log('editTypesBtn clicked');
         showTypeModal(pokemon);
     });
 }
 
 // Show type selection modal
 function showTypeModal(pokemon) {
-    console.log('showTypeModal called');
     const availableTypes = [
         'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting',
         'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost',
@@ -267,7 +264,6 @@ function showTypeModal(pokemon) {
     const typeGrid = document.getElementById('typeGrid');
     const selectedTypes = [...pokemon.types];
 
-    console.log("About to attach save listener, saveTypesBtn element:", document.getElementById('saveTypesBtn'));
 
     // Create type buttons
     availableTypes.forEach(type => {
@@ -307,10 +303,8 @@ function showTypeModal(pokemon) {
     // Save button handler
     const saveTypesBtn = document.getElementById('saveTypesBtn');
     const closeTypesBtn = document.getElementById('closeTypesBtn');
-    console.log("Save/Close buttons found:", { saveTypesBtn, closeTypesBtn });
     
     saveTypesBtn.addEventListener('click', function () {
-        console.log("Save button clicked! selectedTypes:", selectedTypes);
         if (selectedTypes.length === 0) {
             alert('Please select at least one type');
             return;
@@ -325,7 +319,6 @@ function showTypeModal(pokemon) {
 
     // Close button handler
     closeTypesBtn.addEventListener('click', function () {
-        console.log("Close button clicked");
         modal.remove();
     });
 

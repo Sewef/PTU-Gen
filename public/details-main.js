@@ -143,9 +143,6 @@ function loadPokemonDetails() {
     // Keep every opened sheet restorable, including imported legacy Pokémon.
     saveSelectedPokemon(pokemon);
 
-    // Debug: log the pokemon object structure
-    console.log('Pokemon object:', pokemon);
-
     // Update page title and favicon
     const pageTitle = `${pokemon.name} - Lvl ${pokemon.level} - Pokémon Details`;
     document.getElementById('pageTitle').textContent = pageTitle;
@@ -1685,7 +1682,6 @@ async function setupCaptureRateCalculator(pokemon) {
         if (response.ok) {
             const data = await response.json();
             evolutionStagesRemaining = data.evolutionsRemaining || 0;
-            console.log('Evolutions remaining from API:', evolutionStagesRemaining);
         } else {
             console.error('Failed to fetch evolution data:', response.status, response.statusText);
         }

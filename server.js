@@ -70,9 +70,7 @@ app.use((req, res) => {
 
 // Initialize datasets and start server
 initializeDatasets().then(() => {
-  app.listen(PORT, () => {
-    console.log(`✓ PTU Pokemon Generator running on port ${PORT}`);
-  });
+  app.listen(PORT);
 }).catch((error) => {
   console.error('Failed to initialize datasets:', error);
   process.exit(1);

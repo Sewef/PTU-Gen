@@ -14,7 +14,7 @@
             const history = JSON.parse(localStorage.getItem(HISTORY_KEY));
             return Array.isArray(history) ? history : [];
         } catch (error) {
-            console.warn('Unable to read Pokémon history:', error);
+            console.error('Unable to read Pokémon history:', error);
             return [];
         }
     }
@@ -59,7 +59,7 @@
         try {
             return JSON.parse(localStorage.getItem(`${RECORD_PREFIX}${id}`));
         } catch (error) {
-            console.warn('Unable to load Pokémon from history:', error);
+            console.error('Unable to load Pokémon from history:', error);
             return null;
         }
     }

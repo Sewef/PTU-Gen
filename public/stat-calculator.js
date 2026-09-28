@@ -243,7 +243,7 @@ function distributePointsWithBaseRelation(totalPoints, groups, distribution = 'R
         const candidates = getValidDistributionCandidates(distributedPoints, sortedGroups, enforceBaseRelation);
 
         if (candidates.length === 0) {
-            console.warn('No valid stat candidate while preserving Base Relation; distribution stopped early.');
+            console.error('No valid stat candidate while preserving Base Relation; distribution stopped early.');
             break;
         }
 

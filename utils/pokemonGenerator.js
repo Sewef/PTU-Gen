@@ -206,7 +206,6 @@ async function loadDataset(datasetKey) {
     return dataCache[datasetKey];
   }
 
-  console.log(`Loading ${DATASETS[datasetKey].name} dataset...`);
 
   const dataset = DATASETS[datasetKey];
   
@@ -241,7 +240,6 @@ async function loadDataset(datasetKey) {
       abilities, 
       moves 
     };
-    console.log(`✓ ${DATASETS[datasetKey].name} dataset loaded successfully (${mergedPokedex.length} Pokémon)`);
     return dataCache[datasetKey];
   } catch (error) {
     console.error(`Failed to load ${DATASETS[datasetKey].name} dataset:`, error);
@@ -263,7 +261,6 @@ async function loadFandexDataset(fandexKey) {
     return dataCache[cacheKey];
   }
 
-  console.log(`Loading ${FANDEX_DATASETS[fandexKey].name} FanDex...`);
 
   const fandex = FANDEX_DATASETS[fandexKey];
   
@@ -310,7 +307,6 @@ async function loadFandexDataset(fandexKey) {
       moves,
       capabilities: capabilities || {}
     };
-    console.log(`✓ ${FANDEX_DATASETS[fandexKey].name} FanDex loaded successfully`);
     return dataCache[cacheKey];
   } catch (error) {
     console.error(`Failed to load ${FANDEX_DATASETS[fandexKey].name} FanDex:`, error);
@@ -965,7 +961,7 @@ class PokemonGenerator {
       hp = Math.max(1, Math.floor(evaluated));
     } catch (e) {
       // Fallback to default formula if custom formula fails
-      console.warn(`Invalid HP formula "${formula}", using default`);
+      console.error(`Invalid HP formula "${formula}", using default`);
       hp = Math.max(1, Math.floor(level + (statValues.HP * 3) + 10));
     }
 
@@ -2254,14 +2250,14 @@ class PokemonGenerator {
 
       // Limit custom Pokemon to avoid memory issues (max 1000)
       if (pokemonData.length > 1000) {
-        console.warn(`Custom Pokemon data too large (${pokemonData.length}). Truncating to 1000.`);
+        console.error(`Custom Pokemon data too large (${pokemonData.length}). Truncating to 1000.`);
         pokemonData = pokemonData.slice(0, 1000);
       }
 
       // Validate and filter out invalid entries
       const validPokemon = pokemonData.filter(pokemon => {
         if (!pokemon.Species || typeof pokemon.Species !== 'string') {
-          console.warn('Skipping Pokemon without valid Species field');
+          console.error('Skipping Pokemon without valid Species field');
           return false;
         }
         return true;
@@ -2279,7 +2275,6 @@ class PokemonGenerator {
         pokemonByName[pokemon.Species.toLowerCase()] = pokemon;
       });
 
-      console.log(`✓ Loaded ${validPokemon.length} custom Pokemon (${customPokemon.length} total)`);
       return {
         success: true,
         count: validPokemon.length,
@@ -2337,7 +2332,6 @@ class PokemonGenerator {
         abilitiesMapLower[abilityName.toLowerCase()] = customAbilities[abilityName];
       });
 
-      console.log(`✓ Loaded ${count} custom Abilities (${Object.keys(customAbilities).length} total)`);
       return {
         success: true,
         count: count,
@@ -2395,7 +2389,6 @@ class PokemonGenerator {
         movesMapLower[moveName.toLowerCase()] = customMoves[moveName];
       });
 
-      console.log(`✓ Loaded ${count} custom Moves (${Object.keys(customMoves).length} total)`);
       return {
         success: true,
         count: count,
@@ -2430,7 +2423,6 @@ class PokemonGenerator {
     customPokemon = [];
     customAbilities = {};
     customMoves = {};
-    console.log('✓ Cleared all custom data');
     return { success: true };
   }
 }

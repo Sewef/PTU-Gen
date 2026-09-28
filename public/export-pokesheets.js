@@ -10,8 +10,6 @@
  */
 function convertToPokesheetsFormat(pokemon) {
     // Debug: Check if learnsets exist
-    console.log('Pokemon learnsets:', pokemon.learnsets);
-    console.log('Has learnsets?', pokemon.learnsets != null);
     
     // Convert capabilities
     const capabilitiesResult = convertPokesheetsCapabilities(pokemon.capabilities || []);

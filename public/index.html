@@ -893,13 +893,9 @@
                         name: name,
                         searchName: name.toLowerCase()
                     }));
-                    console.log(`✓ Loaded ${allPokemon.length} species from ${dataset} dataset`);
                     
                     // Debug: show first few species and check for forms
                     const withForms = allPokemon.filter(p => p.name.includes('('));
-                    console.log(`Species with forms: ${withForms.length}`);
-                    console.log('First 5 species:', allPokemon.slice(0, 5).map(p => p.name));
-                    console.log('First 5 with forms:', withForms.slice(0, 5).map(p => p.name));
                     
                     // Clear species input when dataset changes
                     speciesInput.value = '';
@@ -922,7 +918,6 @@
                         name: name,
                         searchName: name.toLowerCase()
                     }));
-                    console.log(`✓ Loaded ${allHabitats.length} habitats from ${dataset} dataset`);
                     
                     // Populate habitat dropdown
                     const habitatSelect = document.getElementById('habitat');
@@ -947,7 +942,6 @@
                 if (response.ok) {
                     const data = await response.json();
                     const allTypes = data.types;
-                    console.log(`✓ Loaded ${allTypes.length} types from ${dataset} dataset`);
                     
                     // Populate type dropdown
                     const typeSelect = document.getElementById('type');
@@ -976,7 +970,7 @@
             }
 
             if (allPokemon.length === 0) {
-                console.warn('Pokemon list not loaded yet');
+                console.error('Pokemon list not loaded yet');
                 return;
             }
 
@@ -1065,7 +1059,7 @@
             }
 
             if (allHabitats.length === 0) {
-                console.warn('Habitat list not loaded yet');
+                console.error('Habitat list not loaded yet');
                 return;
             }
 
@@ -1718,8 +1712,6 @@
                 statusText += `• Abilities: ${custom.abilities}\n`;
                 statusText += `• Moves: ${custom.moves}`;
 
-                console.log('Custom data received:', custom);
-                console.log('Status text:', statusText);
                 
                 statusDiv.textContent = statusText;
                 statusDiv.style.color = 'var(--text-primary)';
@@ -1801,7 +1793,7 @@
             });
 
             if (duplicates.length > 0) {
-                console.warn(`Skipped ${duplicates.length} duplicate file(s): ${duplicates.join(', ')}`);
+                console.error(`Skipped ${duplicates.length} duplicate file(s): ${duplicates.join(', ')}`);
             }
 
             updateFileList();
@@ -1911,7 +1903,6 @@
 
         // Generate Pokémon on page load
         window.addEventListener('load', async function () {
-            console.log('🔄 Page load event fired - clearing custom data');
 
             applyStoredSettingsToControls();
             updatePreferenceIndicators();
@@ -1920,12 +1911,10 @@
             try {
                 const deleteResponse = await fetch('/api/pokemon/custom', { method: 'DELETE' });
                 const deleteResult = await deleteResponse.json();
-                console.log('✓ Custom data cleared:', deleteResult);
             } catch (error) {
                 console.error('Error clearing custom data:', error);
             }
             
-            console.log('📋 Loading Pokemon list...');
             const selectedDataset = document.getElementById('dataset').value || 'core';
             loadPokemonList(selectedDataset);
             loadHabitatList(selectedDataset);

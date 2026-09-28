@@ -127,7 +127,6 @@
                     }));
                     statusEl.textContent = '✅ Ready';
                     countEl.textContent = allPokemon.length;
-                    console.log('Loaded', allPokemon.length, 'Pokémon');
                 } else {
                     statusEl.textContent = '❌ API Error';
                 }
@@ -142,7 +141,6 @@
             const value = this.value.trim().toLowerCase();
             selectedSuggestionIndex = -1;
 
-            console.log('Input value:', value, 'All Pokemon:', allPokemon.length);
 
             if (value.length === 0) {
                 suggestionsList.classList.remove('open');
@@ -151,7 +149,7 @@
             }
 
             if (allPokemon.length === 0) {
-                console.warn('Pokemon list not loaded yet');
+                console.error('Pokemon list not loaded yet');
                 return;
             }
 
@@ -159,7 +157,6 @@
                 p.searchName.includes(value)
             ).slice(0, 10);
 
-            console.log('Filtered results:', filtered.length);
 
             if (filtered.length === 0) {
                 suggestionsList.classList.remove('open');

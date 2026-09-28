@@ -38,7 +38,7 @@ async function loadCustomDataFromQuery(query) {
     try {
       await customLoader.load.call(PokemonGenerator, customLoader.url);
     } catch (error) {
-      console.warn(`Failed to load ${customLoader.label} from URL:`, error.message);
+      console.error(`Failed to load ${customLoader.label} from URL:`, error.message);
     }
   }
 }
