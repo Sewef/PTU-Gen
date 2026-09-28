@@ -21,14 +21,15 @@ body,
 
 .extension-shell {
     display: grid;
-    grid-template-rows: 48px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
     background: #171a23;
 }
 
 .extension-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     min-width: 0;
-    align-items: stretch;
+    align-items: start;
     gap: 8px;
     padding: 6px 8px;
     border-bottom: 1px solid #343947;
@@ -43,26 +44,48 @@ body,
     align-items: center;
     gap: 7px;
     padding: 0 8px 0 2px;
+    border: 0;
+    border-right: 1px solid #3a3f4e;
+    background: transparent;
     color: #f8fafc;
+    cursor: pointer;
     font-size: 13px;
     font-weight: 750;
     letter-spacing: .01em;
-    border-right: 1px solid #3a3f4e;
+    min-height: 36px;
+}
+
+.extension-brand:hover,
+.extension-brand.is-active {
+    color: #fff;
+}
+
+.extension-brand.is-active img {
+    filter: drop-shadow(0 0 5px rgb(83 105 201 / 75%));
 }
 
 .tab-list {
     display: flex;
     min-width: 0;
     align-items: stretch;
+    align-content: flex-start;
+    flex-wrap: wrap;
     gap: 4px;
-    overflow-x: auto;
+    max-height: 92px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 2px;
     scrollbar-width: thin;
 }
 
 .extension-tab {
-    display: inline-flex;
-    flex: 0 0 auto;
-    max-width: 190px;
+    display: grid;
+    grid-template-columns: 22px minmax(0, auto) 20px;
+    flex: 0 0 168px;
+    width: 168px;
+    min-width: 168px;
+    max-width: 168px;
+    min-height: 36px;
     align-items: center;
     gap: 7px;
     padding: 0 10px;
@@ -98,12 +121,14 @@ body,
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
 }
 
 .tab-close {
     display: grid;
     width: 20px;
     height: 20px;
+    justify-self: end;
     margin-right: -5px;
     padding: 0;
     place-items: center;
@@ -147,6 +172,7 @@ body,
 @media (max-width: 560px) {
     .extension-header {
         gap: 4px;
+        grid-template-columns: auto minmax(0, 1fr);
     }
 
     .extension-brand span {
@@ -158,7 +184,11 @@ body,
     }
 
     .extension-tab {
-        max-width: 150px;
+        flex-basis: 140px;
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
         padding-inline: 8px;
     }
+
 }
