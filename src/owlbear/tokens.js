@@ -121,6 +121,16 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         return item || null;
     }
 
+    async function focusSceneToken(tokenId, targetWindow) {
+        const item = await getSceneToken(tokenId, targetWindow);
+        if (!item) throw new Error('The linked token no longer exists in this scene.');
+
+        const bounds = await OBR.scene.items.getItemBounds([tokenId]);
+        await OBR.viewport.animateToBounds(bounds);
+        await OBR.player.select([tokenId], true);
+        return item;
+    }
+
     async function setSceneTokenVisibility(tokenId, visible, targetWindow) {
         const existing = await getSceneToken(tokenId, targetWindow);
         if (!existing) throw new Error('The linked token no longer exists in this scene.');
@@ -211,6 +221,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
     return {
         insertSceneToken,
         getSceneToken,
+        focusSceneToken,
         setSceneTokenVisibility,
         setSceneTokenOwner,
         notifyTrackedTokenStates,

@@ -262,6 +262,7 @@ function loadPokemonDetails() {
                         </div>
                         <div class="owlbear-utilities-actions">
                             <button id="insertOwlbearTokenBtn" type="button" class="export-btn-main owlbear-insert-btn">Insert token in scene</button>
+                            <button id="focusOwlbearTokenBtn" type="button" class="owlbear-focus-btn" disabled>Focus</button>
                             <button id="owlbearVisibilityToggle" type="button" class="owlbear-visibility-toggle" data-visible="true" aria-pressed="true" aria-label="Token visibility">
                                 <span class="owlbear-visible-label">Visible</span>
                                 <span class="owlbear-hidden-label">Hidden</span>
@@ -1068,6 +1069,7 @@ function loadPokemonDetails() {
     const exportOwlbearBtn = document.getElementById('exportOwlbearBtn');
     const owlbearConfigBtn = document.getElementById('owlbearConfigBtn');
     const insertOwlbearTokenBtn = document.getElementById('insertOwlbearTokenBtn');
+    const focusOwlbearTokenBtn = document.getElementById('focusOwlbearTokenBtn');
     const owlbearVisibilityToggle = document.getElementById('owlbearVisibilityToggle');
     const owlbearTokenStatus = document.getElementById('owlbearTokenStatus');
     const owlbearOwnerSelect = document.getElementById('owlbearOwnerSelect');
@@ -1263,6 +1265,7 @@ function loadPokemonDetails() {
             : linkedTokenExists
                 ? 'Token inserted'
                 : 'Insert token in scene';
+        if (focusOwlbearTokenBtn) focusOwlbearTokenBtn.disabled = owlbearUtilityBusy || !linkedTokenExists;
 
         if (linkedTokenExists && pokemon.owlbear.tokenId) {
             const shortTokenId = pokemon.owlbear.tokenId.length > 12
@@ -1369,6 +1372,27 @@ function loadPokemonDetails() {
                     const { item } = buildOwlbearItem(pokemon);
                     const result = await requestOwlbearCommand('insert-token', { item });
                     if (!result.token?.id) throw new Error('Owlbear returned no token UUID.');
+                    saveConfirmedTokenState(result.token);
+                } catch (error) {
+                    setOwlbearUtilityError(error);
+                } finally {
+                    owlbearUtilityBusy = false;
+                    renderOwlbearUtilities();
+                }
+            });
+        }
+
+        if (focusOwlbearTokenBtn) {
+            focusOwlbearTokenBtn.addEventListener('click', async () => {
+                if (!pokemon.owlbear.tokenId) return;
+                owlbearUtilityBusy = true;
+                owlbearTokenStatus?.classList.remove('is-error');
+                renderOwlbearUtilities();
+                try {
+                    const result = await requestOwlbearCommand('focus-token', {
+                        tokenId: pokemon.owlbear.tokenId
+                    });
+                    if (!result.token) throw new Error('The linked token no longer exists.');
                     saveConfirmedTokenState(result.token);
                 } catch (error) {
                     setOwlbearUtilityError(error);

@@ -3352,6 +3352,31 @@ pre {
     font-size: .76em;
 }
 
+.owlbear-focus-btn {
+    min-height: 30px;
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: .76em;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.owlbear-focus-btn:hover:not(:disabled),
+.owlbear-focus-btn:focus-visible {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    outline: none;
+}
+
+.owlbear-focus-btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
 .owlbear-owner-select {
     width: 100%;
     min-width: 0;

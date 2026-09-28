@@ -12,6 +12,17 @@ function getPokemonIcon(pokemon) {
     return `https://sewef.github.io/ptu/img/pokemon/icons/${path}.png`;
 }
 
+function getHpPercentage(pokemon) {
+    const current = Number(pokemon?.hitPoints);
+    const maximum = Number(pokemon?.hitPointsMax);
+    if (!Number.isFinite(current) || !Number.isFinite(maximum) || maximum <= 0) return 100;
+    return Math.max(0, Math.min(100, (current / maximum) * 100));
+}
+
+function getTabLabel(pokemon) {
+    return `${pokemon.nickname || pokemon.name} · Lv. ${pokemon.level}`;
+}
+
 export function createTabManager({ tabList, panelList, sendOwlbearContext, schedulePokemonTokenSync }) {
     let tabs = [];
     let activeId = 'home';
@@ -26,11 +37,15 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
 
         document.querySelectorAll('[data-tab-id]').forEach(element => {
             const active = element.dataset.tabId === id;
-            element.classList.toggle('is-active', active);
+            const visualTab = element.closest('.extension-tab') || element;
+            visualTab.classList.toggle('is-active', active);
             element.setAttribute('aria-selected', String(active));
+            element.tabIndex = active ? 0 : -1;
         });
         document.querySelectorAll('[data-panel-id]').forEach(element => {
-            element.classList.toggle('is-active', element.dataset.panelId === id);
+            const active = element.dataset.panelId === id;
+            element.classList.toggle('is-active', active);
+            element.hidden = !active;
         });
 
         persistTabs();
@@ -38,13 +53,17 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
     }
 
     function createTabElements(tab) {
+        const tabElement = document.createElement('div');
+        tabElement.className = 'extension-tab';
+
         const button = document.createElement('button');
-        button.className = 'extension-tab';
+        button.className = 'extension-tab-main';
         button.id = `tab-${tab.id}`;
         button.dataset.tabId = tab.id;
         button.type = 'button';
         button.role = 'tab';
         button.setAttribute('aria-selected', 'false');
+        button.tabIndex = -1;
 
         const icon = document.createElement('img');
         icon.className = 'tab-icon';
@@ -55,19 +74,29 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
         label.className = 'tab-label';
         label.textContent = tab.title;
 
-        const close = document.createElement('span');
+        const health = document.createElement('span');
+        health.className = 'tab-health';
+        health.setAttribute('aria-hidden', 'true');
+        const healthValue = document.createElement('span');
+        healthValue.className = 'tab-health-value';
+        healthValue.style.setProperty('--hp-percent', `${tab.hpPercent ?? 100}%`);
+        health.appendChild(healthValue);
+
+        const close = document.createElement('button');
         close.className = 'tab-close';
-        close.setAttribute('role', 'button');
+        close.type = 'button';
         close.setAttribute('aria-label', `Close ${tab.title}`);
+        close.title = `Close ${tab.title}`;
         close.textContent = '×';
         close.addEventListener('click', event => {
             event.stopPropagation();
             closeTab(tab.id);
         });
 
-        button.append(icon, label, close);
+        button.append(icon, label, health);
         button.addEventListener('click', () => switchTab(tab.id));
-        tabList.appendChild(button);
+        tabElement.append(button, close);
+        tabList.appendChild(tabElement);
 
         const panel = document.createElement('div');
         panel.className = 'extension-panel';
@@ -88,8 +117,8 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
         const id = createId();
         const storageKey = `${POKEMON_KEY_PREFIX}${id}`;
         PTUPokemonStorage.save(pokemon);
-        const title = `${pokemon.nickname || pokemon.name} · Lv. ${pokemon.level}`;
-        const tab = { id, storageKey, title, icon: getPokemonIcon(pokemon) };
+        const title = getTabLabel(pokemon);
+        const tab = { id, storageKey, title, icon: getPokemonIcon(pokemon), hpPercent: getHpPercentage(pokemon) };
 
         localStorage.setItem(storageKey, JSON.stringify(pokemon));
         tabs.push(tab);
@@ -104,7 +133,7 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
 
         const [tab] = tabs.splice(index, 1);
         localStorage.removeItem(tab.storageKey);
-        document.querySelector(`[data-tab-id="${CSS.escape(id)}"]`)?.remove();
+        document.querySelector(`[data-tab-id="${CSS.escape(id)}"]`)?.closest('.extension-tab')?.remove();
         document.querySelector(`[data-panel-id="${CSS.escape(id)}"]`)?.remove();
 
         if (activeId === id) {
@@ -129,8 +158,9 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
                 const pokemon = JSON.parse(localStorage.getItem(tab.storageKey));
                 return {
                     ...tab,
-                    title: `${pokemon.nickname || pokemon.name} · Lv. ${pokemon.level}`,
-                    icon: getPokemonIcon(pokemon)
+                    title: getTabLabel(pokemon),
+                    icon: getPokemonIcon(pokemon),
+                    hpPercent: getHpPercentage(pokemon)
                 };
             });
             tabs.forEach(createTabElements);
@@ -149,15 +179,22 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
         const tab = tabs.find(item => item.storageKey === storageKey);
         if (!tab || !pokemon || typeof pokemon !== 'object') return;
 
-        tab.title = `${pokemon.nickname || pokemon.name} · Lv. ${pokemon.level}`;
+        tab.title = getTabLabel(pokemon);
         tab.icon = getPokemonIcon(pokemon);
-        const tabElement = document.querySelector(`[data-tab-id="${CSS.escape(tab.id)}"]`);
-        const label = tabElement?.querySelector('.tab-label');
-        const icon = tabElement?.querySelector('.tab-icon');
+        tab.hpPercent = getHpPercentage(pokemon);
+        const tabButton = document.querySelector(`[data-tab-id="${CSS.escape(tab.id)}"]`);
+        const tabElement = tabButton?.closest('.extension-tab');
+        const label = tabButton?.querySelector('.tab-label');
+        const icon = tabButton?.querySelector('.tab-icon');
         const close = tabElement?.querySelector('.tab-close');
+        const healthValue = tabButton?.querySelector('.tab-health-value');
         if (label) label.textContent = tab.title;
         if (icon) icon.src = tab.icon;
-        if (close) close.setAttribute('aria-label', `Close ${tab.title}`);
+        if (close) {
+            close.setAttribute('aria-label', `Close ${tab.title}`);
+            close.title = `Close ${tab.title}`;
+        }
+        if (healthValue) healthValue.style.setProperty('--hp-percent', `${tab.hpPercent}%`);
         const frame = document.querySelector(`[data-panel-id="${CSS.escape(tab.id)}"] iframe`);
         if (frame) frame.title = `Details for ${tab.title}`;
         persistTabs();
@@ -166,10 +203,26 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
 
     function setupTabKeyboard() {
         tabList.addEventListener('keydown', event => {
-            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+            const currentTab = event.target.closest('[role="tab"]');
+            if (!currentTab) return;
             const ids = ['home', ...tabs.map(tab => tab.id)];
-            const offset = event.key === 'ArrowRight' ? 1 : -1;
-            const nextIndex = (ids.indexOf(activeId) + offset + ids.length) % ids.length;
+            const currentId = currentTab.dataset.tabId;
+            const currentIndex = ids.indexOf(currentId);
+            if (currentIndex < 0) return;
+
+            let nextIndex;
+            if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % ids.length;
+            else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + ids.length) % ids.length;
+            else if (event.key === 'Home') nextIndex = 0;
+            else if (event.key === 'End') nextIndex = ids.length - 1;
+            else if (event.key === 'Delete' && currentId !== 'home') {
+                event.preventDefault();
+                closeTab(currentId);
+                document.querySelector(`[data-tab-id="${CSS.escape(activeId)}"]`)?.focus();
+                return;
+            } else return;
+
+            event.preventDefault();
             switchTab(ids[nextIndex]);
             document.querySelector(`[data-tab-id="${CSS.escape(activeId)}"]`)?.focus();
         });

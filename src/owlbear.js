@@ -36,6 +36,8 @@ import { createTokenService } from './owlbear/tokens.js';
                 item = await tokenService.insertSceneToken(payload.item, event.source);
             } else if (command === 'get-token-state') {
                 item = await tokenService.getSceneToken(payload.tokenId, event.source);
+            } else if (command === 'focus-token') {
+                item = await tokenService.focusSceneToken(payload.tokenId, event.source);
             } else if (command === 'set-token-visibility') {
                 item = await tokenService.setSceneTokenVisibility(payload.tokenId, payload.visible, event.source);
             } else if (command === 'set-token-owner') {
