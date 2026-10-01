@@ -23,7 +23,7 @@ export const OWLBEAR_INTEGRATIONS: Record<OwlbearIntegrationKind, {
   diceRoller: {
     label: 'Dice roller',
     emptyLabel: 'Dice Roller',
-    options: [{ value: 'none', label: 'None' }, { value: 'justdices', label: 'Just Dices' }]
+    options: [{ value: 'none', label: 'None' }, { value: 'justdices', label: 'JustDices' }]
   }
 };
 

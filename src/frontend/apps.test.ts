@@ -106,7 +106,7 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector<HTMLInputElement>('.capability-value-input')?.value).toBe('5');
     expect(document.querySelector('button[aria-label="Roll Acrobatics"]')).not.toBeNull();
     const integrationBadges = Array.from(document.querySelectorAll('.owlbear-integration-status span'));
-    expect(integrationBadges.map(badge => badge.textContent)).toEqual(['Owl Trackers', 'Initiative', 'Just Dices']);
+    expect(integrationBadges.map(badge => badge.textContent)).toEqual(['Owl Trackers', 'Initiative', 'JustDices']);
     expect(integrationBadges.map(badge => badge.classList.contains('active'))).toEqual([true, false, true]);
 
     const attackLevel = document.querySelector<HTMLInputElement>('input[aria-label="Attack level points"]')!;
