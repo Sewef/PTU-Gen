@@ -135,6 +135,13 @@ body {
     scrollbar-gutter: stable;
 }
 
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
 /* Compact presentation used inside the Owlbear Rodeo extension shell. */
 body.owlbear-embedded {
     min-height: 100%;
@@ -3215,14 +3222,14 @@ pre {
 .export-button-wrapper {
     position: relative;
     margin-left: auto;
-    align-self: flex-start;
+    align-self: center;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .export-button-wrapper button {
-    margin-top: 2px;
+    margin-top: 0;
 }
 
 .export-btn-main {
@@ -3253,7 +3260,13 @@ pre {
 }
 
 .owlbear-export-group .export-btn-main {
-    margin-top: 2px;
+    margin-top: 0;
+}
+
+.details-page .skill-input,
+.details-page .capability-value-input,
+.details-page .capability-no-value-input {
+    font-family: inherit;
 }
 
 .owlbear-copy-btn {
@@ -3432,9 +3445,12 @@ pre {
     color: white;
 }
 
-.owlbear-visibility-toggle:disabled,
 .owlbear-insert-btn[data-busy="true"] {
     cursor: wait;
+}
+
+.owlbear-visibility-toggle:disabled {
+    cursor: default;
 }
 
 .owlbear-insert-btn:disabled:not([data-busy="true"]) {
@@ -3890,16 +3906,42 @@ body.details-page.owlbear-embedded .export-button-wrapper {
 
 @media (max-width: 640px) {
     .db-field {
-        align-items: stretch;
-        flex-direction: column;
+        align-items: center;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 4px;
     }
 
     .db-actions {
-        width: 100%;
+        width: auto;
+        gap: 2px;
     }
 
     .db-actions .copy-roll-formula-btn {
-        flex: 1 1 auto;
+        flex: 0 0 auto;
+        padding-inline: 5px;
+    }
+
+    .db-summary {
+        flex-wrap: nowrap;
+        gap: 4px;
+        overflow: hidden;
+    }
+
+    .db-formula {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .db-adjust-btn {
+        min-width: 23px;
+        padding-inline: 4px;
+    }
+}
+
+@media (max-width: 470px) {
+    .db-range {
+        display: none;
     }
 }
 

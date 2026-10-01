@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -13,8 +15,14 @@ const { initializeDatasets } = require('./utils/pokemonGenerator');
 app.use(cors());
 app.use(express.json());
 
-// Static files FIRST (so index.html is served for root path)
-app.use(express.static('public'));
+// Serve the Vite build in production. Keep public as a development fallback.
+const staticDirectory = fs.existsSync(path.join(__dirname, 'dist')) ? 'dist' : 'public';
+app.use(express.static(staticDirectory));
+// Keep extension entry points available if dist is stale or was produced by a
+// frontend-only build. Built files in dist retain priority.
+if (staticDirectory !== 'public') {
+  app.use(express.static(path.join(__dirname, 'public')));
+}
 
 // Import routes
 const pokemonRoutes = require('./routes/pokemon');

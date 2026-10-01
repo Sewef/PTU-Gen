@@ -6,5 +6,5 @@ compatibility_date = "2026-06-28"
 command = "npm run build"
 
 [assets]
-directory = "./public"
+directory = "./dist"
 binding = "ASSETS"

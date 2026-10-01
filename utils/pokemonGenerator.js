@@ -769,6 +769,7 @@ class PokemonGenerator {
       moves: this.selectMovesForPokemon(species, level, 6),
       item: this.selectItem(),
       skills: species.Skills || {},
+      gender: gender,
       otherInfo: {
         sizeCategory: sizeCategory,
         weightClass: weightClass,
@@ -853,6 +854,7 @@ class PokemonGenerator {
       moves: [],
       item: '',
       skills: {},
+      gender: 'Unknown',
       otherInfo: {
         sizeCategory: 'Unknown',
         weightClass: 0,

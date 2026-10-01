@@ -1,0 +1,97 @@
+import type { Pokemon } from './types';
+import { ensureStruggle } from './moves';
+
+export const ALL_TYPES = [
+  'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground',
+  'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'
+] as const;
+
+export const STAT_LABELS: Record<string, string> = {
+  HP: 'HP', atk: 'Attack', def: 'Defense', spA: 'Special Attack', spD: 'Special Defense', spe: 'Speed'
+};
+
+export function pokemonTypes(pokemon: Pokemon): string[] {
+  const source = pokemon.actualTypes || pokemon.types || [];
+  if (Array.isArray(source)) return source;
+  return source.formes?.[source.selectedForme] || [];
+}
+
+export function pokemonImage(pokemon: Pokemon, size: 'icons' | 'full' = 'icons'): string {
+  const number = pokemon.Icon || pokemon.id;
+  const path = pokemon._fandex ? `${pokemon._fandex}/${number}` : number;
+  return `https://sewef.github.io/ptu/img/pokemon/${size}/${path}.png`;
+}
+
+export function slug(value: unknown): string {
+  return String(value || 'normal').toLowerCase().replace(/\s+/g, '-');
+}
+
+function formulaStats(stats: Record<string, number> | undefined) {
+  return {
+    HP: Number(stats?.HP) || 0,
+    ATK: Number(stats?.atk ?? stats?.ATK ?? stats?.Attack) || 0,
+    DEF: Number(stats?.def ?? stats?.DEF ?? stats?.Defense) || 0,
+    SPA: Number(stats?.spA ?? stats?.SPA ?? stats?.['Special Attack']) || 0,
+    SPD: Number(stats?.spD ?? stats?.SPD ?? stats?.['Special Defense']) || 0,
+    SPE: Number(stats?.spe ?? stats?.SPE ?? stats?.Speed) || 0
+  };
+}
+
+export function calculateHp(level: number, stats: Record<string, number>, formula = 'LEVEL + (HP * 3) + 10'): number {
+  const values = formulaStats(stats);
+  try {
+    const expression = formula.toUpperCase()
+      .replace(/\bLEVEL\b/g, String(Number(level)))
+      .replace(/\b(HP|ATK|DEF|SPA|SPD|SPE)\b/g, token => String(values[token as keyof typeof values]));
+    if (!/^[\d+\-*/(). ]+$/.test(expression)) throw new Error('Invalid HP formula');
+    // The expression is reduced to numbers and arithmetic operators above.
+    return Math.max(1, Math.floor(Function(`"use strict"; return (${expression})`)()));
+  } catch {
+    return Math.max(1, Math.floor(Number(level) + values.HP * 3 + 10));
+  }
+}
+
+export function normalizePokemon(raw: any): Pokemon {
+  const pokemon = structuredClone(raw || {}) as Pokemon;
+  pokemon.name ||= 'Unnamed Pokémon';
+  pokemon.level = Number(pokemon.level) || 1;
+  pokemon.types ||= ['Normal'];
+  pokemon.stats ||= { HP: 1, atk: 1, def: 1, spA: 1, spD: 1, spe: 1 };
+  pokemon.moves = Array.isArray(pokemon.moves) ? pokemon.moves : [];
+  pokemon.abilities = Array.isArray(pokemon.abilities) ? pokemon.abilities : [];
+  pokemon.pokeEdges = Array.isArray(pokemon.pokeEdges) ? pokemon.pokeEdges : [];
+  pokemon.capabilities = Array.isArray(pokemon.capabilities) ? pokemon.capabilities : [];
+  pokemon.skills ||= {};
+  pokemon.otherInfo ||= {};
+  const storedGender = String(pokemon.gender ?? pokemon.otherInfo.gender ?? 'Unknown');
+  pokemon.gender = storedGender === 'Genderless' ? 'No Gender' : storedGender;
+  pokemon.otherInfo.gender = pokemon.gender;
+  pokemon.combatStages ||= {};
+  pokemon.captureState ||= { useErrata: false, standardCounts: {}, standardFlags: {}, errataFlags: {}, rarityBonus: 0 };
+  pokemon.captureState.standardCounts ||= {};
+  pokemon.captureState.standardFlags ||= {};
+  pokemon.captureState.errataFlags ||= {};
+  pokemon.owlbear ||= { visible: true, playerId: '', trackers: 'none', initiative: 'none', diceRoller: 'none' };
+  pokemon.owlbear.visible ??= true;
+  pokemon.owlbear.playerId ||= '';
+  pokemon.owlbear.trackers ||= 'none';
+  pokemon.owlbear.initiative ||= 'none';
+  pokemon.owlbear.diceRoller ||= 'none';
+  pokemon.hpFormula ||= pokemon.hp_formula || 'LEVEL + (HP * 3) + 10';
+  pokemon.hitPointsMax = Number(pokemon.hitPointsMax) || calculateHp(pokemon.level, pokemon.stats, pokemon.hpFormula);
+  if (pokemon.hitPoints === undefined || pokemon.hitPoints === null) pokemon.hitPoints = pokemon.hitPointsMax;
+  pokemon.tutorPoints ??= Math.floor(pokemon.level / 5) + 1;
+  ensureStruggle(pokemon);
+  delete pokemon.typeMultiplierMode;
+  return pokemon;
+}
+
+export function frequencyUses(frequency: unknown): number {
+  const match = String(frequency || '').match(/\d+/);
+  return match ? Math.max(1, Number(match[0])) : 1;
+}
+
+export function parseTutorCost(cost: unknown): number {
+  const match = String(cost || '').match(/\d+/);
+  return match ? Number(match[0]) : 0;
+}
