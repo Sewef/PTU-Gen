@@ -1,6 +1,8 @@
 import type { Pokemon } from './types';
 import { ALL_TYPES, pokemonTypes } from './pokemon';
 
+export const ATTACKING_TYPES = ['Typeless', ...ALL_TYPES];
+
 type Relations = { weak?: string[]; resist?: string[]; immune?: string[] };
 const chart: Record<string, Relations> = {
   normal: { weak: ['fighting'], immune: ['ghost'] },

@@ -18,6 +18,13 @@
     ignoreBaseRelation: '', hpFormula: 'LEVEL + (HP * 3) + 10', owlbearVisible: true,
     owlbearPlayerId: '', owlbearTrackers: 'none', owlbearInitiative: 'none', owlbearDiceRoller: 'none'
   };
+  const helpTitles = {
+    dataset: 'Core: Base manual + official Pokédex\nCommunity: Same + Gen 9 community Pokédex + modifications\nHomebrew: Auto-updated Pokédex + unchanged Gen 9 community Pokédex',
+    distribution: 'Random: Completely unpredictable distribution\nBalanced: Equal distribution across all stats\nMinmaxed: Specializes — high stats get higher, low stats get lower',
+    nature: "Random: Chooses any nature\nOptimal: Raises the species' highest base stat and lowers its lowest base stat\nFixed: Uses the selected nature from the dropdown\nTies currently use Composed",
+    ignoreBaseRelation: 'Use ALL to disable Base Relation for every stat, or list specific stats separated by commas. Accepted stats: HP, ATK, DEF, SPA, SPD, SPE.',
+    hpFormula: 'Formula placeholders: LEVEL, HP, ATK, DEF, SPA, SPD, SPE. Example: LEVEL + (HP * 3) + DEF.'
+  };
 
   let settings = $state<GeneratorSettings>({ ...defaults });
   let pokemons = $state<Pokemon[]>([]);
@@ -97,7 +104,15 @@
     void (async () => {
       try {
         const options = await generatorOptions();
-        if (!disposed) { fandexes = options.fandexes; natures = options.natures; }
+        if (!disposed) {
+          fandexes = options.fandexes;
+          natures = options.natures;
+          const normalizedFandexes = normalizeSelectedFandexes(fandexes);
+          if (normalizedFandexes.join('\0') !== settings.fandex.join('\0')) {
+            settings.fandex = normalizedFandexes;
+            persist();
+          }
+        }
       } catch (error) { if (!disposed) message = error instanceof Error ? error.message : 'Unable to load options'; }
       if (!disposed) await refreshMetadata();
       if (!disposed && embedded) {
@@ -151,6 +166,18 @@
   }
 
   function nameOf(value: any) { return String(value?.name || value?.Name || value?.id || value); }
+
+  function fandexKey(value: any) { return String(value?.key || value?.id || value?.name || value?.Name || value); }
+
+  function normalizeSelectedFandexes(options: any[]) {
+    const canonical = new Map<string, string>();
+    for (const option of options) {
+      const key = fandexKey(option);
+      canonical.set(key.toLowerCase(), key);
+      canonical.set(nameOf(option).toLowerCase(), key);
+    }
+    return [...new Set(settings.fandex.map(value => canonical.get(String(value).toLowerCase())).filter((value): value is string => Boolean(value)))];
+  }
 
   async function submitCustom(kind: 'pokemon' | 'abilities' | 'moves') {
     try {
@@ -209,10 +236,10 @@
   </header>
 
   <main class="content">
-    <section class="panel">
+    <section class="panel generation-settings-panel">
       <h2>⚙️ Generation Settings</h2>
-      <form onsubmit={(event) => { event.preventDefault(); create(false); }} onchange={persist}>
-        <div class="form-group" class:pref-changed-group={datasetChanged}><label for="dataset">Dataset</label>
+      <form class="generation-settings-form" onsubmit={(event) => { event.preventDefault(); create(false); }} onchange={persist}>
+        <div class="form-group" class:pref-changed-group={datasetChanged}><div class="field-label-row"><label for="dataset">Dataset</label><button type="button" class="option-help" title={helpTitles.dataset} aria-label="Help: Dataset">?</button></div>
           <select id="dataset" class:pref-changed-control={datasetChanged} bind:value={settings.dataset} onchange={() => refreshMetadata()}>
             <option value="core">Core</option><option value="community">Community</option><option value="homebrew">Homebrew</option>
           </select>
@@ -220,8 +247,8 @@
         <div class="form-group" class:pref-changed-group={fandexChanged}><span class="group-label">FanDexes</span><div class="checkbox-wrap">
           {#if !fandexes.length}<span class="small-text text-secondary">No FanDex available</span>{/if}
           {#each fandexes as fandex}
-            {@const name = nameOf(fandex)}
-            <label class="inline-option"><input type="checkbox" checked={settings.fandex.includes(name)} onchange={(event) => toggleFandex(name, event.currentTarget.checked)} /> {name}</label>
+            {@const key = fandexKey(fandex)}
+            <label class="inline-option"><input type="checkbox" checked={settings.fandex.includes(key)} onchange={(event) => toggleFandex(key, event.currentTarget.checked)} /> {nameOf(fandex)}</label>
           {/each}
         </div></div>
 
@@ -250,24 +277,24 @@
           <label><input type="radio" bind:group={settings.shinyMode} value="odds" /> Odds</label><input type="number" min="0" max="100" step="0.1" bind:value={settings.shinyOdds} disabled={settings.shinyMode !== 'odds'} /><span>%</span>
         </div></div>
         <div class="form-group options-grid" class:pref-changed-group={optionsChanged}><label><input type="checkbox" bind:checked={settings.includeLegendaries} /> Include legendaries</label><label><input type="checkbox" bind:checked={settings.forceEvolution} /> Force evolution</label></div>
-        <div class="form-group" class:pref-changed-group={distributionChanged}><span class="group-label">Distribution</span><div class="radio-row">
+        <div class="form-group" class:pref-changed-group={distributionChanged}><div class="field-label-row"><span class="group-label">Distribution</span><button type="button" class="option-help" title={helpTitles.distribution} aria-label="Help: Distribution">?</button></div><div class="radio-row">
           {#each ['RANDOM', 'BALANCED', 'MINMAXED'] as value}<label><input type="radio" bind:group={settings.distribution} {value} /> {value}</label>{/each}
         </div></div>
-        <div class="form-group" class:pref-changed-group={natureChanged}><span class="group-label">Nature</span><div class="radio-row">
+        <div class="form-group" class:pref-changed-group={natureChanged}><div class="field-label-row"><span class="group-label">Nature</span><button type="button" class="option-help" title={helpTitles.nature} aria-label="Help: Nature">?</button></div><div class="radio-row">
           <label><input type="radio" bind:group={settings.natureMode} value="random" /> Random</label><label><input type="radio" bind:group={settings.natureMode} value="optimal" /> Optimal</label><label><input type="radio" bind:group={settings.natureMode} value="fixed" /> Fixed</label>
           <select bind:value={settings.nature} disabled={settings.natureMode !== 'fixed'}><option value="">Select nature</option>{#each natures as nature}<option value={nameOf(nature)}>{nameOf(nature)}</option>{/each}</select>
         </div></div>
 
         <button type="button" class="advanced-toggle" class:has-hidden-changes={advancedChanged && !advancedOpen} onclick={() => advancedOpen = !advancedOpen}><span>Advanced</span><span>{advancedOpen ? '▲' : '▼'}</span></button>
         {#if advancedOpen}<div class="advanced-section open"><div class="advanced-content">
-          <div class="form-group" class:pref-changed-group={settings.ignoreBaseRelation !== defaults.ignoreBaseRelation}><label for="ignoreBase">Ignore Base Relation</label><input id="ignoreBase" bind:value={settings.ignoreBaseRelation} placeholder="ALL or HP,ATK,DEF" /></div>
-          <div class="form-group" class:pref-changed-group={settings.hpFormula !== defaults.hpFormula}><label for="hpFormula">HP Formula</label><input id="hpFormula" bind:value={settings.hpFormula} /></div>
+          <div class="form-group" class:pref-changed-group={settings.ignoreBaseRelation !== defaults.ignoreBaseRelation}><div class="field-label-row"><label for="ignoreBase">Ignore Base Relation</label><button type="button" class="option-help" title={helpTitles.ignoreBaseRelation} aria-label="Help: Ignore Base Relation">?</button></div><input id="ignoreBase" bind:value={settings.ignoreBaseRelation} placeholder="ALL or HP,ATK,DEF" /></div>
+          <div class="form-group" class:pref-changed-group={settings.hpFormula !== defaults.hpFormula}><div class="field-label-row"><label for="hpFormula">HP Formula</label><button type="button" class="option-help" title={helpTitles.hpFormula} aria-label="Help: HP Formula">?</button></div><input id="hpFormula" bind:value={settings.hpFormula} /></div>
         </div></div>{/if}
 
         <button type="button" class="advanced-toggle" onclick={() => customOpen = !customOpen}><span>Customization</span><span>{customOpen ? '▲' : '▼'}</span></button>
         {#if customOpen}<div class="advanced-section open"><div class="advanced-content">
           {#each ['pokemon', 'abilities', 'moves'] as kind}
-            <div class="form-group"><label for="custom-{kind}">Custom {kind}</label><div class="input-button-row"><input id="custom-{kind}" bind:value={customInputs[kind as keyof typeof customInputs]} placeholder="Paste JSON or URL" /><button type="button" class="edit-bn" onclick={() => submitCustom(kind as any)}>Load</button></div></div>
+            <div class="form-group"><div class="field-label-row"><label for="custom-{kind}">Custom {kind}</label><button type="button" class="option-help" title={`Load custom ${kind} definitions. Duplicates will be overwritten.`} aria-label={`Help: Custom ${kind}`}>?</button></div><div class="input-button-row"><input id="custom-{kind}" bind:value={customInputs[kind as keyof typeof customInputs]} placeholder="Paste JSON or URL" /><button type="button" class="edit-bn" onclick={() => submitCustom(kind as any)}>Load</button></div></div>
           {/each}
           {#if customStatus}<div class="info-box">{customStatus}</div>{/if}
         </div></div>{/if}
@@ -309,17 +336,28 @@
 </div>
 
 <style>
-  .checkbox-wrap, .inline-controls, .radio-row, .input-button-row { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; }
-  .inline-controls input[type='number'] { width: 5rem; }
-  .inline-option, .radio-row label, .options-grid label, .inline-controls label { display: inline-flex; gap: .35rem; align-items: center; }
+  .generation-settings-panel{container-type:inline-size}
+  .generation-settings-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));align-items:start;gap:.65rem .8rem;font-size:.875rem;line-height:1.3}
+  .generation-settings-form>.form-group,.generation-settings-form>.form-row{min-width:0;margin:0}
+  .generation-settings-form>.advanced-toggle,.generation-settings-form>.advanced-section,.generation-settings-form>.button-group{grid-column:1/-1}
+  .generation-settings-form :is(input,select,button){font-size:inherit}
+  .generation-settings-form :is(input:not([type='radio']):not([type='checkbox']),select){min-height:32px;padding:.38rem .5rem}
+  .checkbox-wrap, .inline-controls, .radio-row, .input-button-row { display: flex; flex-wrap: wrap; gap: .35rem .55rem; align-items: center; }
+  .inline-controls input[type='number'] { width: 4.25rem; }
+  .inline-option, .radio-row label, .options-grid label, .inline-controls label { display: inline-flex; flex:0 0 auto; gap: .3rem; align-items: center; margin:0; white-space:nowrap; }
   .inline-option input, .radio-row input, .options-grid input, .inline-controls input[type='radio'] { width: auto; }
-  .options-grid { display: grid; gap: .5rem; }
-  .advanced-toggle { width: 100%; border: 0; }
+  .options-grid { display:flex;flex-wrap:wrap;align-content:center;gap:.35rem .8rem; }
+  .generation-settings-form>.form-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}
+  .generation-settings-form>.form-row .form-group{min-width:0;margin:0}
+  .advanced-toggle { width: 100%; border: 0; padding:.55rem .7rem; }
   .input-button-row input { flex: 1; }
   .autocomplete-suggestions.visible { display: block; position: relative; }
   .autocomplete-item { display: block; width: 100%; text-align: left; border: 0; padding: .45rem; background: transparent; cursor: pointer; }
-  .group-label { display:block; font-weight:600; margin-bottom:.35rem; }
+  .group-label { display:block; font-size:.82rem; font-weight:650; margin-bottom:.25rem; }
+  .field-label-row{display:flex;align-items:center;gap:.3rem;margin-bottom:.25rem}.field-label-row :is(label,.group-label){margin:0}
+  .option-help{display:inline-grid;place-items:center;flex:0 0 auto;width:1.15rem;height:1.15rem;min-height:0;padding:0;border:1px solid var(--primary-color);border-radius:50%;background:transparent;color:var(--primary-color);font-size:.72rem!important;font-weight:800;line-height:1;cursor:help}.option-help:hover,.option-help:focus-visible{background:var(--primary-color);color:#fff;outline:none}
   .generation-status { margin-bottom: 1rem; }
   .generated-heading { align-items: center; }
   .generated-heading h2 { margin-block: 0; }
+  @container(max-width:500px){.generation-settings-form>.form-row{grid-template-columns:1fr}.generation-settings-form>.button-group{grid-template-columns:1fr}}
 </style>

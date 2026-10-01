@@ -40,6 +40,8 @@
 </details>
 
 <style>
-  .other-info-grid{padding:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem}
-  .other-info-gender{font-size:1.1em}
+  .other-info-grid{padding:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;font-size:.8rem;line-height:1.35}
+  .other-info-grid .info-value,.other-info-gender{font-size:inherit}
+  .other-info-grid strong{font-weight:650}
+  .gender-select{min-height:27px;font-size:inherit}
 </style>

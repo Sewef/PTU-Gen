@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { Pokemon } from '../lib/types';
-  import { ALL_TYPES, slug } from '../lib/pokemon';
-  import { typeEffectiveness } from '../lib/type-effectiveness';
+  import { slug } from '../lib/pokemon';
+  import { ATTACKING_TYPES, typeEffectiveness } from '../lib/type-effectiveness';
   let { pokemon, selected = 'typeless', onselect, onsave }: { pokemon: Pokemon; selected?: string; onselect: (type: string) => void; onsave: () => void } = $props();
   let editing = $state(false);
   const options = [0, .25, .5, 1, 1.5, 2, 2.5, 3, 3.5, 4];
-  const displayedTypes = ['Typeless', ...ALL_TYPES];
+  const displayedTypes = ATTACKING_TYPES;
   const effectiveness = $derived(typeEffectiveness(pokemon));
   function change(type: string, value: number) { pokemon.typeEffectivenessOverrides ||= {}; pokemon.typeEffectivenessOverrides[type] = value; onsave(); }
   function effClass(value: number) { if (value === 0) return 'eff-immune'; if (value <= .25) return 'eff-strong-resist'; if (value <= .5) return 'eff-resist'; if (value === 1) return 'eff-neutral'; if (value <= 2) return 'eff-weak'; return 'eff-strong-weak'; }

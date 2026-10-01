@@ -181,14 +181,19 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         const hpTracker = Array.isArray(trackers)
             ? trackers.find(tracker => String(tracker?.name || '').toLowerCase() === 'hp')
             : null;
+        const injuriesTracker = Array.isArray(trackers)
+            ? trackers.find(tracker => String(tracker?.name || '').toLowerCase() === 'injuries')
+            : null;
         const desiredHp = getFiniteNumber(pokemon.hitPoints);
         const desiredHpMax = getFiniteNumber(pokemon.hitPointsMax);
+        const desiredInjuries = Math.max(0, Math.trunc(getFiniteNumber(pokemon.captureState?.standardCounts?.injuries) || 0));
         const nameChanged = existing.name !== desiredName || (existing.text?.plainText !== undefined && existing.text.plainText !== desiredName);
         const hpChanged = trackersEnabled && hpTracker && (
             (desiredHp !== null && Number(hpTracker.value) !== desiredHp) ||
             (desiredHpMax !== null && Number(hpTracker.max) !== desiredHpMax)
         );
-        if (!nameChanged && !hpChanged) return;
+        const injuriesChanged = trackersEnabled && injuriesTracker && Number(injuriesTracker.value) !== desiredInjuries;
+        if (!nameChanged && !hpChanged && !injuriesChanged) return existing;
 
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
@@ -198,11 +203,24 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
                 if (!trackersEnabled) return;
                 const itemTrackers = item.metadata?.[OWL_TRACKERS_METADATA_KEY];
                 if (!Array.isArray(itemTrackers)) return;
-                const itemHp = itemTrackers.find(tracker => String(tracker?.name || '').toLowerCase() === 'hp');
-                if (itemHp && desiredHp !== null) itemHp.value = desiredHp;
-                if (itemHp && desiredHpMax !== null) itemHp.max = desiredHpMax;
+                const updatedTrackers = itemTrackers.map(tracker => {
+                    const name = String(tracker?.name || '').toLowerCase();
+                    if (name === 'hp') return {
+                        ...tracker,
+                        ...(desiredHp !== null ? { value: desiredHp } : {}),
+                        ...(desiredHpMax !== null ? { max: desiredHpMax } : {})
+                    };
+                    if (name === 'injuries') return { ...tracker, value: desiredInjuries };
+                    return tracker;
+                });
+                item.metadata = {
+                    ...(item.metadata || {}),
+                    [OWL_TRACKERS_METADATA_KEY]: updatedTrackers
+                };
             });
         });
+        const [updated] = await OBR.scene.items.getItems([tokenId]);
+        return updated || existing;
     }
 
     function schedulePokemonTokenSync(pokemon) {
@@ -224,6 +242,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         focusSceneToken,
         setSceneTokenVisibility,
         setSceneTokenOwner,
+        syncPokemonToSceneToken,
         notifyTrackedTokenStates,
         schedulePokemonTokenSync,
         serializeToken

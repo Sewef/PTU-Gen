@@ -25,6 +25,41 @@
     return stop;
   });
 
+  $effect(() => {
+    const tokenId = String(pokemon.owlbear.tokenId || '').trim();
+    const trackers = pokemon.owlbear.trackers;
+    const name = String(pokemon.name || 'Pokémon');
+    const nickname = String(pokemon.nickname || '');
+    const hitPoints = Number(pokemon.hitPoints);
+    const hitPointsMax = Number(pokemon.hitPointsMax);
+    const injuries = Math.max(0, Math.trunc(Number(pokemon.captureState?.standardCounts?.injuries) || 0));
+
+    if (!embedded || !tokenId || trackers !== 'owltrackers') return;
+
+    const timer = window.setTimeout(() => {
+      // Keep this payload plain: Svelte's reactive proxies cannot be cloned by postMessage.
+      const snapshot = {
+        name,
+        nickname,
+        hitPoints,
+        hitPointsMax,
+        captureState: { standardCounts: { injuries } },
+        owlbear: { tokenId, trackers }
+      };
+      void requestOwlbear('sync-token', { pokemon: snapshot })
+        .then(() => {
+          failed = false;
+          status = 'Token linked';
+        })
+        .catch((cause) => {
+          failed = true;
+          status = cause instanceof Error ? cause.message : 'Owlbear synchronization failed';
+        });
+    }, 200);
+
+    return () => window.clearTimeout(timer);
+  });
+
   function confirm(token: Partial<OwlbearTokenState> & { id?: string }) {
     if (!applyTokenToPokemon(pokemon, token)) return;
     failed = false;
@@ -72,7 +107,10 @@
     if (pokemon.owlbear.tokenId) void action(() => requestOwlbear('focus-token', { tokenId: pokemon.owlbear.tokenId }));
   }
   function toggleVisibility() {
-    if (pokemon.owlbear.tokenId) void action(() => requestOwlbear('set-token-visibility', { tokenId: pokemon.owlbear.tokenId, visible: pokemon.owlbear.visible === false }));
+    const visible = pokemon.owlbear.visible === false;
+    pokemon.owlbear.visible = visible;
+    onsave();
+    if (pokemon.owlbear.tokenId) void action(() => requestOwlbear('set-token-visibility', { tokenId: pokemon.owlbear.tokenId, visible }));
   }
   function changeOwner(userId: string) {
     pokemon.owlbear.playerId = userId;
@@ -86,7 +124,7 @@
     <div class="owlbear-utilities-panel" aria-label="Owlbear scene utilities">
       <div class="owlbear-utilities-header"><div class="owlbear-utilities-title">Owlbear Scene</div><div class="owlbear-utilities-header-actions"><span class="owlbear-token-status" class:is-error={failed} aria-live="polite">{status || (linked ? 'Token linked' : 'Token not in scene')}</span><div class="owlbear-header-export"><ExportMenu {pokemon} header /></div></div></div>
       <OwlbearIntegrationBadges owlbear={pokemon.owlbear} />
-      <div class="owlbear-utilities-actions compact"><button type="button" class="owlbear-focus-btn owlbear-primary-action" disabled={busy} onclick={() => linked ? focus() : insert()}>{busy ? 'Working…' : linked ? 'Focus' : 'Insert'}</button><button type="button" class="owlbear-visibility-toggle" disabled={!linked || busy} data-visible={pokemon.owlbear.visible !== false} aria-pressed={pokemon.owlbear.visible !== false} aria-label="Token visibility" onclick={toggleVisibility}><span class="owlbear-visible-label">Visible</span><span class="owlbear-hidden-label">Hidden</span></button><select class="owlbear-owner-select" aria-label="Change token owner" disabled={!currentPlayer || busy} value={pokemon.owlbear.playerId || currentPlayer?.id || ''} onchange={(event) => changeOwner(event.currentTarget.value)}>{#if currentPlayer}<option value={currentPlayer.id}>Me ({currentPlayer.name})</option>{/if}{#each roomPlayers.filter(player => player.id !== currentPlayer?.id) as player}<option value={player.id}>{player.name}</option>{/each}</select></div>
+      <div class="owlbear-utilities-actions compact"><button type="button" class="owlbear-focus-btn owlbear-primary-action" disabled={busy} onclick={() => linked ? focus() : insert()}>{busy ? 'Working…' : linked ? 'Focus' : 'Insert'}</button><button type="button" class="owlbear-visibility-toggle" disabled={busy} data-visible={pokemon.owlbear.visible !== false} aria-pressed={pokemon.owlbear.visible !== false} aria-label="Token visibility" onclick={toggleVisibility}><span class="owlbear-visible-label">Visible</span><span class="owlbear-hidden-label">Hidden</span></button><select class="owlbear-owner-select" aria-label="Change token owner" disabled={!currentPlayer || busy} value={pokemon.owlbear.playerId || currentPlayer?.id || ''} onchange={(event) => changeOwner(event.currentTarget.value)}>{#if currentPlayer}<option value={currentPlayer.id}>Me ({currentPlayer.name})</option>{/if}{#each roomPlayers.filter(player => player.id !== currentPlayer?.id) as player}<option value={player.id}>{player.name}</option>{/each}</select></div>
     </div>
   {:else}
     <ExportMenu {pokemon} />

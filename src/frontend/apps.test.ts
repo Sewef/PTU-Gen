@@ -21,23 +21,31 @@ afterEach(async () => {
 
 describe('Svelte application surfaces', () => {
   it('mounts the generator and hydrates API-backed options', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+    localStorage.setItem('ptu-generator-preferences-v1', JSON.stringify({ fandex: ['Variant'] }));
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);
-      const body = url.includes('/fandexes') ? { fandexes: [] }
+      const body = url.includes('/fandexes') ? { fandexes: [{ key: 'variant', name: 'Variant' }] }
         : url.includes('/natures') ? { natures: ['Brave'] }
         : url.includes('/list') ? { species: ['Pikachu'] }
         : url.includes('/habitats') ? { habitats: ['Forest'] }
         : { types: ['Electric'] };
       return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
     instances.push(mount(GeneratorApp, { target: document.getElementById('app')! }));
     await vi.waitFor(() => expect(document.body.textContent).toContain('Generation Settings'));
+    await vi.waitFor(() => expect(Array.from(document.querySelectorAll('label')).some(label => label.textContent?.includes('Variant'))).toBe(true));
+    expect(Array.from(document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')).find(input => input.parentElement?.textContent?.includes('Variant'))?.checked).toBe(true);
+    expect(fetchMock.mock.calls.some(([input]) => String(input).includes('fandex=variant'))).toBe(true);
     expect(document.querySelector('form')).not.toBeNull();
     const dataset = document.querySelector<HTMLSelectElement>('#dataset')!;
     dataset.value = 'community';
     dataset.dispatchEvent(new Event('change', { bubbles: true }));
     await tick();
     expect(dataset.closest('.form-group')?.classList.contains('pref-changed-group')).toBe(true);
+    const helpButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.option-help'));
+    expect(helpButtons).toHaveLength(3);
+    expect(helpButtons.every(button => button.textContent === '?' && Boolean(button.title))).toBe(true);
 
     const owlbearToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Owlbear Rodeo'))!;
     owlbearToggle.click();
@@ -118,7 +126,16 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector('.capture-formula')?.textContent).toContain('evolution');
     expect(document.body.textContent).toContain('Stuck:');
     expect(document.body.textContent).toContain('× 10');
-    expect(document.querySelector('.level-hp-info-row .hp-damage-controls')).not.toBeNull();
+    expect(document.querySelector('.incoming-damage-block .hp-damage-controls')).not.toBeNull();
+    expect(document.querySelector('.level-hp-info-row + .incoming-damage-block')).not.toBeNull();
+    const tickButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.tick-buttons button'));
+    expect(tickButtons.map(button => button.textContent)).toEqual(['+ Tick', '− Tick', '+ Injury']);
+    expect(document.querySelector<HTMLInputElement>('input[aria-label="Injuries"]')?.value).toBe('0');
+    tickButtons[2].click();
+    await tick();
+    const afterInjury = JSON.parse(localStorage.getItem('selectedPokemon')!);
+    expect(afterInjury.captureState.standardCounts.injuries).toBe(1);
+    expect(afterInjury.hitPoints).toBeLessThanOrEqual(Math.floor(afterInjury.hitPointsMax * .9));
     expect(document.querySelectorAll('.damage-category-buttons button')).toHaveLength(2);
     expect(document.querySelector('.details-right .damage-panel')).toBeNull();
     expect(document.querySelectorAll('.type-effectiveness-item')).toHaveLength(19);

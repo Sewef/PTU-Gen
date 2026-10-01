@@ -5,7 +5,7 @@ const DAMAGE_BASE_TABLE: Record<number, { dmg: string; min: number; avg: number;
 };
 
 const struggleCapabilities = [
-  ['Zapper','Electric'],['Firestarter','Fire'],['Guster','Flying'],['Fountain','Water'],['Freezer','Ice'],['Materializer','Rock']
+  ['Zapper','Electric'],['Firestarter','Fire'],['Guster','Flying'],['Fountain','Water'],['Freezer','Ice'],['Materializer','Rock'],['Intoxicator','Poison']
 ];
 
 export function damageBase(value: number) {

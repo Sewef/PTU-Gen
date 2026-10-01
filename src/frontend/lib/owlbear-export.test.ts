@@ -11,13 +11,14 @@ describe('Owlbear token export', () => {
     const { item } = buildOwlbearItem({
       id: 25, name: 'Pikachu', level: 12, stats: { HP: 5, spe: 8 }, hitPoints: 20, hitPointsMax: 37,
       otherInfo: { sizeCategory: 'Small' },
+      captureState: { standardCounts: { injuries: 3 } },
       owlbear: { visible: true, playerId: 'player-1', trackers: 'owltrackers', initiative: 'prettysordid', diceRoller: 'justdices' }
     });
 
     expect(item.createdUserId).toBe('player-1');
     expect(item.metadata['com.owl-trackers/trackers']).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'HP', value: 20, max: 37 }),
-      expect.objectContaining({ name: 'Injuries', value: 0 })
+      expect.objectContaining({ name: 'Injuries', value: 3 })
     ]));
     expect(item.metadata['com.pretty-initiative/metadata']).toMatchObject({ count: '8', active: false });
   });

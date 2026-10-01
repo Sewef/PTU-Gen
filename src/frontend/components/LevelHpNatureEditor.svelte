@@ -37,8 +37,8 @@
   <span class="info-label">Level &amp; HP</span>
   <div class="level-hp-wrapper"><input class="level-input" aria-label="Level" type="number" min="1" max="100" bind:value={pokemon.level} onchange={changeLevel} /><input id="hpCurrentInput" aria-label="Current HP" class="hp-current-input" type="number" bind:value={pokemon.hitPoints} onchange={onsave} /><span>/</span><input aria-label="Maximum HP" class="hp-max-input" type="number" min="1" bind:value={pokemon.hitPointsMax} onchange={onsave} /></div>
   <div class="margin-top-8"><input id="hpFormulaInput" aria-label="HP Formula" class="skill-input" bind:value={pokemon.hpFormula} onchange={changeHpFormula} /></div>
-  <IncomingDamage bind:pokemon bind:damageType {onsave} />
 </div>
+<IncomingDamage bind:pokemon bind:damageType {onsave} />
 <div class="info-box pokemon-info-row nature-info-row">
   <label class="info-label" for="natureSelect">Nature</label>
   <div class="nature-control"><select id="natureSelect" class="nature-select" value={typeof pokemon.nature === 'string' ? pokemon.nature : pokemon.nature?.name || pokemon.nature?.Name || ''} onchange={(event) => changeNature(event.currentTarget.value)}>{#if !natures.length}<option>{typeof pokemon.nature === 'string' ? pokemon.nature : pokemon.nature?.name || 'Unknown'}</option>{/if}{#each natures as nature}<option value={nature.name || nature.Name}>{nature.name || nature.Name} (+{nature.raise} / −{nature.lower})</option>{/each}</select></div>

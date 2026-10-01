@@ -24,7 +24,9 @@ function normalizeQuery(query) {
 }
 
 function splitFandex(query) {
-  return query.fandex ? query.fandex.split(',') : [];
+  return query.fandex
+    ? query.fandex.split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
+    : [];
 }
 
 async function loadCustomDataFromQuery(query) {

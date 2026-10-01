@@ -101,7 +101,7 @@ function buildOwlbearItem(pokemon, position = { x: 0, y: 0 }) {
                 variant: 'counter',
                 color: 2,
                 inlineMath: true,
-                value: 0,
+                value: Math.max(0, Math.trunc(Number(pokemon.captureState?.standardCounts?.injuries) || 0)),
                 name: 'Injuries'
             }
         ];
