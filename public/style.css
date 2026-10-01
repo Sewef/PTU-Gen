@@ -435,6 +435,7 @@ button {
 .pokemon-meta {
     font-size: 0.85em;
     color: var(--text-secondary);
+    text-transform: capitalize;
 }
 
 .shiny-badge {
