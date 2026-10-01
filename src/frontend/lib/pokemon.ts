@@ -18,6 +18,12 @@ export function pokemonTypes(pokemon: Pokemon): string[] {
   return source.formes?.[source.selectedForme] || [];
 }
 
+export function hasNuclearType(pokemon: Pokemon): boolean {
+  return pokemonTypes(pokemon).some(type => type.toLowerCase() === 'nuclear')
+    || String(pokemon._fandex || '').toLowerCase() === 'uranium'
+    || (pokemon.fandex || []).some(fandex => String(fandex).toLowerCase() === 'uranium');
+}
+
 export function pokemonImage(pokemon: Pokemon, size: 'icons' | 'full' = 'icons'): string {
   const number = pokemon.Icon || pokemon.id;
   const path = pokemon._fandex ? `${pokemon._fandex}/${number}` : number;

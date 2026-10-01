@@ -73,6 +73,12 @@
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   }
 
+  function resetSettings() {
+    settings = { ...defaults, fandex: [...defaults.fandex] };
+    persist();
+    void refreshMetadata();
+  }
+
   async function refreshMetadata() {
     const request = ++metadataRequest;
     try {
@@ -311,7 +317,7 @@
           <div class="form-group" class:pref-changed-group={settings.owlbearDiceRoller !== defaults.owlbearDiceRoller}><label for="dice">{OWLBEAR_INTEGRATIONS.diceRoller.label}</label><select id="dice" bind:value={settings.owlbearDiceRoller}>{#each OWLBEAR_INTEGRATIONS.diceRoller.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
         </div></div>{/if}
 
-        <div class="button-group"><button type="submit" class="btn-generate" disabled={loading}>🎲 Generate Pokémon</button><button type="button" class="btn-generate" onclick={() => create(true)} disabled={loading}>+ Blank Pokémon</button><button type="reset" class="btn-reset" onclick={() => settings = { ...defaults }}>↻ Reset</button></div>
+        <div class="button-group"><button type="submit" class="btn-generate" disabled={loading}>🎲 Generate Pokémon</button><button type="button" class="btn-generate" onclick={() => create(true)} disabled={loading}>+ Blank Pokémon</button><button type="button" class="btn-reset" onclick={resetSettings}>↻ Reset</button></div>
       </form>
     </section>
 

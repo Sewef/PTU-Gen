@@ -1,7 +1,9 @@
 import type { Pokemon } from './types';
-import { ALL_TYPES, pokemonTypes } from './pokemon';
+import { ALL_TYPES, hasNuclearType, pokemonTypes } from './pokemon';
 
-export const ATTACKING_TYPES = ['Typeless', ...ALL_TYPES];
+export function attackingTypes(pokemon: Pokemon): string[] {
+  return ['Typeless', ...ALL_TYPES, ...(hasNuclearType(pokemon) ? ['Nuclear'] : [])];
+}
 
 type Relations = { weak?: string[]; resist?: string[]; immune?: string[] };
 const chart: Record<string, Relations> = {
@@ -27,7 +29,7 @@ const chart: Record<string, Relations> = {
 
 export function typeEffectiveness(pokemon: Pokemon): Record<string, number> {
   const result: Record<string, number> = { typeless: 1 };
-  for (const attacking of ALL_TYPES.map(type => type.toLowerCase())) {
+  for (const attacking of attackingTypes(pokemon).slice(1).map(type => type.toLowerCase())) {
     let score = 0;
     let immune = false;
     for (const defending of pokemonTypes(pokemon).map(type => type.toLowerCase())) {

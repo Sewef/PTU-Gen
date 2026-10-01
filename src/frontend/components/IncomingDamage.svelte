@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Pokemon } from '../lib/types';
-  import { ATTACKING_TYPES, typeEffectiveness } from '../lib/type-effectiveness';
+  import { attackingTypes, typeEffectiveness } from '../lib/type-effectiveness';
   import { adjustHitPointsByTick, calculateIncomingDamage, hitPointTick, injuredHitPointMaximum } from '../lib/combat';
 
   let { pokemon = $bindable(), damageType = $bindable('typeless'), onsave }: {
@@ -11,6 +11,7 @@
 
   let amount: number | null = $state(null);
   let category = $state<'physical' | 'special'>('physical');
+  const damageTypes = $derived(attackingTypes(pokemon));
   const effectiveness = $derived(Number(typeEffectiveness(pokemon)[damageType] ?? 1));
   const defense = $derived(Number(pokemon.stats[category === 'physical' ? 'def' : 'spD'] || 0));
   const finalDamage = $derived(calculateIncomingDamage(amount ?? 0, defense, effectiveness));
@@ -50,7 +51,7 @@
   <div class="incoming-damage-header"><span class="info-label">Incoming Damage</span><label class="injury-counter">Injuries <input aria-label="Injuries" type="number" min="0" value={injuries} onchange={(event) => setInjuries(Number(event.currentTarget.value))} /></label><div class="tick-buttons" role="group" aria-label="HP and injury controls"><button type="button" title={'Heal one tick (' + tick + ' HP), up to ' + healingMaximum} onclick={() => applyTick(1)}>+ Tick</button><button type="button" title={'Lose one tick (' + tick + ' HP)'} onclick={() => applyTick(-1)}>− Tick</button><button type="button" title="Add one injury and reduce the healing cap by 10%" onclick={addInjury}>+ Injury</button></div></div>
   <div class="hp-damage-controls">
     <input class="hp-damage-input" aria-label="Incoming damage" placeholder="Damage" type="number" min="0" value={amount ?? ''} oninput={(event) => setAmount(event.currentTarget.value)} />
-    <select class="hp-damage-select" aria-label="Damage type" bind:value={damageType}>{#each ATTACKING_TYPES as type}<option value={type.toLowerCase()}>{type}</option>{/each}</select>
+    <select class="hp-damage-select" aria-label="Damage type" bind:value={damageType}>{#each damageTypes as type}<option value={type.toLowerCase()}>{type}</option>{/each}</select>
     <div class="damage-category-buttons" role="group" aria-label="Damage class"><button type="button" class:active={category === 'physical'} aria-pressed={category === 'physical'} onclick={() => category = 'physical'}>Physical</button><button type="button" class:active={category === 'special'} aria-pressed={category === 'special'} onclick={() => category = 'special'}>Special</button></div>
     <button type="button" class="hp-damage-btn" onclick={apply}>Apply</button>
   </div>

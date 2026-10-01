@@ -103,7 +103,8 @@ const FANDEX_DATASETS = {
     pokedex: 'pokedex/fandex/pokedex_uranium.min.json',
     abilities: 'abilities/fandex/abilities_uranium.min.json',
     moves: 'moves/fandex/moves_uranium.min.json',
-    capabilities: 'capabilities/fandex/capabilities_uranium.min.json'
+    capabilities: 'capabilities/fandex/capabilities_uranium.min.json',
+    types: ['Nuclear']
   },
   "slime rancher": {
     name: 'Slime Rancher',
@@ -831,6 +832,9 @@ class PokemonGenerator {
     const nature = this.selectNatureForOptions(options, zeroBaseStats);
     const zeroStats = { HP: 0, atk: 0, def: 0, spA: 0, spD: 0, spe: 0 };
     const hitPointsMax = this.calculateHitPoints(level, zeroStats, hpFormula);
+    const fandex = Array.isArray(options.fandex)
+      ? options.fandex
+      : String(options.fandex || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
 
     return {
       id: 0,
@@ -867,7 +871,7 @@ class PokemonGenerator {
       capabilities: [],
       legendary: false,
       dataset: (options.dataset || 'core').toLowerCase(),
-      fandex: [],
+      fandex,
       learnsets: {
         moveLearns: {},
         abilityLearns: { basicAbilities: [], advancedAbilities: [], highAbilities: [] }
@@ -1686,6 +1690,9 @@ class PokemonGenerator {
           }
         });
       }
+    });
+    currentFandexes.forEach(fandexKey => {
+      (FANDEX_DATASETS[fandexKey]?.types || []).forEach(type => types.add(type));
     });
     return Array.from(types).sort();
   }

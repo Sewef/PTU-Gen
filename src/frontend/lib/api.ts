@@ -1,6 +1,12 @@
 import type { GeneratorSettings, Pokemon } from './types';
 import { normalizePokemon } from './pokemon';
 
+export function typesForFandexes(types: string[], fandexes: string[]): string[] {
+  const available = new Set(types);
+  if (fandexes.some(fandex => fandex.trim().toLowerCase() === 'uranium')) available.add('Nuclear');
+  return [...available].sort((left, right) => left.localeCompare(right));
+}
+
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
   const body = await response.json().catch(() => ({}));
@@ -16,7 +22,11 @@ export async function metadata(settings: Pick<GeneratorSettings, 'dataset' | 'fa
     json<{ habitats: string[] }>(`/api/pokemon/habitats?${query}`),
     json<{ types: string[] }>(`/api/pokemon/types?${query}`)
   ]);
-  return { species: species.species, habitats: habitats.habitats, types: types.types };
+  return {
+    species: species.species,
+    habitats: habitats.habitats,
+    types: typesForFandexes(types.types, settings.fandex)
+  };
 }
 
 export async function generatorOptions() {

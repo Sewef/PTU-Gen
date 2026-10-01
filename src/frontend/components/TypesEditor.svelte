@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { Pokemon } from '../lib/types';
-  import { ALL_TYPES, pokemonTypes, slug } from '../lib/pokemon';
+  import { ALL_TYPES, hasNuclearType, pokemonTypes, slug } from '../lib/pokemon';
 
   let { pokemon = $bindable(), onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
   let editing = $state(false);
   let draft = $state<string[]>([]);
   const displayed = $derived(pokemonTypes(pokemon));
+  const availableTypes = $derived([...ALL_TYPES, ...(hasNuclearType(pokemon) ? ['Nuclear'] : [])]);
 
   function open() {
     draft = [...displayed];
@@ -33,7 +34,7 @@
     <div class="modal-content" role="dialog" aria-modal="true" aria-label="Select Types">
       <h2 class="modal-title">Select Types</h2>
       <div class="modal-info-box"><p>Selected types: <span class="types">{#each draft as type}<span class="type-badge type-{slug(type)}">{type}</span>{:else}<span class="text-tertiary">None</span>{/each}</span></p></div>
-      <div class="modal-grid type-picker">{#each ALL_TYPES as type}<button type="button" class="type-badge type-choice type-{slug(type)}" class:selected={draft.includes(type)} aria-pressed={draft.includes(type)} onclick={() => toggle(type)}>{type}</button>{/each}</div>
+      <div class="modal-grid type-picker">{#each availableTypes as type}<button type="button" class="type-badge type-choice type-{slug(type)}" class:selected={draft.includes(type)} aria-pressed={draft.includes(type)} onclick={() => toggle(type)}>{type}</button>{/each}</div>
       <div class="modal-buttons"><button type="button" class="modal-btn modal-btn-primary" disabled={!draft.length} onclick={save}>Save</button><button type="button" class="modal-btn modal-btn-secondary" onclick={() => editing = false}>Cancel</button></div>
     </div>
   </div>

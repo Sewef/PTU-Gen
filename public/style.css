@@ -1017,6 +1017,7 @@ button {
 .type-dark { background: #705848; }
 .type-steel { background: #B8B8D0; color: #333; }
 .type-fairy { background: #EE99AC; }
+.type-nuclear { background: #2F9E44; }
 
 .stats-grid {
     display: grid;

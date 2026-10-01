@@ -3,6 +3,7 @@ import { mount, tick, unmount } from 'svelte';
 import GeneratorApp from './GeneratorApp.svelte';
 import DetailsApp from './DetailsApp.svelte';
 import MovesEditor from './components/MovesEditor.svelte';
+import TypeEffectiveness from './components/TypeEffectiveness.svelte';
 import { normalizePokemon } from './lib/pokemon';
 
 let instances: any[] = [];
@@ -70,10 +71,39 @@ describe('Svelte application surfaces', () => {
     expect(helpButtons).toHaveLength(3);
     expect(helpButtons.every(button => button.textContent === '?' && Boolean(button.title))).toBe(true);
 
+    const reset = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Reset'))!;
+    reset.click();
+    await tick();
+    expect(dataset.value).toBe('core');
+    expect(Array.from(document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')).find(input => input.parentElement?.textContent?.includes('Variant'))?.checked).toBe(false);
+    expect(JSON.parse(localStorage.getItem('ptu-generator-preferences-v1') || '{}')).toMatchObject({ dataset: 'core', fandex: [] });
+    await vi.waitFor(() => expect(fetchMock.mock.calls.some(([input]) => String(input).includes('dataset=core') && !String(input).includes('fandex='))).toBe(true));
+
     const owlbearToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Owlbear Rodeo'))!;
     owlbearToggle.click();
     await tick();
     expect(Array.from(document.querySelectorAll('label')).find(label => label.textContent?.includes('Token visible'))?.classList.contains('inline-option')).toBe(true);
+  });
+
+  it('offers Nuclear as a type when the Uranium FanDex is selected', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      const body = url.includes('/fandexes') ? { fandexes: [{ key: 'uranium', name: 'Uranium' }] }
+        : url.includes('/natures') ? { natures: [] }
+        : url.includes('/list') ? { species: [] }
+        : url.includes('/habitats') ? { habitats: [] }
+        : { types: ['Fire', 'Water'] };
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }));
+    instances.push(mount(GeneratorApp, { target: document.getElementById('app')! }));
+    await vi.waitFor(() => expect(Array.from(document.querySelectorAll('label')).some(label => label.textContent?.includes('Uranium'))).toBe(true));
+
+    const typeSelect = document.querySelector<HTMLSelectElement>('#type')!;
+    expect(Array.from(typeSelect.options).some(option => option.value === 'Nuclear')).toBe(false);
+    const uranium = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')).find(input => input.parentElement?.textContent?.includes('Uranium'))!;
+    uranium.click();
+
+    await vi.waitFor(() => expect(Array.from(typeSelect.options).some(option => option.value === 'Nuclear')).toBe(true));
   });
 
   it('mounts an editable details sheet from local storage', async () => {
@@ -210,5 +240,20 @@ describe('Svelte application surfaces', () => {
 
     expect(Array.from(document.querySelectorAll('button')).some(button => button.textContent === 'Roll')).toBe(true);
     expect(Array.from(document.querySelectorAll('button')).some(button => button.textContent === 'Crit')).toBe(true);
+  });
+
+  it('shows Nuclear in type effectiveness when Uranium was selected for generation', async () => {
+    const pokemon = normalizePokemon({
+      id: 1, name: 'Orchynx', level: 1, types: ['Grass', 'Steel'], stats: { HP: 1 }, fandex: ['uranium']
+    });
+    instances.push(mount(TypeEffectiveness, {
+      target: document.getElementById('app')!,
+      props: { pokemon, selected: 'typeless', onselect: vi.fn(), onsave: vi.fn() }
+    }));
+    await tick();
+
+    expect(document.querySelectorAll('.type-effectiveness-item')).toHaveLength(20);
+    const nuclear = Array.from(document.querySelectorAll('.type-effectiveness-item')).find(item => item.textContent?.includes('Nuclear'));
+    expect(nuclear?.textContent).toContain('1x');
   });
 });

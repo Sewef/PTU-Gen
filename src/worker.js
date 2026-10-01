@@ -152,6 +152,7 @@ app.get('/api/pokemon/generateBlank', c => {
       nature: query.nature,
       hpformula: query.hpformula,
       dataset: query.dataset,
+      fandex: splitFandex(query),
       owlbearvisible: query.owlbearvisible,
       owlbearplayerid: query.owlbearplayerid,
       owlbeartrackers: query.owlbeartrackers,

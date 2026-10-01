@@ -124,6 +124,7 @@ router.get('/generateBlank', (req, res) => {
       nature: req.query.nature,
       hpformula: req.query.hpformula,
       dataset: req.query.dataset,
+      fandex: splitFandex(req.query),
       owlbearvisible: req.query.owlbearvisible,
       owlbearplayerid: req.query.owlbearplayerid,
       owlbeartrackers: req.query.owlbeartrackers,

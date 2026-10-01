@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generationParams } from './api';
+import { generationParams, typesForFandexes } from './api';
 import type { GeneratorSettings } from './types';
 
 const settings: GeneratorSettings = {
@@ -27,5 +27,17 @@ describe('generationParams', () => {
     expect(params.has('species')).toBe(false);
     expect(params.has('habitat')).toBe(false);
     expect(params.get('level')).toBe('20');
+  });
+});
+
+describe('typesForFandexes', () => {
+  it('adds Nuclear only when Uranium is included', () => {
+    expect(typesForFandexes(['Fire', 'Water'], ['uranium'])).toEqual(['Fire', 'Nuclear', 'Water']);
+    expect(typesForFandexes(['Fire', 'Water'], ['Uranium'])).toEqual(['Fire', 'Nuclear', 'Water']);
+    expect(typesForFandexes(['Fire', 'Water'], ['sage'])).toEqual(['Fire', 'Water']);
+  });
+
+  it('does not duplicate Nuclear when the API already returns it', () => {
+    expect(typesForFandexes(['Fire', 'Nuclear'], ['uranium'])).toEqual(['Fire', 'Nuclear']);
   });
 });

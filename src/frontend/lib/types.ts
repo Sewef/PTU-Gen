@@ -17,6 +17,7 @@ export interface Pokemon extends JsonRecord {
   level: number;
   dataset?: string;
   _fandex?: string;
+  fandex?: string[];
   shiny?: boolean;
   legendary?: boolean;
   types: string[] | { isFormeVariant: true; selectedForme: string; formes: Record<string, string[]> };
