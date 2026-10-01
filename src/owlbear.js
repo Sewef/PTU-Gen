@@ -22,6 +22,7 @@ import { createTokenService } from './owlbear/tokens.js';
     const tabs = createTabManager({
         tabList,
         panelList,
+        historyScope: `owlbear:${OBR.room.id}`,
         sendOwlbearContext: owlbearContext.sendOwlbearContext,
         schedulePokemonTokenSync: tokenService.schedulePokemonTokenSync
     });

@@ -17,6 +17,7 @@
   import OwlbearPanel from './components/OwlbearPanel.svelte';
 
   const storageKey = new URLSearchParams(location.search).get('pokemonKey') || 'selectedPokemon';
+  const requestedHistoryScope = new URLSearchParams(location.search).get('historyScope');
   const embedded = new URLSearchParams(location.search).get('embedded') === 'true';
   let pokemon = $state<Pokemon | null>(null);
   let error = $state('');
@@ -24,7 +25,7 @@
 
   function persist() {
     if (!pokemon) return;
-    savePokemon(pokemon, storageKey);
+    savePokemon(pokemon, storageKey, requestedHistoryScope || String(pokemon._ptuHistoryScope || 'site'));
     document.title = `${pokemon.name} - Lvl ${pokemon.level} - Pokémon Details`;
   }
 

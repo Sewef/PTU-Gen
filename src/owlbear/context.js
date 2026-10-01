@@ -5,6 +5,7 @@ export function createOwlbearContext({ OBR, resolveOwlbearReady, notifyTrackedTo
     function getOwlbearContextMessage() {
         return {
             type: 'ptu-owlbear-players',
+            roomId: OBR.room.id,
             currentPlayer,
             players: partyPlayers
         };

@@ -20,6 +20,29 @@ afterEach(async () => {
 });
 
 describe('Svelte application surfaces', () => {
+  it('adds generated Pokémon to history only when their card is opened', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      const body = url.includes('/fandexes') ? { fandexes: [] }
+        : url.includes('/natures') ? { natures: [] }
+        : url.includes('/generate?') ? { id: 25, name: 'Pikachu', level: 12, stats: { HP: 5 }, types: ['Electric'], owlbear: {} }
+        : url.includes('/list') ? { species: ['Pikachu'] }
+        : url.includes('/habitats') ? { habitats: ['Forest'] }
+        : { types: ['Electric'] };
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }));
+    vi.spyOn(window, 'open').mockImplementation(() => null);
+    instances.push(mount(GeneratorApp, { target: document.getElementById('app')! }));
+    await vi.waitFor(() => expect(document.querySelector('button[type="submit"]')).not.toBeNull());
+
+    document.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+    await vi.waitFor(() => expect(document.querySelector('.pokemon-card')).not.toBeNull());
+    expect(JSON.parse(localStorage.getItem('ptu-pokemon-history-v1') || '[]')).toHaveLength(0);
+
+    document.querySelector<HTMLButtonElement>('.pokemon-card')!.click();
+    expect(JSON.parse(localStorage.getItem('ptu-pokemon-history-v1') || '[]')).toHaveLength(1);
+  });
+
   it('mounts the generator and hydrates API-backed options', async () => {
     localStorage.setItem('ptu-generator-preferences-v1', JSON.stringify({ fandex: ['Variant'] }));
     const fetchMock = vi.fn(async (input: string | URL | Request) => {

@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { generate, generatorOptions, loadCustom, metadata } from './lib/api';
   import type { GeneratorSettings, HistoryEntry, Pokemon } from './lib/types';
-  import { clearHistory, HISTORY_KEY, listHistory, loadPokemon, plainPokemon, removeHistory, savePokemon } from './lib/storage';
+  import { clearHistory, historyKey, listHistory, loadPokemon, owlbearHistoryScope, plainPokemon, removeHistory, savePokemon, SITE_HISTORY_SCOPE } from './lib/storage';
   import type { OwlbearPlayer } from './lib/owlbear';
   import { OWLBEAR_INTEGRATIONS } from './lib/owlbear-integrations';
   import PokemonCards from './components/PokemonCards.svelte';
@@ -45,6 +45,7 @@
   let selectedFiles = $state<File[]>([]);
   let currentPlayer = $state<OwlbearPlayer | null>(null);
   let roomPlayers = $state<OwlbearPlayer[]>([]);
+  let historyScope = $state(embedded ? '' : SITE_HISTORY_SCOPE);
   let metadataRequest = 0;
 
   const filteredSpecies = $derived(settings.species.trim().length > 0
@@ -85,7 +86,7 @@
     }
   }
 
-  function refreshHistory() { history = listHistory(); }
+  function refreshHistory() { history = historyScope ? listHistory(historyScope) : []; }
 
   onMount(() => {
     let disposed = false;
@@ -93,13 +94,17 @@
       if (event.origin !== location.origin || event.data?.type !== 'ptu-owlbear-players') return;
       currentPlayer = event.data.currentPlayer?.id ? { id: String(event.data.currentPlayer.id), name: String(event.data.currentPlayer.name || 'Player') } : null;
       roomPlayers = (Array.isArray(event.data.players) ? event.data.players : []).filter((player: any) => player?.id).map((player: any) => ({ id: String(player.id), name: String(player.name || 'Player') }));
+      if (embedded && event.data.roomId) {
+        historyScope = owlbearHistoryScope(String(event.data.roomId));
+        refreshHistory();
+      }
       settings.owlbearPlayerId ||= currentPlayer?.id || '';
     };
     if (embedded) document.body.classList.add('owlbear-embedded');
     settings = readSettings();
     refreshHistory();
     window.addEventListener('ptu-history-updated', refreshHistory);
-    window.addEventListener('storage', event => { if (event.key === HISTORY_KEY) refreshHistory(); });
+    window.addEventListener('storage', event => { if (event.key === historyKey(historyScope)) refreshHistory(); });
     window.addEventListener('message', onPlayers);
     void (async () => {
       try {
@@ -147,7 +152,6 @@
           initiative: settings.owlbearInitiative,
           diceRoller: settings.owlbearDiceRoller
         };
-        savePokemon(pokemon);
         results.push(pokemon);
       } catch (error) {
         message = `Pokémon ${index + 1}: ${error instanceof Error ? error.message : 'generation failed'}`;
@@ -200,7 +204,6 @@
         const values = Array.isArray(data) ? data : data.pokemon ? data.pokemon : [data];
         for (const value of values) {
           if (!value?.name) continue;
-          savePokemon(value);
           imported.push(value);
         }
       } catch (error) { message = `${file.name}: ${error instanceof Error ? error.message : 'invalid JSON'}`; }
@@ -212,9 +215,9 @@
   }
 
   function openHistory(entry: HistoryEntry) {
-    const pokemon = loadPokemon(entry.id);
+    const pokemon = loadPokemon(entry.id, historyScope);
     if (!pokemon) return refreshHistory();
-    savePokemon(pokemon);
+    savePokemon(pokemon, 'selectedPokemon', historyScope);
     if (embedded) {
       window.parent.postMessage({ type: 'ptu-open-pokemon', pokemon: plainPokemon(pokemon), activate: false }, location.origin);
       return;
@@ -314,9 +317,9 @@
 
     <section class="panel">
       {#if history.length}<section class="pokemon-history-section">
-        <div class="pokemon-history-header"><h3>Recent Pokémon</h3><button type="button" class="history-clear-btn" onclick={() => { if (confirm('Clear the entire Pokémon history?')) clearHistory(); }}>Clear history</button></div>
+        <div class="pokemon-history-header"><h3>Recent Pokémon</h3><button type="button" class="history-clear-btn" onclick={() => { if (confirm('Clear the entire Pokémon history?')) clearHistory(historyScope); }}>Clear history</button></div>
         <div class="pokemon-history-grid">{#each history.slice(0, 12) as entry}
-          <article class="pokemon-history-card"><button type="button" class="pokemon-history-open" onclick={() => openHistory(entry)}><img src={entry.icon} alt="" class="pokemon-history-icon" /><span class="pokemon-history-text"><strong>{entry.nickname ? `${entry.nickname} (${entry.name})` : entry.name}</strong><small>Lv. {entry.level}</small></span></button><button type="button" class="pokemon-history-remove" aria-label="Remove" onclick={() => removeHistory(entry.id)}>×</button></article>
+          <article class="pokemon-history-card"><button type="button" class="pokemon-history-open" onclick={() => openHistory(entry)}><img src={entry.icon} alt="" class="pokemon-history-icon" /><span class="pokemon-history-text"><strong>{entry.nickname ? `${entry.nickname} (${entry.name})` : entry.name}</strong><small>Lv. {entry.level}</small></span></button><button type="button" class="pokemon-history-remove" aria-label="Remove" onclick={() => removeHistory(entry.id, historyScope)}>×</button></article>
         {/each}</div>
       </section>{/if}
 
@@ -329,7 +332,7 @@
       <div class="flex-between-center generated-heading"><h2>🎯 Generated Pokémon</h2>{#if pokemons.length}<ExportMenu pokemon={pokemons} bulk />{/if}</div>
       {#if message}<div class:loading={loading} class:error={!loading && !pokemons.length} class="generation-status">{message}</div>{/if}
       <div class:no-pokemon={!pokemons.length} class="pokemon-display">
-        {#if pokemons.length}<PokemonCards {pokemons} />{:else if !loading}<p>No Pokémon generated yet. Configure the settings and click Generate!</p>{/if}
+        {#if pokemons.length}<PokemonCards {pokemons} {historyScope} />{:else if !loading}<p>No Pokémon generated yet. Configure the settings and click Generate!</p>{/if}
       </div>
     </section>
   </main>

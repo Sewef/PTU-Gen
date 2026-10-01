@@ -11,6 +11,8 @@ describe('pokemon storage', () => {
     expect(id).toBe('record-1');
     expect(loadPokemon(id)?.name).toBe('Pikachu');
     expect(listHistory()).toHaveLength(1);
+    savePokemon(plainPokemon(pokemon));
+    expect(listHistory()).toHaveLength(1);
   });
 
   it('removes individual records and clears the complete history', () => {
@@ -21,6 +23,21 @@ describe('pokemon storage', () => {
     savePokemon(pokemon);
     clearHistory();
     expect(listHistory()).toEqual([]);
+  });
+
+  it('keeps site and Owlbear room histories isolated', () => {
+    const sitePokemon = normalizePokemon({ id: 1, name: 'Bulbasaur', level: 5, stats: { HP: 5 }, types: ['Grass'] });
+    const roomPokemon = normalizePokemon({ id: 4, name: 'Charmander', level: 7, stats: { HP: 5 }, types: ['Fire'] });
+    savePokemon(sitePokemon);
+    savePokemon(roomPokemon, 'room-selected', 'owlbear:room-42');
+
+    expect(listHistory().map(entry => entry.name)).toEqual(['Bulbasaur']);
+    expect(listHistory('owlbear:room-42').map(entry => entry.name)).toEqual(['Charmander']);
+    expect(listHistory('owlbear:another-room')).toEqual([]);
+
+    clearHistory('owlbear:room-42');
+    expect(listHistory('owlbear:room-42')).toEqual([]);
+    expect(listHistory().map(entry => entry.name)).toEqual(['Bulbasaur']);
   });
 
   it('creates a structured-clone-safe value for iframe messages', () => {

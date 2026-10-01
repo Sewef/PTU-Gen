@@ -23,12 +23,15 @@ function getTabLabel(pokemon) {
     return `${pokemon.nickname || pokemon.name} · Lv. ${pokemon.level}`;
 }
 
-export function createTabManager({ tabList, panelList, sendOwlbearContext, schedulePokemonTokenSync }) {
+export function createTabManager({ tabList, panelList, historyScope, sendOwlbearContext, schedulePokemonTokenSync }) {
     let tabs = [];
     let activeId = 'home';
+    const scopeKey = encodeURIComponent(historyScope);
+    const tabsStorageKey = `${TABS_STORAGE_KEY}:${scopeKey}`;
+    const pokemonKeyPrefix = `${POKEMON_KEY_PREFIX}${scopeKey}-`;
 
     function persistTabs() {
-        localStorage.setItem(TABS_STORAGE_KEY, JSON.stringify({ tabs, activeId }));
+        localStorage.setItem(tabsStorageKey, JSON.stringify({ tabs, activeId }));
     }
 
     function switchTab(id) {
@@ -106,7 +109,7 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
         panel.setAttribute('aria-labelledby', button.id);
 
         const frame = document.createElement('iframe');
-        frame.src = `details.html?embedded=true&pokemonKey=${encodeURIComponent(tab.storageKey)}`;
+        frame.src = `details.html?embedded=true&pokemonKey=${encodeURIComponent(tab.storageKey)}&historyScope=${encodeURIComponent(historyScope)}`;
         frame.title = `Details for ${tab.title}`;
         frame.addEventListener('load', () => sendOwlbearContext(frame.contentWindow));
         panel.appendChild(frame);
@@ -115,8 +118,8 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
 
     function openPokemon(pokemon, { activate = true } = {}) {
         const id = createId();
-        const storageKey = `${POKEMON_KEY_PREFIX}${id}`;
-        PTUPokemonStorage.save(pokemon);
+        const storageKey = `${pokemonKeyPrefix}${id}`;
+        PTUPokemonStorage.save(pokemon, historyScope);
         const title = getTabLabel(pokemon);
         const tab = { id, storageKey, title, icon: getPokemonIcon(pokemon), hpPercent: getHpPercentage(pokemon) };
 
@@ -145,14 +148,14 @@ export function createTabManager({ tabList, panelList, sendOwlbearContext, sched
 
     function restoreTabs() {
         try {
-            const saved = JSON.parse(localStorage.getItem(TABS_STORAGE_KEY));
+            const saved = JSON.parse(localStorage.getItem(tabsStorageKey));
             if (!saved || !Array.isArray(saved.tabs)) return;
 
             tabs = saved.tabs.filter(tab =>
                 tab &&
                 typeof tab.id === 'string' &&
                 typeof tab.storageKey === 'string' &&
-                tab.storageKey.startsWith(POKEMON_KEY_PREFIX) &&
+                tab.storageKey.startsWith(pokemonKeyPrefix) &&
                 localStorage.getItem(tab.storageKey)
             ).map(tab => {
                 const pokemon = JSON.parse(localStorage.getItem(tab.storageKey));

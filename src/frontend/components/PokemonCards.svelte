@@ -1,16 +1,17 @@
 <script lang="ts">
   import type { Pokemon } from '../lib/types';
   import { pokemonImage, pokemonTypes, slug } from '../lib/pokemon';
-  import { plainPokemon, savePokemon } from '../lib/storage';
+  import { ensurePokemonId, plainPokemon, savePokemon } from '../lib/storage';
 
-  let { pokemons }: { pokemons: Pokemon[] } = $props();
+  let { pokemons, historyScope = 'site' }: { pokemons: Pokemon[]; historyScope?: string } = $props();
 
-  function openPokemon(pokemon: Pokemon, index: number) {
+  function openPokemon(pokemon: Pokemon, index: number, event: MouseEvent) {
     const embedded = new URLSearchParams(location.search).get('owlbear') === 'true' && window.parent !== window;
-    savePokemon(pokemon);
+    ensurePokemonId(pokemon);
+    if (!embedded) savePokemon(pokemon, 'selectedPokemon', historyScope);
     sessionStorage.setItem(`pokemon_${index}`, JSON.stringify(pokemon));
     if (embedded) {
-      window.parent.postMessage({ type: 'ptu-open-pokemon', pokemon: plainPokemon(pokemon), activate: false }, location.origin);
+      window.parent.postMessage({ type: 'ptu-open-pokemon', pokemon: plainPokemon(pokemon), activate: !(event.ctrlKey || event.metaKey) }, location.origin);
       return;
     }
     window.open('/details.html', '_blank', 'noopener');
@@ -19,7 +20,7 @@
 
 <div class="pokemon-cards-grid">
   {#each pokemons as pokemon, index (pokemon._ptuRecordId || index)}
-    <button type="button" class="pokemon-card" onclick={() => openPokemon(pokemon, index)}>
+    <button type="button" class="pokemon-card" onclick={(event) => openPokemon(pokemon, index, event)}>
       <div class="pokemon-card-header">
         <img src={pokemonImage(pokemon)} alt={pokemon.name} class="pokemon-card-icon" />
         <div class="pokemon-card-number">#{Number(pokemon.id) || 0}</div>
