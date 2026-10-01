@@ -3,16 +3,17 @@
   import { calculateHp, STAT_LABELS } from '../lib/pokemon';
 
   let { pokemon = $bindable(), onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
-  const statKeys = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'];
+  const statKeys = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'] as const;
+  type StatKey = typeof statKeys[number];
   const baseKeys: Record<string, string> = { HP: 'HP', atk: 'Attack', def: 'Defense', spA: 'Special Attack', spD: 'Special Defense', spe: 'Speed' };
   const multipliers: Record<number, number> = { [-6]: .4, [-5]: .5, [-4]: .6, [-3]: .7, [-2]: .8, [-1]: .9, 0: 1, 1: 1.2, 2: 1.4, 3: 1.6, 4: 1.8, 5: 2, 6: 2.2 };
 
-  function rawBase(stat: string) { return Number(pokemon.baseStats?.[baseKeys[stat]] ?? pokemon.baseWithNature?.[stat] ?? pokemon.stats[stat]) || 0; }
-  function effectiveBase(stat: string) { return Number(pokemon.baseWithNature?.[stat] ?? rawBase(stat)) || 0; }
-  function natureModifier(stat: string) { return effectiveBase(stat) - rawBase(stat); }
-  function levelPoints(stat: string) { return Number(pokemon.stats[stat]) - effectiveBase(stat); }
+  function rawBase(stat: StatKey) { return Number(pokemon.baseStats?.[baseKeys[stat]] ?? pokemon.baseWithNature?.[stat] ?? pokemon.stats[stat]) || 0; }
+  function effectiveBase(stat: StatKey) { return Number(pokemon.baseWithNature?.[stat] ?? rawBase(stat)) || 0; }
+  function natureModifier(stat: StatKey) { return effectiveBase(stat) - rawBase(stat); }
+  function levelPoints(stat: StatKey) { return Number(pokemon.stats[stat]) - effectiveBase(stat); }
 
-  function updateLevel(stat: string, value: number) {
+  function updateLevel(stat: StatKey, value: number) {
     const points = Number(value) || 0;
     pokemon.distributedPoints ||= {};
     pokemon.distributedPoints[stat] = points;
@@ -21,7 +22,7 @@
     onsave();
   }
 
-  function updateBase(stat: string, value: number) {
+  function updateBase(stat: StatKey, value: number) {
     const points = levelPoints(stat);
     const modifier = natureModifier(stat);
     pokemon.baseStats ||= {};
@@ -37,11 +38,11 @@
     onsave();
   }
 
-  function updateHp(stat: string) {
+  function updateHp(stat: StatKey) {
     if (stat === 'HP') pokemon.hitPointsMax = calculateHp(pokemon.level, pokemon.stats, pokemon.hpFormula);
   }
 
-  function total(stat: string) {
+  function total(stat: StatKey) {
     if (stat === 'HP') return Number(pokemon.stats[stat] || 0);
     return Math.floor(Number(pokemon.stats[stat] || 0) * (multipliers[Number(pokemon.combatStages[stat] || 0)] || 1));
   }
