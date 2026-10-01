@@ -30,6 +30,7 @@
     const trackers = pokemon.owlbear.trackers;
     const name = String(pokemon.name || 'Pokémon');
     const nickname = String(pokemon.nickname || '');
+    const shiny = Boolean(pokemon.shiny);
     const hitPoints = Number(pokemon.hitPoints);
     const hitPointsMax = Number(pokemon.hitPointsMax);
     const injuries = Math.max(0, Math.trunc(Number(pokemon.captureState?.standardCounts?.injuries) || 0));
@@ -41,6 +42,7 @@
       const snapshot = {
         name,
         nickname,
+        shiny,
         hitPoints,
         hitPointsMax,
         captureState: { standardCounts: { injuries } },

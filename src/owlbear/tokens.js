@@ -125,8 +125,17 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         const item = await getSceneToken(tokenId, targetWindow);
         if (!item) throw new Error('The linked token no longer exists in this scene.');
 
-        const bounds = await OBR.scene.items.getItemBounds([tokenId]);
-        await OBR.viewport.animateToBounds(bounds);
+        const [bounds, viewportPosition, viewportWidth, viewportHeight] = await Promise.all([
+            OBR.scene.items.getItemBounds([tokenId]),
+            OBR.viewport.getPosition(),
+            OBR.viewport.getWidth(),
+            OBR.viewport.getHeight()
+        ]);
+        const tokenScreenPosition = await OBR.viewport.transformPoint(bounds.center);
+        await OBR.viewport.setPosition({
+            x: viewportPosition.x + (viewportWidth / 2) - tokenScreenPosition.x,
+            y: viewportPosition.y + (viewportHeight / 2) - tokenScreenPosition.y
+        });
         await OBR.player.select([tokenId], true);
         return item;
     }
@@ -197,8 +206,10 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
 
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
-                item.name = desiredName;
-                if (item.text?.plainText !== undefined) item.text.plainText = desiredName;
+                if (item.name !== desiredName) item.name = desiredName;
+                if (item.text?.plainText !== undefined && item.text.plainText !== desiredName) {
+                    item.text.plainText = desiredName;
+                }
 
                 if (!trackersEnabled) return;
                 const itemTrackers = item.metadata?.[OWL_TRACKERS_METADATA_KEY];
