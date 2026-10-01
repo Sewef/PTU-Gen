@@ -4,6 +4,7 @@
   import type { GeneratorSettings, HistoryEntry, Pokemon } from './lib/types';
   import { clearHistory, HISTORY_KEY, listHistory, loadPokemon, plainPokemon, removeHistory, savePokemon } from './lib/storage';
   import type { OwlbearPlayer } from './lib/owlbear';
+  import { OWLBEAR_INTEGRATIONS } from './lib/owlbear-integrations';
   import PokemonCards from './components/PokemonCards.svelte';
   import ExportMenu from './components/ExportMenu.svelte';
 
@@ -275,9 +276,9 @@
         {#if owlbearOpen}<div class="advanced-section open"><div class="advanced-content">
           <div class="form-group" class:pref-changed-group={settings.owlbearPlayerId !== defaults.owlbearPlayerId}><label for="owner">{embedded ? 'Owner' : 'Player ID'}</label>{#if embedded}<select id="owner" bind:value={settings.owlbearPlayerId} disabled={!currentPlayer}><option value="">{currentPlayer ? 'Select owner' : 'Loading players…'}</option>{#if currentPlayer}<option value={currentPlayer.id}>Me ({currentPlayer.name})</option>{/if}{#each roomPlayers.filter(player => player.id !== currentPlayer?.id) as player}<option value={player.id}>{player.name}</option>{/each}</select>{:else}<input id="owner" bind:value={settings.owlbearPlayerId} />{/if}</div>
           <div class="form-group" class:pref-changed-group={settings.owlbearVisible !== defaults.owlbearVisible}><label class="inline-option"><input type="checkbox" bind:checked={settings.owlbearVisible} /> Token visible</label></div>
-          <div class="form-group" class:pref-changed-group={settings.owlbearTrackers !== defaults.owlbearTrackers}><label for="trackers">Trackers</label><select id="trackers" bind:value={settings.owlbearTrackers}><option value="none">None</option><option value="owltrackers">Owl Trackers</option></select></div>
-          <div class="form-group" class:pref-changed-group={settings.owlbearInitiative !== defaults.owlbearInitiative}><label for="initiative">Initiative</label><select id="initiative" bind:value={settings.owlbearInitiative}><option value="none">None</option><option value="prettysordid">Pretty Sordid</option></select></div>
-          <div class="form-group" class:pref-changed-group={settings.owlbearDiceRoller !== defaults.owlbearDiceRoller}><label for="dice">Dice roller</label><select id="dice" bind:value={settings.owlbearDiceRoller}><option value="none">None</option><option value="justdices">JustDices</option></select></div>
+          <div class="form-group" class:pref-changed-group={settings.owlbearTrackers !== defaults.owlbearTrackers}><label for="trackers">{OWLBEAR_INTEGRATIONS.trackers.label}</label><select id="trackers" bind:value={settings.owlbearTrackers}>{#each OWLBEAR_INTEGRATIONS.trackers.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
+          <div class="form-group" class:pref-changed-group={settings.owlbearInitiative !== defaults.owlbearInitiative}><label for="initiative">{OWLBEAR_INTEGRATIONS.initiative.label}</label><select id="initiative" bind:value={settings.owlbearInitiative}>{#each OWLBEAR_INTEGRATIONS.initiative.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
+          <div class="form-group" class:pref-changed-group={settings.owlbearDiceRoller !== defaults.owlbearDiceRoller}><label for="dice">{OWLBEAR_INTEGRATIONS.diceRoller.label}</label><select id="dice" bind:value={settings.owlbearDiceRoller}>{#each OWLBEAR_INTEGRATIONS.diceRoller.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
         </div></div>{/if}
 
         <div class="button-group"><button type="submit" class="btn-generate" disabled={loading}>🎲 Generate Pokémon</button><button type="button" class="btn-generate" onclick={() => create(true)} disabled={loading}>+ Blank Pokémon</button><button type="reset" class="btn-reset" onclick={() => settings = { ...defaults }}>↻ Reset</button></div>

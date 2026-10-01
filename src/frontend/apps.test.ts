@@ -75,7 +75,7 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector<HTMLInputElement>('.capability-value-input')?.value).toBe('5');
     expect(document.querySelector('button[aria-label="Roll Acrobatics"]')).not.toBeNull();
     const integrationBadges = Array.from(document.querySelectorAll('.owlbear-integration-status span'));
-    expect(integrationBadges.map(badge => badge.textContent)).toEqual(['Owl Trackers', 'Initiative', 'JustDices']);
+    expect(integrationBadges.map(badge => badge.textContent)).toEqual(['Owl Trackers', 'Initiative', 'Just Dices']);
     expect(integrationBadges.map(badge => badge.classList.contains('active'))).toEqual([true, false, true]);
 
     const attackLevel = document.querySelector<HTMLInputElement>('input[aria-label="Attack level points"]')!;
@@ -115,6 +115,9 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector('.capture-rate-display')?.textContent).toContain('Base');
     expect(document.querySelector('.capture-rate-display')?.textContent).toContain('Current');
     expect(document.querySelector('.capture-rate-modifiers .modifiers-grid')).not.toBeNull();
+    expect(document.querySelector('.capture-formula')?.textContent).toContain('evolution');
+    expect(document.body.textContent).toContain('Stuck:');
+    expect(document.body.textContent).toContain('× 10');
     expect(document.querySelector('.level-hp-info-row .hp-damage-controls')).not.toBeNull();
     expect(document.querySelectorAll('.damage-category-buttons button')).toHaveLength(2);
     expect(document.querySelector('.details-right .damage-panel')).toBeNull();

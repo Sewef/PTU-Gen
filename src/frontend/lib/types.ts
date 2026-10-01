@@ -1,5 +1,14 @@
 export type JsonRecord = Record<string, any>;
 
+export interface OwlbearSettings extends JsonRecord {
+  visible: boolean;
+  playerId: string;
+  trackers: string;
+  initiative: string;
+  diceRoller: string;
+  tokenId?: string;
+}
+
 export interface Pokemon extends JsonRecord {
   id: number | string;
   Icon?: number | string;
@@ -28,6 +37,7 @@ export interface Pokemon extends JsonRecord {
   hpFormula?: string;
   tutorPoints?: number;
   typeEffectivenessOverrides?: Record<string, number>;
+  owlbear: OwlbearSettings;
 }
 
 export interface HistoryEntry {
