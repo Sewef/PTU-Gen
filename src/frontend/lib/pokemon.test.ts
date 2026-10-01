@@ -18,6 +18,19 @@ describe('pokemon helpers', () => {
     expect(pokemon.hitPoints).toBe(pokemon.hitPointsMax);
     expect(pokemon.gender).toBe('Female');
     expect(pokemon.otherInfo?.gender).toBe('Female');
+    expect(pokemon.combatStages).toEqual({ atk: 0, def: 0, spA: 0, spD: 0, spe: 0 });
+  });
+
+  it('preserves combat stages while removing the legacy HP stage', () => {
+    const pokemon = normalizePokemon({
+      name: 'Testmon',
+      level: 5,
+      stats: { HP: 3 },
+      types: ['Fire'],
+      combatStages: { HP: 4, atk: 2, def: -1 }
+    });
+
+    expect(pokemon.combatStages).toEqual({ atk: 2, def: -1, spA: 0, spD: 0, spe: 0 });
   });
 
   it('resolves forme-dependent types', () => {

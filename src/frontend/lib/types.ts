@@ -22,6 +22,7 @@ export interface Pokemon extends JsonRecord {
   types: string[] | { isFormeVariant: true; selectedForme: string; formes: Record<string, string[]> };
   actualTypes?: string[];
   stats: Record<string, number>;
+  combatStages: Record<'atk' | 'def' | 'spA' | 'spD' | 'spe', number>;
   baseStats?: Record<string, number>;
   baseWithNature?: Record<string, number>;
   distributedPoints?: Record<string, number>;

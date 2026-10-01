@@ -10,6 +10,8 @@ export const STAT_LABELS: Record<string, string> = {
   HP: 'HP', atk: 'Attack', def: 'Defense', spA: 'Special Attack', spD: 'Special Defense', spe: 'Speed'
 };
 
+export const COMBAT_STAGE_KEYS = ['atk', 'def', 'spA', 'spD', 'spe'] as const;
+
 export function pokemonTypes(pokemon: Pokemon): string[] {
   const source = pokemon.actualTypes || pokemon.types || [];
   if (Array.isArray(source)) return source;
@@ -66,7 +68,10 @@ export function normalizePokemon(raw: any): Pokemon {
   const storedGender = String(pokemon.gender ?? pokemon.otherInfo.gender ?? 'Unknown');
   pokemon.gender = storedGender === 'Genderless' ? 'No Gender' : storedGender;
   pokemon.otherInfo.gender = pokemon.gender;
-  pokemon.combatStages ||= {};
+  const storedCombatStages = pokemon.combatStages || {};
+  pokemon.combatStages = Object.fromEntries(
+    COMBAT_STAGE_KEYS.map(stat => [stat, Number(storedCombatStages[stat]) || 0])
+  ) as Pokemon['combatStages'];
   pokemon.captureState ||= { useErrata: false, standardCounts: {}, standardFlags: {}, errataFlags: {}, rarityBonus: 0 };
   pokemon.captureState.standardCounts ||= {};
   pokemon.captureState.standardFlags ||= {};
