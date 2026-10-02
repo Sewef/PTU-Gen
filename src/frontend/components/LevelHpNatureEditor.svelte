@@ -4,6 +4,7 @@
   import { calculateHp } from '../lib/pokemon';
   import { getNatures } from '../lib/api';
   import { levelUpdate, natureUpdate } from '../lib/pokemon-editor';
+  import { natureLabel, natureName } from '../lib/natures';
   import IncomingDamage from './IncomingDamage.svelte';
 
   let { pokemon = $bindable(), damageType = $bindable('typeless'), onsave }: {
@@ -22,7 +23,7 @@
     onsave();
   }
   function changeNature(name: string) {
-    const nature = natures.find(item => String(item.name || item.Name) === name);
+    const nature = natures.find(item => natureName(item) === name);
     if (!nature) return;
     Object.assign(pokemon, natureUpdate(pokemon, nature, (globalThis as any).PTUStatCalc));
     onsave();
@@ -41,7 +42,7 @@
 <IncomingDamage bind:pokemon bind:damageType {onsave} />
 <div class="info-box pokemon-info-row nature-info-row">
   <label class="info-label" for="natureSelect">Nature</label>
-  <div class="nature-control"><select id="natureSelect" class="nature-select" value={typeof pokemon.nature === 'string' ? pokemon.nature : pokemon.nature?.name || pokemon.nature?.Name || ''} onchange={(event) => changeNature(event.currentTarget.value)}>{#if !natures.length}<option>{typeof pokemon.nature === 'string' ? pokemon.nature : pokemon.nature?.name || 'Unknown'}</option>{/if}{#each natures as nature}<option value={nature.name || nature.Name}>{nature.name || nature.Name} (+{nature.raise} / −{nature.lower})</option>{/each}</select></div>
+  <div class="nature-control"><select id="natureSelect" class="nature-select" value={natureName(pokemon.nature) || 'Unknown'} onchange={(event) => changeNature(event.currentTarget.value)}>{#if !natures.length}<option>{natureName(pokemon.nature) || 'Unknown'}</option>{/if}{#each natures as nature}<option value={natureName(nature)}>{natureLabel(nature)}</option>{/each}</select></div>
 </div>
 
 <style>

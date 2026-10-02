@@ -49,7 +49,7 @@ describe('Svelte application surfaces', () => {
     const fetchMock = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);
       const body = url.includes('/fandexes') ? { fandexes: [{ key: 'variant', name: 'Variant' }] }
-        : url.includes('/natures') ? { natures: ['Brave'] }
+        : url.includes('/natures') ? { natures: [{ name: 'Brave', raise: 'Attack', lower: 'Speed' }] }
         : url.includes('/list') ? { species: ['Pikachu'] }
         : url.includes('/habitats') ? { habitats: ['Forest'] }
         : { types: ['Electric'] };
@@ -70,6 +70,7 @@ describe('Svelte application surfaces', () => {
     const helpButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.option-help'));
     expect(helpButtons).toHaveLength(3);
     expect(helpButtons.every(button => button.textContent === '?' && Boolean(button.title))).toBe(true);
+    expect(Array.from(document.querySelector<HTMLSelectElement>('select[aria-label="Fixed nature"]')!.options).find(option => option.value === 'Brave')?.textContent).toBe('Brave (+Attack / −Speed)');
 
     const reset = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Reset'))!;
     reset.click();

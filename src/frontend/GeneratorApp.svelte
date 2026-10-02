@@ -5,6 +5,7 @@
   import { clearHistory, historyKey, listHistory, loadPokemon, owlbearHistoryScope, plainPokemon, removeHistory, savePokemon, SITE_HISTORY_SCOPE } from './lib/storage';
   import type { OwlbearPlayer } from './lib/owlbear';
   import { OWLBEAR_INTEGRATIONS } from './lib/owlbear-integrations';
+  import { natureLabel, natureName } from './lib/natures';
   import PokemonCards from './components/PokemonCards.svelte';
   import ExportMenu from './components/ExportMenu.svelte';
 
@@ -291,7 +292,7 @@
         </div></div>
         <div class="form-group" class:pref-changed-group={natureChanged}><div class="field-label-row"><span class="group-label">Nature</span><button type="button" class="option-help" title={helpTitles.nature} aria-label="Help: Nature">?</button></div><div class="radio-row">
           <label><input type="radio" bind:group={settings.natureMode} value="random" /> Random</label><label><input type="radio" bind:group={settings.natureMode} value="optimal" /> Optimal</label><label><input type="radio" bind:group={settings.natureMode} value="fixed" /> Fixed</label>
-          <select bind:value={settings.nature} disabled={settings.natureMode !== 'fixed'}><option value="">Select nature</option>{#each natures as nature}<option value={nameOf(nature)}>{nameOf(nature)}</option>{/each}</select>
+          <select aria-label="Fixed nature" bind:value={settings.nature} disabled={settings.natureMode !== 'fixed'}><option value="">Select nature</option>{#each natures as nature}<option value={natureName(nature)}>{natureLabel(nature)}</option>{/each}</select>
         </div></div>
 
         <button type="button" class="advanced-toggle" class:has-hidden-changes={advancedChanged && !advancedOpen} onclick={() => advancedOpen = !advancedOpen}><span>Advanced</span><span>{advancedOpen ? '▲' : '▼'}</span></button>
