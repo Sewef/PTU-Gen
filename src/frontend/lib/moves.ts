@@ -22,8 +22,11 @@ export function ensureStruggle(pokemon: Pokemon) {
   const struggle = pokemon.struggle && typeof pokemon.struggle === 'object' ? pokemon.struggle : {};
   const types = struggleTypes(pokemon);
   struggle.name = 'Struggle'; struggle.range = 'Melee, 1 Target';
-  if (!struggle.class) struggle.class = Number(pokemon.stats.spA) > Number(pokemon.stats.atk) ? 'special' : 'physical';
   if (!struggle.type) struggle.type = types[1] || 'Normal';
+  // Determine the class of Struggle based on the Pokémon's stats if it has multiple types
+  if (types.length > 1) struggle.class = Number(pokemon.stats.spA) > Number(pokemon.stats.atk) ? 'special' : 'physical';
+  else struggle.class = 'physical';
+  
   if (!struggle.ac) struggle.ac = defaults.ac;
   if (!struggle.damageBase) struggle.damageBase = damageBase(defaults.db);
   pokemon.struggle = struggle;
