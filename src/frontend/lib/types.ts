@@ -9,6 +9,14 @@ export interface OwlbearSettings extends JsonRecord {
   tokenId?: string;
 }
 
+export interface BattleOnlyForm extends JsonRecord {
+  name: string;
+  icon: string;
+  types: string[];
+  stats: Partial<Record<'HP' | 'atk' | 'def' | 'spA' | 'spD' | 'spe', number>>;
+  ability?: JsonRecord | null;
+}
+
 export interface Pokemon extends JsonRecord {
   id: number | string;
   Icon?: number | string;
@@ -32,6 +40,9 @@ export interface Pokemon extends JsonRecord {
   nature?: JsonRecord | string;
   skills?: Record<string, string>;
   capabilities?: string[];
+  battleOnlyForms?: BattleOnlyForm[];
+  activeBattleOnlyForm?: string;
+  activeBattleOnlyFormIcon?: string;
   abilities?: JsonRecord[];
   moves?: JsonRecord[];
   pokeEdges?: JsonRecord[];

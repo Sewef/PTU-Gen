@@ -1,4 +1,4 @@
-import type { Pokemon } from './types';
+import type { BattleOnlyForm, Pokemon } from './types';
 import { ensureStruggle } from './moves';
 
 export const ALL_TYPES = [
@@ -25,10 +25,42 @@ export function hasNuclearType(pokemon: Pokemon): boolean {
     || (pokemon.fandex || []).some(fandex => String(fandex).toLowerCase() === 'uranium');
 }
 
-export function pokemonImage(pokemon: Pokemon, size: 'icons' | 'full' = 'icons'): string {
-  const number = pokemon.Icon || pokemon.id;
+function normalizeBattleOnlyForms(value: unknown): BattleOnlyForm[] {
+  const entries = Array.isArray(value)
+    ? value.map(form => [String(form?.name || ''), form] as const)
+    : Object.entries(value && typeof value === 'object' ? value : {});
+  const statAliases: Record<string, keyof Pokemon['statBonuses']> = {
+    HP: 'HP', Attack: 'atk', atk: 'atk', Defense: 'def', def: 'def',
+    'Special Attack': 'spA', spA: 'spA', 'Special Defense': 'spD', spD: 'spD', Speed: 'spe', spe: 'spe'
+  };
+  return entries.filter(([name]) => Boolean(name)).map(([name, raw]: readonly [string, any]) => {
+    const stats: BattleOnlyForm['stats'] = {};
+    for (const [key, amount] of Object.entries(raw?.stats || raw?.Stats || {})) {
+      const stat = statAliases[key];
+      if (stat) stats[stat] = Number(amount) || 0;
+    }
+    const abilityValue = raw?.ability ?? raw?.Ability;
+    return {
+      name,
+      icon: String(raw?.icon ?? raw?.Icon ?? '').trim(),
+      types: Array.isArray(raw?.types ?? raw?.Type) ? [...(raw.types ?? raw.Type)] : [],
+      stats,
+      ability: typeof abilityValue === 'string' ? { name: abilityValue } : abilityValue || null
+    };
+  });
+}
+
+function imageUrl(pokemon: Pokemon, number: string | number, size: 'icons' | 'full'): string {
   const path = pokemon._fandex ? `${pokemon._fandex}/${number}` : number;
   return `https://sewef.github.io/ptu/img/pokemon/${size}/${path}.png`;
+}
+
+export function pokemonImage(pokemon: Pokemon, size: 'icons' | 'full' = 'icons'): string {
+  return imageUrl(pokemon, pokemon.activeBattleOnlyFormIcon || pokemon.Icon || pokemon.id, size);
+}
+
+export function battleOnlyFormImage(pokemon: Pokemon, form: BattleOnlyForm, size: 'icons' | 'full' = 'full'): string {
+  return imageUrl(pokemon, form.icon || pokemon.Icon || pokemon.id, size);
 }
 
 export function slug(value: unknown): string {
@@ -74,6 +106,7 @@ export function normalizePokemon(raw: any): Pokemon {
   pokemon.abilities = Array.isArray(pokemon.abilities) ? pokemon.abilities : [];
   pokemon.pokeEdges = Array.isArray(pokemon.pokeEdges) ? pokemon.pokeEdges : [];
   pokemon.capabilities = Array.isArray(pokemon.capabilities) ? pokemon.capabilities : [];
+  pokemon.battleOnlyForms = normalizeBattleOnlyForms(pokemon.battleOnlyForms || pokemon['Battle-Only Forms']);
   pokemon.skills ||= {};
   pokemon.otherInfo ||= {};
   const storedGender = String(pokemon.gender ?? pokemon.otherInfo.gender ?? 'Unknown');

@@ -61,7 +61,7 @@ function calculateOwlbearHPValue(level, statsOrHp, formula = OWLBEAR_DEFAULT_HP_
  * position defaults to {x:0, y:0}.
  */
 function buildOwlbearItem(pokemon, position = { x: 0, y: 0 }) {
-    const imageNumber = pokemon.Icon || pokemon.id;
+    const imageNumber = pokemon.activeBattleOnlyFormIcon || pokemon.Icon || pokemon.id;
     const imagePath = pokemon._fandex
         ? `${pokemon._fandex}/${imageNumber}`
         : imageNumber;

@@ -24,4 +24,12 @@ describe('Owlbear token export', () => {
     ]));
     expect(item.metadata['com.pretty-initiative/metadata']).toMatchObject({ count: '8', active: false });
   });
+
+  it('uses the active Battle-Only Form sprite', () => {
+    const { item } = buildOwlbearItem({
+      id: 448, name: 'Lucario', activeBattleOnlyFormIcon: '448-mega', level: 50,
+      stats: { HP: 16, spe: 18 }, otherInfo: {}, owlbear: {}
+    });
+    expect(item.image.url).toContain('/448-mega.png');
+  });
 });

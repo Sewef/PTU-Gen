@@ -72,4 +72,30 @@ describe('Owlbear token service', () => {
     expect(nameWrites).toBe(0);
     expect(OBR.scene.items.updateItems).toHaveBeenCalledOnce();
   });
+
+  it('synchronizes a transformed sprite without requiring Owl Trackers', async () => {
+    vi.useFakeTimers();
+    const item: any = { id: 'token-1', name: 'Lucario', image: { url: 'base.png', width: 96, height: 96 }, metadata: {} };
+    const originalImage = item.image;
+    const OBR = {
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: {
+          getItems: vi.fn(async () => [item]),
+          updateItems: vi.fn(async (_ids: string[], update: (items: any[]) => void) => update([item]))
+        }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+    await service.getSceneToken('token-1', {});
+    service.schedulePokemonTokenSync({
+      name: 'Lucario', imageUrl: 'mega.png', captureState: { standardCounts: {} },
+      owlbear: { tokenId: 'token-1', trackers: 'none' }
+    });
+    await vi.advanceTimersByTimeAsync(301);
+
+    expect(item.image).toMatchObject({ url: 'mega.png', width: 96, height: 96 });
+    expect(item.image).toBe(originalImage);
+    expect(OBR.scene.items.updateItems).toHaveBeenCalledOnce();
+  });
 });

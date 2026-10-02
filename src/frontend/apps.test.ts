@@ -118,6 +118,7 @@ describe('Svelte application surfaces', () => {
       baseStats: { HP: 5, Attack: 6, Defense: 4, 'Special Attack': 7, 'Special Defense': 5, Speed: 8 },
       baseWithNature: { HP: 5, atk: 8, def: 4, spA: 7, spD: 5, spe: 6 }, nature: { name: 'Brave', raise: 'Attack', lower: 'Speed' },
       moves: [], abilities: [], capabilities: ['Overland 5', 'Underdog'], skills: { Acrobatics: '3d6+2' }, pokeEdges: [], otherInfo: { sizeCategory: 'Small', hatch_rate: 10, gender: 'Female' },
+      battleOnlyForms: [{ name: 'Charged Form', icon: '25-charged', types: ['Unchanged'], stats: { atk: 4, def: 2, spA: 2, spe: 2 }, ability: { name: 'Adaptability' } }],
       owlbear: { trackers: 'owltrackers', initiative: 'none', diceRoller: 'justdices', visible: true }
     }));
     instances.push(mount(DetailsApp, { target: document.getElementById('app')! }));
@@ -144,6 +145,28 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector<HTMLTextAreaElement>('.capability-no-value-input')?.value).toBe('Underdog');
     expect(document.querySelector<HTMLInputElement>('.capability-value-input')?.value).toBe('5');
     expect(document.querySelector('button[aria-label="Roll Acrobatics"]')).not.toBeNull();
+    const capabilitiesHeading = Array.from(document.querySelectorAll('.section-title')).find(heading => heading.textContent?.includes('Capabilities'))!;
+    const battleFormsSection = document.querySelector('.battle-only-forms-section');
+    expect(capabilitiesHeading.compareDocumentPosition(battleFormsSection!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(battleFormsSection?.textContent).toContain('Charged Form');
+    expect(battleFormsSection?.textContent).toContain('Adaptability');
+    const transformButton = Array.from(battleFormsSection!.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent === 'Transform')!;
+    transformButton.click();
+    await tick();
+    const transformed = JSON.parse(localStorage.getItem('selectedPokemon')!);
+    expect(transformed.activeBattleOnlyForm).toBe('Charged Form');
+    expect(transformed.activeBattleOnlyFormIcon).toBe('25-charged');
+    expect(transformed.statBonuses.atk).toBe(4);
+    expect(transformed.stats.atk).toBe(14);
+    expect(transformed.abilities.some((ability: { name: string }) => ability.name === 'Adaptability')).toBe(true);
+    const revertButton = Array.from(battleFormsSection!.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent === 'Revert')!;
+    revertButton.click();
+    await tick();
+    const reverted = JSON.parse(localStorage.getItem('selectedPokemon')!);
+    expect(reverted.activeBattleOnlyForm).toBeUndefined();
+    expect(reverted.statBonuses.atk).toBe(0);
+    expect(reverted.stats.atk).toBe(10);
+    expect(reverted.abilities.some((ability: { name: string }) => ability.name === 'Adaptability')).toBe(false);
     const integrationBadges = Array.from(document.querySelectorAll('.owlbear-integration-status span'));
     expect(integrationBadges.map(badge => badge.textContent)).toEqual(['Owl Trackers', 'Initiative', 'JustDices']);
     expect(integrationBadges.map(badge => badge.classList.contains('active'))).toEqual([true, false, true]);

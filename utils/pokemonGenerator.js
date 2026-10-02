@@ -781,6 +781,7 @@ class PokemonGenerator {
         habitat: (otherInfo.Habitat || 'Unknown').split(',').map(h => h.trim()).join(', ')
       },
       capabilities: species.Capabilities || [],
+      battleOnlyForms: this.getBattleOnlyForms(species),
       legendary: species.Legendary || false,
       _fandex: species._fandex,
       dataset: dataset,
@@ -1390,6 +1391,31 @@ class PokemonGenerator {
       };
     }
     return this.normalizeAbilityFields(abilityOrArray, definition);
+  }
+
+  static getBattleOnlyForms(species) {
+    const forms = species?.['Battle-Only Forms'];
+    if (!forms || typeof forms !== 'object') return [];
+    const statKeys = {
+      HP: 'HP', Attack: 'atk', Defense: 'def',
+      'Special Attack': 'spA', 'Special Defense': 'spD', Speed: 'spe'
+    };
+
+    return Object.entries(forms).map(([name, form]) => {
+      const stats = {};
+      Object.entries(form?.Stats || {}).forEach(([stat, value]) => {
+        if (statKeys[stat]) stats[statKeys[stat]] = Number(value) || 0;
+      });
+      const abilityName = String(form?.Ability || '').trim();
+
+      return {
+        name,
+        icon: String(form?.Icon || '').trim(),
+        types: Array.isArray(form?.Type) ? form.Type : [],
+        stats,
+        ability: abilityName ? this.getAbilityLearnsetEntry(abilityName) : null
+      };
+    });
   }
 
   /**

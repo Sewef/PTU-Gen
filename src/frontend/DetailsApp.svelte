@@ -11,6 +11,7 @@
   import CaptureCalculator from './components/CaptureCalculator.svelte';
   import SkillsEditor from './components/SkillsEditor.svelte';
   import CapabilitiesEditor from './components/CapabilitiesEditor.svelte';
+  import BattleOnlyForms from './components/BattleOnlyForms.svelte';
   import OtherInformation from './components/OtherInformation.svelte';
   import TypesEditor from './components/TypesEditor.svelte';
   import LevelHpNatureEditor from './components/LevelHpNatureEditor.svelte';
@@ -81,6 +82,7 @@
 
           <SkillsEditor bind:pokemon {embedded} onsave={persist} />
           <CapabilitiesEditor bind:pokemon onsave={persist} />
+          <BattleOnlyForms bind:pokemon onsave={persist} />
 
           <AbilitiesEditor {pokemon} onsave={persist} />
         </div>

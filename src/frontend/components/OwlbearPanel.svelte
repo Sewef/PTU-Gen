@@ -4,6 +4,7 @@
   import { listenOwlbear, requestOwlbear, type OwlbearPlayer, type OwlbearTokenState } from '../lib/owlbear';
   import { OWLBEAR_INTEGRATIONS } from '../lib/owlbear-integrations';
   import { applyTokenToPokemon } from '../lib/owlbear-token';
+  import { pokemonImage } from '../lib/pokemon';
   import ExportMenu from './ExportMenu.svelte';
   import OwlbearIntegrationBadges from './OwlbearIntegrationBadges.svelte';
 
@@ -34,8 +35,9 @@
     const hitPoints = Number(pokemon.hitPoints);
     const hitPointsMax = Number(pokemon.hitPointsMax);
     const injuries = Math.max(0, Math.trunc(Number(pokemon.captureState?.standardCounts?.injuries) || 0));
+    const imageUrl = pokemonImage(pokemon, 'full');
 
-    if (!embedded || !tokenId || trackers !== 'owltrackers') return;
+    if (!embedded || !tokenId) return;
 
     const timer = window.setTimeout(() => {
       // Keep this payload plain: Svelte's reactive proxies cannot be cloned by postMessage.
@@ -45,6 +47,7 @@
         shiny,
         hitPoints,
         hitPointsMax,
+        imageUrl,
         captureState: { standardCounts: { injuries } },
         owlbear: { tokenId, trackers }
       };

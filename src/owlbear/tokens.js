@@ -196,19 +196,26 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         const desiredHp = getFiniteNumber(pokemon.hitPoints);
         const desiredHpMax = getFiniteNumber(pokemon.hitPointsMax);
         const desiredInjuries = Math.max(0, Math.trunc(getFiniteNumber(pokemon.captureState?.standardCounts?.injuries) || 0));
+        const desiredImageUrl = String(pokemon.imageUrl || '').trim();
         const nameChanged = existing.name !== desiredName || (existing.text?.plainText !== undefined && existing.text.plainText !== desiredName);
+        const imageChanged = Boolean(desiredImageUrl && existing.image?.url !== desiredImageUrl);
         const hpChanged = trackersEnabled && hpTracker && (
             (desiredHp !== null && Number(hpTracker.value) !== desiredHp) ||
             (desiredHpMax !== null && Number(hpTracker.max) !== desiredHpMax)
         );
         const injuriesChanged = trackersEnabled && injuriesTracker && Number(injuriesTracker.value) !== desiredInjuries;
-        if (!nameChanged && !hpChanged && !injuriesChanged) return existing;
+        if (!nameChanged && !imageChanged && !hpChanged && !injuriesChanged) return existing;
 
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
                 if (item.name !== desiredName) item.name = desiredName;
                 if (item.text?.plainText !== undefined && item.text.plainText !== desiredName) {
                     item.text.plainText = desiredName;
+                }
+                if (desiredImageUrl && item.image?.url !== desiredImageUrl) {
+                    // Owlbear hands updateItems an Immer draft. Mutate the image
+                    // content in place so its SDK-managed dimensions/MIME stay intact.
+                    item.image.url = desiredImageUrl;
                 }
 
                 if (!trackersEnabled) return;
