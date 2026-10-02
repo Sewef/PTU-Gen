@@ -1407,13 +1407,24 @@ class PokemonGenerator {
         if (statKeys[stat]) stats[statKeys[stat]] = Number(value) || 0;
       });
       const abilityName = String(form?.Ability || '').trim();
+      const abilityReplacements = {};
+      Object.entries(form || {}).forEach(([slot, value]) => {
+        if (!/^(?:(?:Basic|Adv) Ability \d+|High Ability)$/i.test(slot.trim())) return;
+        const instruction = String(value || '')
+          .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+          .replace(/\u00a0/g, ' ')
+          .trim();
+        const replacementName = instruction.match(/^Becomes\s+(.+)$/i)?.[1]?.trim();
+        if (replacementName) abilityReplacements[slot.trim()] = this.getAbilityLearnsetEntry(replacementName);
+      });
 
       return {
         name,
         icon: String(form?.Icon || '').trim(),
         types: Array.isArray(form?.Type) ? form.Type : [],
         stats,
-        ability: abilityName ? this.getAbilityLearnsetEntry(abilityName) : null
+        ability: abilityName ? this.getAbilityLearnsetEntry(abilityName) : null,
+        abilityReplacements
       };
     });
   }

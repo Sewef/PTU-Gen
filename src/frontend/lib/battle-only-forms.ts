@@ -22,11 +22,41 @@ function addFormAbility(pokemon: Pokemon, form: BattleOnlyForm) {
   pokemon.abilities!.push({ ...ability, usageCount: 0, _battleOnlyForm: form.name });
 }
 
+function replaceAbilities(pokemon: Pokemon, form: BattleOnlyForm) {
+  const replacements = new Map(
+    Object.entries(form.abilityReplacements || {})
+      .filter(([, replacement]) => String(replacement?.name || '').trim())
+      .map(([slot, replacement]) => [slot.toLowerCase(), { slot, replacement }])
+  );
+  if (!replacements.size) return;
+
+  pokemon.abilities = (pokemon.abilities || []).map(ability => {
+    const entry = replacements.get(String(ability.sourceSlot || '').toLowerCase());
+    if (!entry) return ability;
+    return {
+      ...entry.replacement,
+      sourceTier: ability.sourceTier,
+      sourceSlot: entry.slot,
+      usageCount: 0,
+      _battleOnlyForm: form.name,
+      _battleOnlyFormReplacedAbility: ability
+    };
+  });
+}
+
+function restoreReplacedAbilities(pokemon: Pokemon, formName: string) {
+  pokemon.abilities = (pokemon.abilities || []).map(ability => {
+    if (ability._battleOnlyForm !== formName || !ability._battleOnlyFormReplacedAbility) return ability;
+    return ability._battleOnlyFormReplacedAbility;
+  });
+}
+
 export function setBattleOnlyForm(pokemon: Pokemon, requestedName: string | null): boolean {
   const forms = pokemon.battleOnlyForms || [];
   const current = forms.find(form => form.name === pokemon.activeBattleOnlyForm);
   if (current) {
     applyStatModifiers(pokemon, current, -1);
+    restoreReplacedAbilities(pokemon, current.name);
     removeFormAbility(pokemon, current.name);
   }
 
@@ -39,6 +69,7 @@ export function setBattleOnlyForm(pokemon: Pokemon, requestedName: string | null
   if (next) {
     applyStatModifiers(pokemon, next, 1);
     addFormAbility(pokemon, next);
+    replaceAbilities(pokemon, next);
     pokemon.activeBattleOnlyForm = next.name;
     pokemon.activeBattleOnlyFormIcon = next.icon;
   }

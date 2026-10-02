@@ -15,6 +15,7 @@ export interface BattleOnlyForm extends JsonRecord {
   types: string[];
   stats: Partial<Record<'HP' | 'atk' | 'def' | 'spA' | 'spD' | 'spe', number>>;
   ability?: JsonRecord | null;
+  abilityReplacements?: Record<string, JsonRecord>;
 }
 
 export interface Pokemon extends JsonRecord {

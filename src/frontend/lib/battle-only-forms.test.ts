@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { setBattleOnlyForm } from './battle-only-forms';
 import { normalizePokemon, pokemonImage } from './pokemon';
+import PokemonGenerator from '../../../utils/pokemonGenerator.js';
 
 function lucario() {
   return normalizePokemon({
@@ -17,6 +18,40 @@ function lucario() {
 }
 
 describe('Battle-Only Forms', () => {
+  it('migrates the previous Adv Ability 1 representation', () => {
+    const pokemon = normalizePokemon({
+      name: 'Necrozma', level: 50, stats: { HP: 10 },
+      abilities: [{ name: 'Starlight', sourceTier: 'advanced', sourceSlot: 'Adv Ability 1' }],
+      battleOnlyForms: [{
+        name: 'Ultra Burst', stats: {}, advancedAbility1: { name: 'Illuminate', frequency: 'Static' }
+      }]
+    });
+
+    expect(pokemon.battleOnlyForms?.[0].abilityReplacements).toMatchObject({
+      'Adv Ability 1': { name: 'Illuminate' }
+    });
+    setBattleOnlyForm(pokemon, 'Ultra Burst');
+    expect(pokemon.abilities).toContainEqual(expect.objectContaining({
+      name: 'Illuminate', sourceSlot: 'Adv Ability 1'
+    }));
+  });
+
+  it('parses markdown replacement instructions for multiple ability slots', () => {
+    const [form] = PokemonGenerator.getBattleOnlyForms({
+      'Battle-Only Forms': {
+        'Radiant Form': {
+          'Adv Ability 1': '[Becomes Illuminate](https://sewef.github.io/ptu/ptuhomebrew/pokedex.html#)  ',
+          'Adv Ability 2': '[Becomes Solar Power](https://example.com)'
+        }
+      }
+    });
+
+    expect(form.abilityReplacements).toMatchObject({
+      'Adv Ability 1': { name: 'Illuminate' },
+      'Adv Ability 2': { name: 'Solar Power' }
+    });
+  });
+
   it('applies and reverts stat bonuses, ability and sprite without accumulation', () => {
     const pokemon = lucario();
     const originalAttack = pokemon.stats.atk;
@@ -40,5 +75,37 @@ describe('Battle-Only Forms', () => {
     setBattleOnlyForm(pokemon, 'Aura Form');
     setBattleOnlyForm(pokemon, 'Aura Form');
     expect(pokemon.abilities?.filter(ability => ability.name === 'Adaptability')).toHaveLength(1);
+  });
+
+  it('temporarily replaces abilities by slot and restores their complete state', () => {
+    const pokemon = lucario();
+    const original = {
+      name: 'Justified', frequency: 'Scene x2', effect: 'Original effect.', usageCount: 1,
+      sourceTier: 'advanced', sourceSlot: 'Adv Ability 1'
+    };
+    const secondOriginal = {
+      name: 'Steadfast', frequency: 'Static', effect: 'Second original.', usageCount: 0,
+      sourceTier: 'advanced', sourceSlot: 'Adv Ability 2'
+    };
+    pokemon.abilities!.push(original, secondOriginal);
+    pokemon.battleOnlyForms![0].abilityReplacements = {
+      'Adv Ability 1': { name: 'Illuminate', frequency: 'Static', effect: 'Replacement effect.' },
+      'Adv Ability 2': { name: 'Solar Power', frequency: 'Scene', effect: 'Second replacement.' }
+    };
+
+    setBattleOnlyForm(pokemon, 'Aura Form');
+    const transformed = pokemon.abilities!.find(ability => ability.sourceSlot === 'Adv Ability 1');
+    expect(transformed).toMatchObject({
+      name: 'Illuminate', frequency: 'Static', effect: 'Replacement effect.', usageCount: 0,
+      sourceTier: 'advanced', sourceSlot: 'Adv Ability 1'
+    });
+    expect(pokemon.abilities?.some(ability => ability.name === 'Justified')).toBe(false);
+    expect(pokemon.abilities).toContainEqual(expect.objectContaining({ name: 'Solar Power', sourceSlot: 'Adv Ability 2' }));
+
+    setBattleOnlyForm(pokemon, 'Aura Form');
+    expect(pokemon.abilities).toContainEqual(original);
+    expect(pokemon.abilities).toContainEqual(secondOriginal);
+    expect(pokemon.abilities?.some(ability => ability.name === 'Illuminate')).toBe(false);
+    expect(pokemon.abilities?.some(ability => ability.name === 'Solar Power')).toBe(false);
   });
 });

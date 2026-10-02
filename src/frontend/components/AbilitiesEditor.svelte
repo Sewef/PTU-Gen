@@ -25,6 +25,7 @@
     {#each pokemon.abilities || [] as ability, index}
       <article class="section-card">
         <div class="section-card-header">{#if ability.editable}<input class="custom-ability-name-input" bind:value={ability.name} onchange={onsave} />{:else}<div class="section-card-name">{ability.name}</div>{/if}<button type="button" class="remove-ability-btn" onclick={() => remove(index)}>✕ Remove</button></div>
+        {#if ability.sourceSlot}<div class="section-card-field ability-source-slot"><strong>Slot:</strong> {ability.sourceSlot}</div>{/if}
         {#if ability.editable}
           <label class="section-card-field"><strong>Frequency:</strong><input bind:value={ability.frequency} onchange={onsave} /></label>
           <label class="section-card-field"><strong>Effect:</strong><textarea bind:value={ability.effect} onchange={onsave}></textarea></label>

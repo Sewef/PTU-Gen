@@ -28,6 +28,9 @@
               {/each}
             </div>
             {#if form.ability?.name}<div class="section-card-field"><strong>Ability:</strong> {form.ability.name}</div>{/if}
+            {#each Object.entries(form.abilityReplacements || {}) as [slot, ability]}
+              <div class="section-card-field"><strong>{slot}:</strong> Becomes {ability.name}</div>
+            {/each}
             {#if form.types?.length && !form.types.includes('Unchanged')}<div class="section-card-field"><strong>Types:</strong> {form.types.join(', ')}</div>{/if}
           </div>
         </article>

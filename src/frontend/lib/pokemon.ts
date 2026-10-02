@@ -1,4 +1,4 @@
-import type { BattleOnlyForm, Pokemon } from './types';
+import type { BattleOnlyForm, JsonRecord, Pokemon } from './types';
 import { ensureStruggle } from './moves';
 
 export const ALL_TYPES = [
@@ -40,12 +40,28 @@ function normalizeBattleOnlyForms(value: unknown): BattleOnlyForm[] {
       if (stat) stats[stat] = Number(amount) || 0;
     }
     const abilityValue = raw?.ability ?? raw?.Ability;
+    const abilityReplacements: Record<string, JsonRecord> = {};
+    const replacementValues = {
+      ...(raw?.advancedAbility1 ? { 'Adv Ability 1': raw.advancedAbility1 } : {}),
+      ...(raw?.abilityReplacements && typeof raw.abilityReplacements === 'object' ? raw.abilityReplacements : {}),
+      ...Object.fromEntries(Object.entries(raw || {}).filter(([key]) => /^(?:(?:Basic|Adv) Ability \d+|High Ability)$/i.test(key.trim())))
+    };
+    for (const [slot, value] of Object.entries(replacementValues)) {
+      if (value && typeof value === 'object') {
+        abilityReplacements[slot.trim()] = value as JsonRecord;
+        continue;
+      }
+      const instruction = String(value || '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/\u00a0/g, ' ').trim();
+      const replacementName = instruction.match(/^Becomes\s+(.+)$/i)?.[1]?.trim();
+      if (replacementName) abilityReplacements[slot.trim()] = { name: replacementName };
+    }
     return {
       name,
       icon: String(raw?.icon ?? raw?.Icon ?? '').trim(),
       types: Array.isArray(raw?.types ?? raw?.Type) ? [...(raw.types ?? raw.Type)] : [],
       stats,
-      ability: typeof abilityValue === 'string' ? { name: abilityValue } : abilityValue || null
+      ability: typeof abilityValue === 'string' ? { name: abilityValue } : abilityValue || null,
+      abilityReplacements
     };
   });
 }

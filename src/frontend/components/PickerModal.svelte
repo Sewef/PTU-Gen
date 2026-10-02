@@ -17,7 +17,7 @@
       {#each filtered as item}
         {@const name = itemName(item)}
         <button type="button" class:exists={selected.includes(name)} class="modal-move-btn" onclick={() => onpick(item)}>
-          <span class="move-btn-text">{name}{item.type ? ` — ${item.type}` : ''}{item.frequency ? ` — ${item.frequency}` : ''}</span>{#if selected.includes(name)}<span> ✓</span>{/if}
+          <span class="move-btn-text">{name}{item.sourceSlot ? ` — ${item.sourceSlot}` : ''}{item.type ? ` — ${item.type}` : ''}{item.frequency ? ` — ${item.frequency}` : ''}</span>{#if selected.includes(name)}<span> ✓</span>{/if}
         </button>
       {:else}<div class="empty-grid-message">No result</div>{/each}
     </div>

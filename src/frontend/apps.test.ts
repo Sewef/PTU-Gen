@@ -117,7 +117,7 @@ describe('Svelte application surfaces', () => {
       id: 25, name: 'Pikachu', level: 12, types: ['Electric'], stats: { HP: 7, atk: 10, def: 6, spA: 8, spD: 7, spe: 10 },
       baseStats: { HP: 5, Attack: 6, Defense: 4, 'Special Attack': 7, 'Special Defense': 5, Speed: 8 },
       baseWithNature: { HP: 5, atk: 8, def: 4, spA: 7, spD: 5, spe: 6 }, nature: { name: 'Brave', raise: 'Attack', lower: 'Speed' },
-      moves: [], abilities: [], capabilities: ['Overland 5', 'Underdog'], skills: { Acrobatics: '3d6+2' }, pokeEdges: [], otherInfo: { sizeCategory: 'Small', hatch_rate: 10, gender: 'Female' },
+      moves: [], abilities: [{ name: 'Static', sourceTier: 'basic', sourceSlot: 'Basic Ability 1' }], capabilities: ['Overland 5', 'Underdog'], skills: { Acrobatics: '3d6+2' }, pokeEdges: [], otherInfo: { sizeCategory: 'Small', hatch_rate: 10, gender: 'Female' },
       battleOnlyForms: [{ name: 'Charged Form', icon: '25-charged', types: ['Unchanged'], stats: { atk: 4, def: 2, spA: 2, spe: 2 }, ability: { name: 'Adaptability' } }],
       owlbear: { trackers: 'owltrackers', initiative: 'none', diceRoller: 'justdices', visible: true }
     }));
@@ -145,6 +145,7 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector<HTMLTextAreaElement>('.capability-no-value-input')?.value).toBe('Underdog');
     expect(document.querySelector<HTMLInputElement>('.capability-value-input')?.value).toBe('5');
     expect(document.querySelector('button[aria-label="Roll Acrobatics"]')).not.toBeNull();
+    expect(document.querySelector('.ability-source-slot')?.textContent).toContain('Basic Ability 1');
     const capabilitiesHeading = Array.from(document.querySelectorAll('.section-title')).find(heading => heading.textContent?.includes('Capabilities'))!;
     const battleFormsSection = document.querySelector('.battle-only-forms-section');
     expect(capabilitiesHeading.compareDocumentPosition(battleFormsSection!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -246,6 +247,7 @@ describe('Svelte application surfaces', () => {
       const body = url.includes('/natures') ? { natures: [] }
         : url.includes('/all-moves') ? [{ name: 'Thunderbolt' }]
         : url.includes('/all-abilities') ? [{ name: 'Static' }]
+        : url.includes('/abilities/') ? { advanced: [{ name: 'Lightning Rod', sourceSlot: 'Adv Ability 2' }] }
         : [];
       return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
     });
@@ -256,6 +258,7 @@ describe('Svelte application surfaces', () => {
     const abilitySection = Array.from(document.querySelectorAll('.section')).find(section => section.textContent?.includes('Abilities'))!;
     (Array.from(abilitySection.querySelectorAll('button')).find(button => button.textContent?.includes('Edit')) as HTMLButtonElement).click();
     await vi.waitFor(() => expect(document.body.textContent).toContain('Search all abilities'));
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain('Lightning Rod — Adv Ability 2');
     (Array.from(document.querySelectorAll('button')).find(button => button.textContent?.includes('Search all abilities')) as HTMLButtonElement).click();
     await vi.waitFor(() => expect(document.body.textContent).toContain('Static'));
     expect(fetchMock.mock.calls.some(call => String(call[0]).includes('/api/pokemon/all-abilities'))).toBe(true);
