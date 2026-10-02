@@ -18,6 +18,7 @@ describe('pokemon helpers', () => {
     expect(pokemon.hitPoints).toBe(pokemon.hitPointsMax);
     expect(pokemon.gender).toBe('Female');
     expect(pokemon.otherInfo?.gender).toBe('Female');
+    expect(pokemon.statBonuses).toEqual({ HP: 0, atk: 0, def: 0, spA: 0, spD: 0, spe: 0 });
     expect(pokemon.combatStages).toEqual({ atk: 0, def: 0, spA: 0, spD: 0, spe: 0 });
   });
 

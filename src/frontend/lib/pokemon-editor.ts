@@ -1,5 +1,5 @@
 import type { Pokemon } from './types';
-import { calculateHp } from './pokemon';
+import { calculateHp, STAT_KEYS } from './pokemon';
 
 export function levelUpdate(pokemon: Pokemon, requested: number) {
   const level = Math.min(100, Math.max(1, Number(requested) || 1));
@@ -20,8 +20,8 @@ export function natureUpdate(pokemon: Pokemon, nature: any, calculator: any) {
     pokemon.ignoreBaseRelation
   );
   const stats = { ...pokemon.stats };
-  for (const stat of ['HP', 'atk', 'def', 'spA', 'spD', 'spe']) {
-    stats[stat] = result.baseWithNature[stat] + (result.distributedPoints[stat] || 0);
+  for (const stat of STAT_KEYS) {
+    stats[stat] = result.baseWithNature[stat] + (result.distributedPoints[stat] || 0) + (pokemon.statBonuses?.[stat] || 0);
   }
   return {
     nature,

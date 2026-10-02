@@ -11,6 +11,7 @@ export const STAT_LABELS: Record<string, string> = {
 };
 
 export const COMBAT_STAGE_KEYS = ['atk', 'def', 'spA', 'spD', 'spe'] as const;
+export const STAT_KEYS = ['HP', ...COMBAT_STAGE_KEYS] as const;
 
 export function pokemonTypes(pokemon: Pokemon): string[] {
   const source = pokemon.actualTypes || pokemon.types || [];
@@ -65,6 +66,10 @@ export function normalizePokemon(raw: any): Pokemon {
   pokemon.level = Number(pokemon.level) || 1;
   pokemon.types ||= ['Normal'];
   pokemon.stats ||= { HP: 1, atk: 1, def: 1, spA: 1, spD: 1, spe: 1 };
+  const storedStatBonuses = pokemon.statBonuses || {};
+  pokemon.statBonuses = Object.fromEntries(
+    STAT_KEYS.map(stat => [stat, Number(storedStatBonuses[stat]) || 0])
+  ) as Pokemon['statBonuses'];
   pokemon.moves = Array.isArray(pokemon.moves) ? pokemon.moves : [];
   pokemon.abilities = Array.isArray(pokemon.abilities) ? pokemon.abilities : [];
   pokemon.pokeEdges = Array.isArray(pokemon.pokeEdges) ? pokemon.pokeEdges : [];
