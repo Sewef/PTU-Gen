@@ -130,7 +130,7 @@ describe('Svelte application surfaces', () => {
     expect(document.body.textContent).toContain('Hatch Rate:');
     expect(document.querySelector<HTMLSelectElement>('.gender-select')?.value).toBe('Female');
     expect(document.querySelectorAll('.stats-table-heading span')).toHaveLength(6);
-    expect(document.querySelector('.base-relation-summary')?.textContent?.replace(/\s+/g, '')).toBe('atk>spA>spe>HP=spD>def');
+    expect(document.querySelector('.base-relation-summary')?.textContent?.replace(/\s+/g, '')).toBe('Atk>SpAtk>Spd>HP=SpDef>Def');
     expect(document.querySelectorAll('.stat-relation-checkbox')).toHaveLength(6);
     expect(document.querySelectorAll('.nature-indicator')).toHaveLength(2);
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Attack base stat after Nature"]')?.value).toBe('8');
@@ -140,7 +140,7 @@ describe('Svelte application surfaces', () => {
     attackRelation.click();
     await tick();
     expect(JSON.parse(localStorage.getItem('selectedPokemon')!).ignoreBaseRelation).toBe('atk');
-    expect(Array.from(document.querySelectorAll('.br-stat')).find(stat => stat.textContent === 'atk')?.classList.contains('br-stat-ignored')).toBe(true);
+    expect(Array.from(document.querySelectorAll('.br-stat')).find(stat => stat.textContent === 'Atk')?.classList.contains('br-stat-ignored')).toBe(true);
     expect(document.querySelector<HTMLTextAreaElement>('.capability-no-value-input')?.value).toBe('Underdog');
     expect(document.querySelector<HTMLInputElement>('.capability-value-input')?.value).toBe('5');
     expect(document.querySelector('button[aria-label="Roll Acrobatics"]')).not.toBeNull();

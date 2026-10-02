@@ -6,6 +6,7 @@
   const statKeys = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'] as const;
   type StatKey = typeof statKeys[number];
   const baseKeys: Record<string, string> = { HP: 'HP', atk: 'Attack', def: 'Defense', spA: 'Special Attack', spD: 'Special Defense', spe: 'Speed' };
+  const relationLabels: Record<StatKey, string> = { HP: 'HP', atk: 'Atk', def: 'Def', spA: 'SpAtk', spD: 'SpDef', spe: 'Spd' };
   const multipliers: Record<number, number> = { [-6]: .4, [-5]: .5, [-4]: .6, [-3]: .7, [-2]: .8, [-1]: .9, 0: 1, 1: 1.2, 2: 1.4, 3: 1.6, 4: 1.8, 5: 2, 6: 2.2 };
 
   function rawBase(stat: StatKey) { return Number(pokemon.baseStats?.[baseKeys[stat]] ?? pokemon.baseWithNature?.[stat] ?? pokemon.stats[stat]) || 0; }
@@ -102,7 +103,7 @@
         {#if groupIndex > 0}<span class="br-sep br-gt">&gt;</span>{/if}
         {#each group as stat, statIndex}
           {#if statIndex > 0}<span class="br-sep">=</span>{/if}
-          <span class="br-stat" class:br-stat-ignored={ignoredStats().has(stat)}>{stat}</span>
+          <span class="br-stat" class:br-stat-ignored={ignoredStats().has(stat)}>{relationLabels[stat]}</span>
         {/each}
       {/each}
     </div>
