@@ -49,12 +49,12 @@
 
 <div class="info-box incoming-damage-block">
   <div class="incoming-damage-header"><span class="info-label">Incoming Damage</span><label class="injury-counter">Injuries <input aria-label="Injuries" type="number" min="0" value={injuries} onchange={(event) => setInjuries(Number(event.currentTarget.value))} /></label><div class="tick-buttons" role="group" aria-label="HP and injury controls"><button type="button" title={'Heal one tick (' + tick + ' HP), up to ' + healingMaximum} onclick={() => applyTick(1)}>+ Tick</button><button type="button" title={'Lose one tick (' + tick + ' HP)'} onclick={() => applyTick(-1)}>− Tick</button><button type="button" title="Add one injury and reduce the healing cap by 10%" onclick={addInjury}>+ Injury</button></div></div>
-  <div class="hp-damage-controls">
+  <form class="hp-damage-controls" onsubmit={(event) => { event.preventDefault(); apply(); }}>
     <input class="hp-damage-input" aria-label="Incoming damage" placeholder="Damage" type="number" min="0" value={amount ?? ''} oninput={(event) => setAmount(event.currentTarget.value)} />
     <select class="hp-damage-select" aria-label="Damage type" bind:value={damageType}>{#each damageTypes as type}<option value={type.toLowerCase()}>{type}</option>{/each}</select>
     <div class="damage-category-buttons" role="group" aria-label="Damage class"><button type="button" class:active={category === 'physical'} aria-pressed={category === 'physical'} onclick={() => category = 'physical'}>Physical</button><button type="button" class:active={category === 'special'} aria-pressed={category === 'special'} onclick={() => category = 'special'}>Special</button></div>
-    <button type="button" class="hp-damage-btn" onclick={apply}>Apply</button>
-  </div>
+    <button type="submit" class="hp-damage-btn">Apply</button>
+  </form>
   {#if amount !== null && amount > 0}<div class="hp-damage-preview">Final: {finalDamage} ({amount} − {defense}, {effectiveness}x)</div>{/if}
 </div>
 

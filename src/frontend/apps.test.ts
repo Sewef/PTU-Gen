@@ -232,6 +232,14 @@ describe('Svelte application surfaces', () => {
     expect(afterInjury.captureState.standardCounts.injuries).toBe(1);
     expect(afterInjury.hitPoints).toBeLessThanOrEqual(Math.floor(afterInjury.hitPointsMax * .9));
     expect(document.querySelectorAll('.damage-category-buttons button')).toHaveLength(2);
+    const damageInput = document.querySelector<HTMLInputElement>('input[aria-label="Incoming damage"]')!;
+    const damageForm = damageInput.closest('form')!;
+    damageInput.value = '10';
+    damageInput.dispatchEvent(new Event('input', { bubbles: true }));
+    damageForm.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
+    await tick();
+    const afterDamage = JSON.parse(localStorage.getItem('selectedPokemon')!);
+    expect(afterDamage.hitPoints).toBeLessThan(afterInjury.hitPoints);
     expect(document.querySelector('.details-right .damage-panel')).toBeNull();
     expect(document.querySelectorAll('.type-effectiveness-item')).toHaveLength(19);
     expect(document.querySelector('.type-effectiveness-header small')).toBeNull();
