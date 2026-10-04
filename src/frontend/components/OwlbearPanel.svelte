@@ -14,6 +14,8 @@
   let failed = $state(false);
   let currentPlayer = $state<OwlbearPlayer | null>(null);
   let roomPlayers = $state<OwlbearPlayer[]>([]);
+  let formStateInitialized = false;
+  let previousBattleOnlyFormIcon = '';
   const linked = $derived(Boolean(pokemon.owlbear.tokenId));
 
   onMount(() => {
@@ -35,7 +37,10 @@
     const hitPoints = Number(pokemon.hitPoints);
     const hitPointsMax = Number(pokemon.hitPointsMax);
     const injuries = Math.max(0, Math.trunc(Number(pokemon.captureState?.standardCounts?.injuries) || 0));
-    const imageUrl = pokemonImage(pokemon, 'full');
+    const battleOnlyFormIcon = String(pokemon.activeBattleOnlyFormIcon || '');
+    const formChanged = formStateInitialized && battleOnlyFormIcon !== previousBattleOnlyFormIcon;
+    previousBattleOnlyFormIcon = battleOnlyFormIcon;
+    formStateInitialized = true;
 
     if (!embedded || !tokenId) return;
 
@@ -47,7 +52,7 @@
         shiny,
         hitPoints,
         hitPointsMax,
-        imageUrl,
+        ...(formChanged ? { imageUrl: pokemonImage(pokemon, 'full') } : {}),
         captureState: { standardCounts: { injuries } },
         owlbear: { tokenId, trackers }
       };

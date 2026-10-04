@@ -98,4 +98,39 @@ describe('Owlbear token service', () => {
     expect(item.image).toBe(originalImage);
     expect(OBR.scene.items.updateItems).toHaveBeenCalledOnce();
   });
+
+  it('preserves a manually replaced image and token geometry when synchronizing', async () => {
+    const item: any = {
+      id: 'token-1',
+      name: 'Lucario',
+      image: { url: 'https://example.com/custom.png', width: 320, height: 180 },
+      scale: { x: 2.5, y: 1.75 },
+      grid: { dpi: 70, offset: { x: 160, y: 90 } },
+      metadata: {}
+    };
+    const originalImage = structuredClone(item.image);
+    const originalScale = structuredClone(item.scale);
+    const originalGrid = structuredClone(item.grid);
+    const OBR = {
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: {
+          getItems: vi.fn(async () => [item]),
+          updateItems: vi.fn(async (_ids: string[], update: (items: any[]) => void) => update([item]))
+        }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+
+    await service.syncPokemonToSceneToken({
+      name: 'Lucario', nickname: 'Aura', captureState: { standardCounts: {} },
+      owlbear: { tokenId: 'token-1', trackers: 'none' }
+    });
+
+    expect(item.image).toEqual(originalImage);
+    expect(item.scale).toEqual(originalScale);
+    expect(item.grid).toEqual(originalGrid);
+    expect(item.name).toBe('Aura');
+    expect(OBR.scene.items.updateItems).toHaveBeenCalledOnce();
+  });
 });
