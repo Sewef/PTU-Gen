@@ -1,7 +1,7 @@
 {
     "Warrior": {
         "image": "https://i.imgur.com/2KVkaLl.jpeg",
-        "types": ["Water", "Fire"],
+        "types": ["Typeless", "Fire"],
         "basic_abilities": ["Soundproof", "Battle Armor"],
         "advanced_abilities": ["Intimidate", "Moxie"],
         "high_ability": ["Guts"],

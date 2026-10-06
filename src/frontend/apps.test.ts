@@ -3,6 +3,7 @@ import { mount, tick, unmount } from 'svelte';
 import GeneratorApp from './GeneratorApp.svelte';
 import DetailsApp from './DetailsApp.svelte';
 import MovesEditor from './components/MovesEditor.svelte';
+import TypesEditor from './components/TypesEditor.svelte';
 import TypeEffectiveness from './components/TypeEffectiveness.svelte';
 import { damageBase } from './lib/moves';
 import { normalizePokemon } from './lib/pokemon';
@@ -368,5 +369,41 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelectorAll('.type-effectiveness-item')).toHaveLength(20);
     const nuclear = Array.from(document.querySelectorAll('.type-effectiveness-item')).find(item => item.textContent?.includes('Nuclear'));
     expect(nuclear?.textContent).toContain('1x');
+  });
+
+  it('lets users change move types and offers Typeless and Uranium Nuclear for moves and species', async () => {
+    const pokemon = normalizePokemon({
+      id: 1, name: 'Orchynx', level: 1, types: ['Grass', 'Steel'], stats: { HP: 1 }, fandex: ['uranium'],
+      moves: [{ name: 'Leaf Blade', type: 'Grass', class: 'Physical', damageBase: damageBase(5) }]
+    });
+    const onsave = vi.fn();
+    instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } }));
+    await tick();
+
+    document.querySelector<HTMLButtonElement>('[aria-label="Change Leaf Blade type"]')!.click();
+    await tick();
+    expect(Array.from(document.querySelectorAll('.type-choice')).map(button => button.textContent)).toContain('Typeless');
+    expect(Array.from(document.querySelectorAll('.type-choice')).map(button => button.textContent)).toContain('Nuclear');
+    document.querySelector<HTMLButtonElement>('.type-choice.type-typeless')!.click();
+    document.querySelector<HTMLButtonElement>('[role="dialog"] .modal-btn-primary')!.click();
+    await tick();
+    expect(pokemon.moves?.[0].type).toBe('Typeless');
+    expect(onsave).toHaveBeenCalled();
+    expect(document.querySelector('.move .type-typeless')).not.toBeNull();
+    document.querySelector<HTMLButtonElement>('[aria-label="Change Leaf Blade type"]')!.click();
+    await tick();
+    document.querySelector<HTMLButtonElement>('.type-choice.type-nuclear')!.click();
+    document.querySelector<HTMLButtonElement>('[role="dialog"] .modal-btn-primary')!.click();
+    await tick();
+    expect(pokemon.moves?.[0].type).toBe('Nuclear');
+
+    await unmount(instances.pop()!);
+    document.body.innerHTML = '<div id="app"></div>';
+    instances.push(mount(TypesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } }));
+    await tick();
+    document.querySelector<HTMLButtonElement>('.pokemon-types-row .edit-bn')!.click();
+    await tick();
+    expect(Array.from(document.querySelectorAll('.type-choice')).map(button => button.textContent)).toContain('Typeless');
+    expect(Array.from(document.querySelectorAll('.type-choice')).map(button => button.textContent)).toContain('Nuclear');
   });
 });

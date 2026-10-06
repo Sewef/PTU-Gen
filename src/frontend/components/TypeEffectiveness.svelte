@@ -22,4 +22,3 @@
     {/each}
   </div>
 </div>
-<style>.type-typeless { background:var(--bg-tertiary);color:var(--text-primary);border-color:var(--border-color) }</style>

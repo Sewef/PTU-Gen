@@ -198,8 +198,8 @@ function templateSpeciesToDatabase(name, value, index) {
   const skills = requireObject(species.skills, `Species "${name}".skills`);
   const capabilities = requireObject(species.capabilities, `Species "${name}".capabilities`);
   const moves = requireObject(species.moves, `Species "${name}".moves`);
-  const basicAbilities = requireStringArray(species.basic_abilities, `Species "${name}".basic_abilities`, 2);
-  const advancedAbilities = requireStringArray(species.advanced_abilities, `Species "${name}".advanced_abilities`, 3);
+  const basicAbilities = requireStringArray(species.basic_abilities, `Species "${name}".basic_abilities`);
+  const advancedAbilities = requireStringArray(species.advanced_abilities, `Species "${name}".advanced_abilities`);
   const highAbilities = requireStringArray(species.high_ability, `Species "${name}".high_ability`);
   const types = requireStringArray(species.types, `Species "${name}".types`);
   if (types.length < 1 || types.length > 2) throw new Error(`Species "${name}".types must contain one or two types`);
@@ -249,11 +249,8 @@ function templateSpeciesToDatabase(name, value, index) {
     Legendary: Boolean(species.legendary),
     'Basic Information': {
       Type: types,
-      'Basic Ability 1': basicAbilities[0] || null,
-      'Basic Ability 2': basicAbilities[1] || null,
-      'Adv Ability 1': advancedAbilities[0] || null,
-      'Adv Ability 2': advancedAbilities[1] || null,
-      'Adv Ability 3': advancedAbilities[2] || null,
+      ...Object.fromEntries(basicAbilities.map((ability, index) => [`Basic Ability ${index + 1}`, ability])),
+      ...Object.fromEntries(advancedAbilities.map((ability, index) => [`Adv Ability ${index + 1}`, ability])),
       'High Ability': highAbilities.length > 1 ? highAbilities : highAbilities[0] || null
     },
     'Base Stats': {

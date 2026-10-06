@@ -1,8 +1,8 @@
 import type { Pokemon } from './types';
-import { ALL_TYPES, hasNuclearType, pokemonTypes } from './pokemon';
+import { pokemonTypes, selectableTypes } from './pokemon';
 
 export function attackingTypes(pokemon: Pokemon): string[] {
-  return ['Typeless', ...ALL_TYPES, ...(hasNuclearType(pokemon) ? ['Nuclear'] : [])];
+  return selectableTypes(pokemon);
 }
 
 type Relations = { weak?: string[]; resist?: string[]; immune?: string[] };

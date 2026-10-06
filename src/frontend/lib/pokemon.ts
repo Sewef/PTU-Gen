@@ -76,6 +76,10 @@ export function pokemonImage(pokemon: Pokemon, size: 'icons' | 'full' = 'icons')
   return imageUrl(pokemon, pokemon.activeBattleOnlyFormIcon || pokemon.Icon || pokemon.id, size);
 }
 
+export function selectableTypes(pokemon: Pokemon): string[] {
+  return ['Typeless', ...ALL_TYPES, ...(hasNuclearType(pokemon) ? ['Nuclear'] : [])];
+}
+
 export function battleOnlyFormImage(pokemon: Pokemon, form: BattleOnlyForm, size: 'icons' | 'full' = 'full'): string {
   return imageUrl(pokemon, form.icon || pokemon.Icon || pokemon.id, size);
 }
