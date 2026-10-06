@@ -445,7 +445,7 @@ GET /api/pokemon/team?minLevel=20&maxLevel=80&minSize=3&maxSize=12&includeLegend
         <div class="endpoint">
             <div class="endpoint-header">
                 <span class="method method-post">POST</span>
-                <span class="endpoint-path">/custom/pokemon</span>
+                <span class="endpoint-path">/custom/species</span>
             </div>
             <h3>Load Custom Pokémon</h3>
             <p class="description">
@@ -454,7 +454,7 @@ GET /api/pokemon/team?minLevel=20&maxLevel=80&minSize=3&maxSize=12&includeLegend
             </p>
 
             <div class="note">
-                <strong>📄 Example JSON:</strong> <a href="example-custom-pokemon.json" target="_blank" class="doc-link">example-custom-pokemon.json</a>
+                <strong>📄 Template:</strong> <a href="template_species.json" target="_blank" class="doc-link">template_species.json</a>
             </div>
 
             <table class="params-table">
@@ -468,8 +468,8 @@ GET /api/pokemon/team?minLevel=20&maxLevel=80&minSize=3&maxSize=12&includeLegend
                 <tbody>
                     <tr>
                         <td><span class="param-name">data</span></td>
-                        <td><span class="param-type">array|object</span></td>
-                        <td>Parsed JSON array or object containing custom Pokémon definitions</td>
+                        <td><span class="param-type">object</span></td>
+                        <td>Parsed template object keyed by species name</td>
                     </tr>
                     <tr>
                         <td><span class="param-name">url</span></td>
@@ -486,19 +486,24 @@ GET /api/pokemon/team?minLevel=20&maxLevel=80&minSize=3&maxSize=12&includeLegend
             <div class="example">
                 <div class="example-title">Example Request (JSON POST):</div>
                 <div class="example-code">
-curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
+curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/species \
   -H "Content-Type: application/json" \
   -d '{
-    "data": [{
-      "Number": 9001,
-      "Species": "Customizard",
-      "Icon": 4,
-      "Legendary": false,
-      "Basic Information": {...},
-      "Base Stats": {...},
-      "Other Information": {...},
-      "Moves": {...}
-    }]
+    "data": {
+      "Warrior": {
+        "image": "https://example.com/warrior.png",
+        "types": ["Water", "Fire"],
+        "basic_abilities": ["Soundproof", "Battle Armor"],
+        "advanced_abilities": ["Intimidate", "Moxie"],
+        "high_ability": ["Guts"],
+        "size": "Medium",
+        "weight_class": 2,
+        "base_stats": {"hp": 8, "atk": 12, "def": 7, "spA": 6, "spD": 7, "spe": 9},
+        "skills": {...},
+        "capabilities": {...},
+        "moves": {...}
+      }
+    }
   }'
                 </div>
             </div>
@@ -506,10 +511,10 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
             <div class="example">
                 <div class="example-title">Example Request (URL):</div>
                 <div class="example-code">
-curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
+curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/species \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://example.com/custom-pokemon.json"
+    "url": "https://example.com/template_species.json"
   }'
                 </div>
             </div>
@@ -536,7 +541,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
             </p>
 
             <div class="note">
-                <strong>📄 Example JSON:</strong> <a href="example-custom-abilities.json" target="_blank" class="doc-link">example-custom-abilities.json</a>
+                <strong>📄 Template:</strong> <a href="template_abilities.json" target="_blank" class="doc-link">template_abilities.json</a>
             </div>
 
             <table class="params-table">
@@ -550,7 +555,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
                 <tbody>
                     <tr>
                         <td><span class="param-name">data</span></td>
-                        <td><span class="param-type">array|object</span></td>
+                        <td><span class="param-type">object</span></td>
                         <td>Parsed JSON containing custom ability definitions</td>
                     </tr>
                     <tr>
@@ -583,7 +588,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
             </p>
 
             <div class="note">
-                <strong>📄 Example JSON:</strong> <a href="example-custom-moves.json" target="_blank" class="doc-link">example-custom-moves.json</a>
+                <strong>📄 Template:</strong> <a href="template_moves.json" target="_blank" class="doc-link">template_moves.json</a>
             </div>
 
             <table class="params-table">
@@ -597,7 +602,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
                 <tbody>
                     <tr>
                         <td><span class="param-name">data</span></td>
-                        <td><span class="param-type">array|object</span></td>
+                        <td><span class="param-type">object</span></td>
                         <td>Parsed JSON containing custom move definitions</td>
                     </tr>
                     <tr>
@@ -638,7 +643,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/pokemon \
                 <div class="response-title">Success Response:</div>
                 <pre><code>{
   "custom": {
-    "pokemon": 2,
+    "species": 2,
     "abilities": 3,
     "moves": 5
   }
@@ -1436,7 +1441,7 @@ LEVEL + (HP * 4)        // Increased HP gain<br>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><span class="param-name">customPokemonUrl</span></td>
+                        <td><span class="param-name">customSpeciesUrl</span></td>
                         <td><span class="param-type">string</span></td>
                         <td><code>/generate</code>, <code>/generateWild/:level</code>, <code>/team</code></td>
                         <td>URL to JSON file with custom Pokémon. Will be loaded before generation.</td>
@@ -1458,7 +1463,7 @@ LEVEL + (HP * 4)        // Increased HP gain<br>
 
             <div class="note">
                 <strong>URL Encoding:</strong> When using these parameters in URLs with special characters, make sure to URL-encode them properly.
-                <br><code>customPokemonUrl=http%3A%2F%2Fexample.com%2Fpokemon.json</code>
+                <br><code>customSpeciesUrl=http%3A%2F%2Fexample.com%2Ftemplate_species.json</code>
             </div>
 
             <div class="example">
@@ -1466,7 +1471,7 @@ LEVEL + (HP * 4)        // Increased HP gain<br>
                 <div class="example-code">
 GET https://ptu-gen.onrender.com/api/pokemon/generate?
   level=50&
-  customPokemonUrl=https://ptu-gen.onrender.com/example-custom-pokemon.json
+  customSpeciesUrl=https://ptu-gen.onrender.com/template_species.json
                 </div>
             </div>
 
@@ -1474,8 +1479,8 @@ GET https://ptu-gen.onrender.com/api/pokemon/generate?
                 <div class="example-title">Example: Generate specific custom species:</div>
                 <div class="example-code">
 GET https://ptu-gen.onrender.com/api/pokemon/generate?
-  species=Customizard&
-  customPokemonUrl=https://ptu-gen.onrender.com/example-custom-pokemon.json
+  species=Warrior&
+  customSpeciesUrl=https://ptu-gen.onrender.com/template_species.json
                 </div>
             </div>
 
@@ -1485,7 +1490,7 @@ GET https://ptu-gen.onrender.com/api/pokemon/generate?
 GET https://ptu-gen.onrender.com/api/pokemon/team?
   level=50&
   size=6&
-  customPokemonUrl=https://example.com/pokemon.json&
+  customSpeciesUrl=https://example.com/species.json&
   customAbilitiesUrl=https://example.com/abilities.json&
   customMovesUrl=https://example.com/moves.json
                 </div>

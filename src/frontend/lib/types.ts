@@ -21,6 +21,7 @@ export interface BattleOnlyForm extends JsonRecord {
 export interface Pokemon extends JsonRecord {
   id: number | string;
   Icon?: number | string;
+  image?: string;
   name: string;
   nickname?: string;
   level: number;

@@ -2,9 +2,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-type BuildOwlbearItem = (pokemon: any) => { item: any };
 const source = readFileSync(resolve('public/export-owlbear.js'), 'utf8');
-const buildOwlbearItem = new Function(`${source}\nreturn buildOwlbearItem;`)() as BuildOwlbearItem;
+const helpers = new Function(`${source}\nreturn { buildOwlbearItem, computeOwlbearBounds };`)() as {
+  buildOwlbearItem: (pokemon: any, position?: { x: number; y: number }, imageMetadata?: { width: number; height: number; mime: string }) => { item: any };
+  computeOwlbearBounds: (items: Record<string, any>) => { min: { x: number; y: number }; max: { x: number; y: number } };
+};
+const { buildOwlbearItem, computeOwlbearBounds } = helpers;
 
 describe('Owlbear token export', () => {
   it('keeps configured tracker and initiative metadata on inserted tokens', () => {
@@ -31,5 +34,27 @@ describe('Owlbear token export', () => {
       stats: { HP: 16, spe: 18 }, otherInfo: {}, owlbear: {}
     });
     expect(item.image.url).toContain('/448-mega.png');
+  });
+
+  it('uses a custom species image', () => {
+    const { item } = buildOwlbearItem({
+      id: 900000, name: 'Warrior', image: 'https://example.com/warrior.jpeg', level: 10,
+      stats: { HP: 8, spe: 9 }, otherInfo: {}, owlbear: {}
+    }, undefined, { width: 1200, height: 800, mime: 'image/jpeg' });
+    expect(item.image).toEqual({
+      url: 'https://example.com/warrior.jpeg', width: 1200, height: 800, mime: 'image/jpeg'
+    });
+    expect(item.grid).toEqual({ dpi: 1200, offset: { x: 600, y: 400 } });
+  });
+
+  it('computes bounds from image dimensions and token scale', () => {
+    const { item } = buildOwlbearItem({
+      id: 900000, name: 'Warrior', level: 10, stats: {}, otherInfo: { sizeCategory: 'Large' }, owlbear: {}
+    }, { x: 100, y: 200 }, { width: 300, height: 180, mime: 'image/png' });
+
+    expect(computeOwlbearBounds({ token: item })).toEqual({
+      min: { x: -200, y: 20 },
+      max: { x: 400, y: 380 }
+    });
   });
 });

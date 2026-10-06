@@ -72,6 +72,7 @@ function imageUrl(pokemon: Pokemon, number: string | number, size: 'icons' | 'fu
 }
 
 export function pokemonImage(pokemon: Pokemon, size: 'icons' | 'full' = 'icons'): string {
+  if (!pokemon.activeBattleOnlyFormIcon && pokemon.image?.trim()) return pokemon.image.trim();
   return imageUrl(pokemon, pokemon.activeBattleOnlyFormIcon || pokemon.Icon || pokemon.id, size);
 }
 

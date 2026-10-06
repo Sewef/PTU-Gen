@@ -1,0 +1,13 @@
+{
+    "Death Ray": {
+        "type": "Ghost",
+        "frequency": "Daily",
+        "ac": "None",
+        "db": "4",
+        "class": "Special",
+        "range": "Line 30, Exhausting, Smite, Doom",
+        "effect": "Summons latin singers while blasting a powerful ghost attack that deals damage to all enemies in a line.",
+        "contest_type": "Cute",
+        "contest_effect": "Exhausting Act"
+    }
+}

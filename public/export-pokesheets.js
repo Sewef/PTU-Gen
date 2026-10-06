@@ -32,7 +32,7 @@ function convertToPokesheetsFormat(pokemon) {
             regionOfOrigin: null,
             entryText: null,
             pokeApiId: null,
-            imageFileUrl: `https://sewef.github.io/ptu/img/pokemon/full/${pokemon.id | 0}.png`,
+            imageFileUrl: String(pokemon.image || '').trim() || `https://sewef.github.io/ptu/img/pokemon/full/${pokemon.id | 0}.png`,
             cryFileUrl: null,
             baseStats: {},
             size: pokemon.otherInfo?.sizeCategory || "Unknown",

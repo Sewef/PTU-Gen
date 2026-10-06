@@ -16,9 +16,9 @@ router.use((req, res, next) => {
 async function loadCustomDataFromQuery(query) {
   const customLoaders = [
     {
-      url: query.custompokemonurl,
-      label: 'custom Pokemon',
-      load: PokemonGenerator.loadCustomPokemon
+      url: query.customspeciesurl,
+      label: 'custom species',
+      load: PokemonGenerator.loadCustomSpecies
     },
     {
       url: query.customabilitiesurl,
@@ -73,7 +73,7 @@ function splitFandex(query) {
  *   - nature: string - Specific nature name (e.g., 'Adamant', 'Timid'). If not specified, a random nature is chosen
  *   - includeLegendaries: boolean - Include legendary Pokemon in generation (default: false)
  *   - forceEvolution: boolean - Automatically evolve Pokemon based on level and evolution conditions (default: false)
- *   - customPokemonUrl: string - URL to JSON file with custom Pokemon (will be loaded before generation)
+ *   - customSpeciesUrl: string - URL to JSON file with custom species (will be loaded before generation)
  *   - customAbilitiesUrl: string - URL to JSON file with custom Abilities (will be loaded before generation)
  *   - customMovesUrl: string - URL to JSON file with custom Moves (will be loaded before generation)
  */
@@ -144,7 +144,7 @@ router.get('/generateBlank', (req, res) => {
  * Generate a wild Pokemon at specific level
  * Query params:
  *   - dataset: string - 'core' (default), 'community', or 'homebrew'
- *   - customPokemonUrl: string - URL to JSON file with custom Pokemon
+ *   - customSpeciesUrl: string - URL to JSON file with custom species
  *   - customAbilitiesUrl: string - URL to JSON file with custom Abilities
  *   - customMovesUrl: string - URL to JSON file with custom Moves
  */
@@ -190,7 +190,7 @@ router.get('/generateWild/:level', async (req, res) => {
  *   - maxSize: number (1-50) - maximum team size for random range
  *   - dataset: string - 'core' (default), 'community', or 'homebrew'
  *   - includeLegendaries: boolean - Include legendary Pokemon (default: false)
- *   - customPokemonUrl: string - URL to JSON file with custom Pokemon
+ *   - customSpeciesUrl: string - URL to JSON file with custom species
  *   - customAbilitiesUrl: string - URL to JSON file with custom Abilities
  *   - customMovesUrl: string - URL to JSON file with custom Moves
  */
@@ -481,11 +481,11 @@ router.get('/all-abilities', async (req, res) => {
 });
 
 /**
- * POST /api/pokemon/custom/pokemon
- * Load custom Pokemon from JSON data or URL
+ * POST /api/pokemon/custom/species
+ * Load custom species from JSON data or URL
  * Body: { data: {...} } or { url: "https://..." }
  */
-router.post('/custom/pokemon', async (req, res) => {
+router.post('/custom/species', async (req, res) => {
   try {
     const { data, url } = req.body;
     
@@ -493,7 +493,7 @@ router.post('/custom/pokemon', async (req, res) => {
       return res.status(400).json({ error: 'Must provide either data (JSON) or url (string)' });
     }
     
-    const result = await PokemonGenerator.loadCustomPokemon(data || url);
+    const result = await PokemonGenerator.loadCustomSpecies(data || url);
     res.json(result);
   } catch (error) {
     res.status(400).json({ error: error.message });

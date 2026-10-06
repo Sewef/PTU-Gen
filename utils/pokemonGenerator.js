@@ -130,6 +130,149 @@ let customPokemon = [];
 let customAbilities = {};
 let customMoves = {};
 
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function requireObject(value, path) {
+  if (!isPlainObject(value)) throw new Error(`${path} must be an object`);
+  return value;
+}
+
+function requireString(value, path) {
+  if (typeof value !== 'string' || !value.trim()) throw new Error(`${path} must be a non-empty string`);
+  return value.trim();
+}
+
+function requireStringArray(value, path, maximum = Infinity) {
+  if (!Array.isArray(value) || value.some(item => typeof item !== 'string' || !item.trim())) {
+    throw new Error(`${path} must be an array of non-empty strings`);
+  }
+  if (value.length > maximum) throw new Error(`${path} accepts at most ${maximum} entries`);
+  return value.map(item => item.trim());
+}
+
+function setCaseInsensitive(record, name, value) {
+  const existingName = Object.keys(record).find(key => key.toLowerCase() === name.toLowerCase());
+  if (existingName && existingName !== name) delete record[existingName];
+  record[name] = value;
+}
+
+function templateAbilityToDatabase(name, value) {
+  const ability = requireObject(value, `Ability "${name}"`);
+  return {
+    Name: name,
+    Frequency: requireString(ability.frequency, `Ability "${name}".frequency`),
+    ...(ability.trigger === undefined ? {} : { Trigger: String(ability.trigger) }),
+    Effect: requireString(ability.effect, `Ability "${name}".effect`),
+    ...(ability.bonus === undefined ? {} : { Bonus: String(ability.bonus) }),
+    ...(ability.special === undefined ? {} : { Special: String(ability.special) }),
+    ...(ability.note === undefined ? {} : { Note: String(ability.note) }),
+    ...(ability.table === undefined ? {} : { Table: ability.table })
+  };
+}
+
+function templateMoveToDatabase(name, value) {
+  const move = requireObject(value, `Move "${name}"`);
+  const damageBase = move.db === undefined || move.db === null || move.db === '' ? undefined : Number(move.db);
+  if (damageBase !== undefined && (!Number.isInteger(damageBase) || damageBase < 1 || damageBase > 28)) {
+    throw new Error(`Move "${name}".db must be an integer from 1 to 28`);
+  }
+  return {
+    Name: name,
+    Type: requireString(move.type, `Move "${name}".type`),
+    Frequency: requireString(move.frequency, `Move "${name}".frequency`),
+    AC: move.ac === undefined ? undefined : String(move.ac),
+    ...(damageBase === undefined ? {} : { 'Damage Base': damageBase }),
+    Class: requireString(move.class, `Move "${name}".class`),
+    Range: requireString(move.range, `Move "${name}".range`),
+    Effect: requireString(move.effect, `Move "${name}".effect`),
+    ...(move.contest_type === undefined ? {} : { 'Contest Type': String(move.contest_type) }),
+    ...(move.contest_effect === undefined ? {} : { 'Contest Effect': String(move.contest_effect) })
+  };
+}
+
+function templateSpeciesToDatabase(name, value, index) {
+  const species = requireObject(value, `Species "${name}"`);
+  const stats = requireObject(species.base_stats, `Species "${name}".base_stats`);
+  const skills = requireObject(species.skills, `Species "${name}".skills`);
+  const capabilities = requireObject(species.capabilities, `Species "${name}".capabilities`);
+  const moves = requireObject(species.moves, `Species "${name}".moves`);
+  const basicAbilities = requireStringArray(species.basic_abilities, `Species "${name}".basic_abilities`, 2);
+  const advancedAbilities = requireStringArray(species.advanced_abilities, `Species "${name}".advanced_abilities`, 3);
+  const highAbilities = requireStringArray(species.high_ability, `Species "${name}".high_ability`);
+  const types = requireStringArray(species.types, `Species "${name}".types`);
+  if (types.length < 1 || types.length > 2) throw new Error(`Species "${name}".types must contain one or two types`);
+
+  const statValue = (key) => {
+    const number = Number(stats[key]);
+    if (!Number.isInteger(number) || number < 1) throw new Error(`Species "${name}".base_stats.${key} must be a positive integer`);
+    return number;
+  };
+  const capabilityValue = (key) => {
+    const number = Number(capabilities[key]);
+    if (!Number.isInteger(number) || number < 0) throw new Error(`Species "${name}".capabilities.${key} must be a non-negative integer`);
+    return number;
+  };
+  if (!Array.isArray(moves.level_up)) throw new Error(`Species "${name}".moves.level_up must be an array`);
+  const levelUp = moves.level_up.map((entry, moveIndex) => {
+    requireObject(entry, `Species "${name}".moves.level_up[${moveIndex}]`);
+    const level = Number(entry.level);
+    if (!Number.isInteger(level) || level < 1 || level > 100) throw new Error(`Species "${name}".moves.level_up[${moveIndex}].level must be an integer from 1 to 100`);
+    return { Level: level, Move: requireString(entry.move, `Species "${name}".moves.level_up[${moveIndex}].move`) };
+  });
+  const tutor = requireStringArray(moves.tutor, `Species "${name}".moves.tutor`).map(move => ({ Move: move }));
+  const otherCapabilities = capabilities.other === undefined
+    ? []
+    : (Array.isArray(capabilities.other) ? requireStringArray(capabilities.other, `Species "${name}".capabilities.other`) : [requireString(capabilities.other, `Species "${name}".capabilities.other`)]);
+  const jump = requireObject(capabilities.jump, `Species "${name}".capabilities.jump`);
+  const jumpHigh = Number(jump.high);
+  const jumpLong = Number(jump.long);
+  if (![jumpHigh, jumpLong].every(number => Number.isInteger(number) && number >= 0)) throw new Error(`Species "${name}".capabilities.jump values must be non-negative integers`);
+  const size = requireString(species.size, `Species "${name}".size`);
+  const weightClass = Number(species.weight_class);
+  if (!Number.isInteger(weightClass) || weightClass < 1) throw new Error(`Species "${name}".weight_class must be a positive integer`);
+  const evolution = species.evolution === undefined ? [] : (() => {
+    const value = requireObject(species.evolution, `Species "${name}".evolution`);
+    const level = Number(value.level);
+    if (!Number.isInteger(level) || level < 1 || level > 100) throw new Error(`Species "${name}".evolution.level must be an integer from 1 to 100`);
+    return [
+      { Stade: 1, Species: name },
+      { Stade: 2, Species: requireString(value.evolves_to, `Species "${name}".evolution.evolves_to`), 'Minimum Level': level }
+    ];
+  })();
+
+  return {
+    Number: 900000 + index,
+    Species: name,
+    Image: requireString(species.image, `Species "${name}".image`),
+    Legendary: Boolean(species.legendary),
+    'Basic Information': {
+      Type: types,
+      'Basic Ability 1': basicAbilities[0] || null,
+      'Basic Ability 2': basicAbilities[1] || null,
+      'Adv Ability 1': advancedAbilities[0] || null,
+      'Adv Ability 2': advancedAbilities[1] || null,
+      'Adv Ability 3': advancedAbilities[2] || null,
+      'High Ability': highAbilities.length > 1 ? highAbilities : highAbilities[0] || null
+    },
+    'Base Stats': {
+      HP: statValue('hp'), Attack: statValue('atk'), Defense: statValue('def'),
+      'Special Attack': statValue('spA'), 'Special Defense': statValue('spD'), Speed: statValue('spe')
+    },
+    Skills: Object.fromEntries(Object.entries(skills).map(([skill, formula]) => [skill.charAt(0).toUpperCase() + skill.slice(1), requireString(formula, `Species "${name}".skills.${skill}`)])),
+    Capabilities: [
+      `Overland ${capabilityValue('overland')}`, `Swim ${capabilityValue('swim')}`,
+      `Burrow ${capabilityValue('burrow')}`, `Sky ${capabilityValue('sky')}`,
+      `Jump ${jumpHigh}/${jumpLong}`, `Power ${capabilityValue('power')}`,
+      ...otherCapabilities
+    ],
+    'Other Information': { 'Size Information': { Height: `(${size})`, Weight: `Weight Class ${weightClass}` } },
+    Moves: { 'Level Up Move List': levelUp, 'TM/HM Move List': [], 'Tutor Move List': tutor },
+    Evolution: evolution
+  };
+}
+
 /**
  * Return the canonical move name used as a database key.
  * Some learnsets decorate moves with Markdown and variant metadata, for example:
@@ -746,6 +889,7 @@ class PokemonGenerator {
     const pokemon = {
       id: species.Number,
       Icon: species.Icon,
+      image: species.Image || '',
       name: displayName,
       displayName: displayName,
       baseName: species.Species,
@@ -1989,11 +2133,12 @@ class PokemonGenerator {
           if (Array.isArray(movesData['Level Up Move List'])) {
             result.levelUp = movesData['Level Up Move List'].map(move => {
               const canonicalMoveName = cleanMoveName(move.Move);
-              const hasStab = pokemonTypes.some(type => type.toLowerCase() === move.Type?.toLowerCase());
               const moveDef = this.getMoveDefinition(canonicalMoveName);
+              const moveType = moveDef?.Type || move.Type;
+              const hasStab = pokemonTypes.some(type => type.toLowerCase() === moveType?.toLowerCase());
               return {
                 name: canonicalMoveName,
-                type: moveDef?.['Type'] || move.Type,
+                type: moveType,
                 level: move.Level,
                 frequency: moveDef?.['Frequency'] || 'N/A',
                 class: moveDef?.['Class'] || 'N/A',
@@ -2009,11 +2154,12 @@ class PokemonGenerator {
           if (Array.isArray(movesData['TM/HM Move List'])) {
             result.tm = movesData['TM/HM Move List'].map(move => {
               const canonicalMoveName = cleanMoveName(move.Move);
-              const hasStab = pokemonTypes.some(type => type.toLowerCase() === move.Type?.toLowerCase());
               const moveDef = this.getMoveDefinition(canonicalMoveName);
+              const moveType = moveDef?.Type || move.Type;
+              const hasStab = pokemonTypes.some(type => type.toLowerCase() === moveType?.toLowerCase());
               return {
                 name: canonicalMoveName,
-                type: moveDef?.['Type'] || move.Type,
+                type: moveType,
                 frequency: moveDef?.['Frequency'] || 'N/A',
                 class: moveDef?.['Class'] || 'N/A',
                 range: moveDef?.['Range'] || 'N/A',
@@ -2028,11 +2174,12 @@ class PokemonGenerator {
           if (Array.isArray(movesData['Tutor Move List'])) {
             result.tutor = movesData['Tutor Move List'].map(move => {
               const canonicalMoveName = cleanMoveName(move.Move);
-              const hasStab = pokemonTypes.some(type => type.toLowerCase() === move.Type?.toLowerCase());
               const moveDef = this.getMoveDefinition(canonicalMoveName);
+              const moveType = moveDef?.Type || move.Type;
+              const hasStab = pokemonTypes.some(type => type.toLowerCase() === moveType?.toLowerCase());
               return {
                 name: canonicalMoveName,
-                type: moveDef?.['Type'] || move.Type,
+                type: moveType,
                 frequency: moveDef?.['Frequency'] || 'N/A',
                 class: moveDef?.['Class'] || 'N/A',
                 range: moveDef?.['Range'] || 'N/A',
@@ -2290,37 +2437,22 @@ class PokemonGenerator {
    * @param {Object|string} data - Either parsed JSON object or URL string
    * @returns {Promise<Object>} Result with count and status
    */
-  static async loadCustomPokemon(data) {
+  static async loadCustomSpecies(data) {
     try {
-      let pokemonData;
+      let speciesData;
       
       if (typeof data === 'string') {
         // It's a URL - fetch it
-        pokemonData = await fetchDataFromURL(data);
+        speciesData = await fetchDataFromURL(data);
       } else {
         // It's already parsed JSON
-        pokemonData = data;
+        speciesData = data;
       }
 
-      // Ensure it's an array
-      if (!Array.isArray(pokemonData)) {
-        throw new Error('Custom Pokemon data must be an array');
-      }
-
-      // Limit custom Pokemon to avoid memory issues (max 1000)
-      if (pokemonData.length > 1000) {
-        console.error(`Custom Pokemon data too large (${pokemonData.length}). Truncating to 1000.`);
-        pokemonData = pokemonData.slice(0, 1000);
-      }
-
-      // Validate and filter out invalid entries
-      const validPokemon = pokemonData.filter(pokemon => {
-        if (!pokemon.Species || typeof pokemon.Species !== 'string') {
-          console.error('Skipping Pokemon without valid Species field');
-          return false;
-        }
-        return true;
-      });
+      requireObject(speciesData, 'Custom species data');
+      const entries = Object.entries(speciesData);
+      if (entries.length > 1000) throw new Error('Custom species data cannot contain more than 1000 entries');
+      const validPokemon = entries.map(([name, species], index) => templateSpeciesToDatabase(requireString(name, 'Species name'), species, index));
 
       // Merge with existing custom Pokemon, overwriting duplicates by Species name
       const customMap = new Map(customPokemon.map(p => [p.Species.toLowerCase(), p]));
@@ -2340,7 +2472,7 @@ class PokemonGenerator {
         totalCustom: customPokemon.length
       };
     } catch (error) {
-      console.error('Error loading custom Pokemon:', error);
+      console.error('Error loading custom species:', error);
       throw error;
     }
   }
@@ -2362,29 +2494,15 @@ class PokemonGenerator {
         abilitiesData = data;
       }
 
-      let count = 0;
-      
-      // Merge with existing custom abilities, overwriting duplicates by name
-      if (Array.isArray(abilitiesData)) {
-        // Convert array to object format
-        // Limit to 500 abilities to avoid memory issues
-        const slice = abilitiesData.slice(0, 500);
-        count = slice.length;
-        slice.forEach(ability => {
-          if (ability.Name && typeof ability.Name === 'string') {
-            customAbilities[ability.Name] = ability;
-          }
-        });
-      } else {
-        // Already in object format
-        const entries = Object.entries(abilitiesData).slice(0, 500);
-        count = entries.length;
-        entries.forEach(([name, abilityData]) => {
-          if (typeof name === 'string' && abilityData) {
-            customAbilities[name] = abilityData;
-          }
-        });
-      }
+      requireObject(abilitiesData, 'Custom abilities data');
+      const entries = Object.entries(abilitiesData);
+      if (entries.length > 500) throw new Error('Custom abilities data cannot contain more than 500 entries');
+      const normalizedAbilities = entries.map(([name, ability]) => {
+        const normalizedName = requireString(name, 'Ability name');
+        return [normalizedName, templateAbilityToDatabase(normalizedName, ability)];
+      });
+      normalizedAbilities.forEach(([name, ability]) => { setCaseInsensitive(customAbilities, name, ability); });
+      const count = entries.length;
 
       // Rebuild abilities map with new custom abilities
       Object.keys(customAbilities).forEach(abilityName => {
@@ -2419,29 +2537,15 @@ class PokemonGenerator {
         movesData = data;
       }
 
-      let count = 0;
-
-      // Merge with existing custom moves, overwriting duplicates by name
-      if (Array.isArray(movesData)) {
-        // Convert array to object format
-        // Limit to 500 moves to avoid memory issues
-        const slice = movesData.slice(0, 500);
-        count = slice.length;
-        slice.forEach(move => {
-          if (move.Name && typeof move.Name === 'string') {
-            customMoves[move.Name] = move;
-          }
-        });
-      } else {
-        // Already in object format
-        const entries = Object.entries(movesData).slice(0, 500);
-        count = entries.length;
-        entries.forEach(([name, moveData]) => {
-          if (typeof name === 'string' && moveData) {
-            customMoves[name] = moveData;
-          }
-        });
-      }
+      requireObject(movesData, 'Custom moves data');
+      const entries = Object.entries(movesData);
+      if (entries.length > 500) throw new Error('Custom moves data cannot contain more than 500 entries');
+      const normalizedMoves = entries.map(([name, move]) => {
+        const normalizedName = requireString(name, 'Move name');
+        return [normalizedName, templateMoveToDatabase(normalizedName, move)];
+      });
+      normalizedMoves.forEach(([name, move]) => { setCaseInsensitive(customMoves, name, move); });
+      const count = entries.length;
 
       // Rebuild moves map with new custom moves
       Object.keys(customMoves).forEach(moveName => {
@@ -2464,7 +2568,7 @@ class PokemonGenerator {
    */
   static getCustomData() {
     return {
-      pokemon: customPokemon.length,
+      species: customPokemon.length,
       abilities: Object.keys(customAbilities).length,
       moves: Object.keys(customMoves).length
     };
@@ -2482,6 +2586,13 @@ class PokemonGenerator {
     customPokemon = [];
     customAbilities = {};
     customMoves = {};
+    pokemonByName = {};
+    pokemonDatabase.forEach(pokemon => {
+      const speciesName = pokemon.Species.toLowerCase();
+      pokemonByName[pokemon.Form ? `${speciesName}|${pokemon.Form.toLowerCase()}` : speciesName] = pokemon;
+    });
+    movesMapLower = Object.fromEntries(Object.entries(movesDatabase).map(([name, move]) => [name.toLowerCase(), move]));
+    abilitiesMapLower = Object.fromEntries(Object.entries(abilitiesDatabase).map(([name, ability]) => [name.toLowerCase(), ability]));
     return { success: true };
   }
 }

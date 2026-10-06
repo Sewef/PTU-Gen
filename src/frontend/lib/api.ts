@@ -74,11 +74,15 @@ export async function generate(settings: GeneratorSettings, blank = false): Prom
   return normalizePokemon(await json(`/api/pokemon/${endpoint}?${generationParams(settings, blank)}`));
 }
 
-export async function loadCustom(kind: 'pokemon' | 'abilities' | 'moves', input: string) {
-  const trimmed = input.trim();
+export type CustomizationKind = 'species' | 'abilities' | 'moves';
+
+export async function loadCustom(kind: CustomizationKind, input: string | unknown) {
   let body: Record<string, unknown>;
-  if (/^https?:\/\//i.test(trimmed)) body = { url: trimmed };
-  else body = { data: JSON.parse(trimmed) };
+  if (typeof input === 'string') {
+    const trimmed = input.trim();
+    if (!trimmed) throw new Error('Select a JSON file or paste JSON / a URL.');
+    body = /^https?:\/\//i.test(trimmed) ? { url: trimmed } : { data: JSON.parse(trimmed) };
+  } else body = { data: input };
   return json(`/api/pokemon/custom/${kind}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
   });

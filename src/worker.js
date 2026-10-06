@@ -32,9 +32,9 @@ function splitFandex(query) {
 async function loadCustomDataFromQuery(query) {
   const customLoaders = [
     {
-      url: query.custompokemonurl,
-      label: 'custom Pokemon',
-      load: PokemonGenerator.loadCustomPokemon
+      url: query.customspeciesurl,
+      label: 'custom species',
+      load: PokemonGenerator.loadCustomSpecies
     },
     {
       url: query.customabilitiesurl,
@@ -94,7 +94,7 @@ app.get('/api/info', c => {
       abilities: '/api/pokemon/abilities/:species',
       allMoves: '/api/pokemon/all-moves',
       allAbilities: '/api/pokemon/all-abilities',
-      customPokemon: 'POST /api/pokemon/custom/pokemon',
+      customSpecies: 'POST /api/pokemon/custom/species',
       customAbilities: 'POST /api/pokemon/custom/abilities',
       customMoves: 'POST /api/pokemon/custom/moves',
       customStatus: 'GET /api/pokemon/custom',
@@ -445,7 +445,7 @@ app.get('/api/pokemon/all-abilities', async c => {
   }
 });
 
-app.post('/api/pokemon/custom/pokemon', async c => {
+app.post('/api/pokemon/custom/species', async c => {
   try {
     await ensureInitialized();
     const { data, url } = await readJsonBody(c);
@@ -454,7 +454,7 @@ app.post('/api/pokemon/custom/pokemon', async c => {
       return c.json({ error: 'Must provide either data (JSON) or url (string)' }, 400);
     }
 
-    const result = await PokemonGenerator.loadCustomPokemon(data || url);
+    const result = await PokemonGenerator.loadCustomSpecies(data || url);
     return c.json(result);
   } catch (error) {
     return jsonError(c, error, 400);

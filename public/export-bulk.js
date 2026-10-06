@@ -102,15 +102,19 @@ async function exportBulkPokesheets(pokemons) {
 async function exportBulkOwlbear(pokemons) {
     const shared = {};
     let currentX = 0;
+    let previousHalfWidth = 0;
     const owlbearSettings = getBulkOwlbearSettings();
 
     for (const pokemon of pokemons) {
         const pokemonForExport = owlbearSettings
             ? { ...pokemon, owlbear: { ...owlbearSettings } }
             : pokemon;
-        const { uuid, item } = buildOwlbearItem(pokemonForExport, { x: currentX, y: 0 });
+        const { uuid, item } = await buildOwlbearItemWithImage(pokemonForExport, { x: 0, y: 0 });
+        const currentHalfWidth = item.image.width * Math.abs(Number(item.scale?.x) || 1) / 2;
+        if (Object.keys(shared).length > 0) currentX += previousHalfWidth + currentHalfWidth;
+        item.position.x = currentX;
         shared[uuid] = item;
-        currentX += OWLBEAR_TOKEN_SIZE;
+        previousHalfWidth = currentHalfWidth;
     }
 
     const merged = {

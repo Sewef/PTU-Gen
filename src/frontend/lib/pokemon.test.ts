@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateHp, normalizePokemon, pokemonTypes } from './pokemon';
+import { calculateHp, normalizePokemon, pokemonImage, pokemonTypes } from './pokemon';
 
 describe('pokemon helpers', () => {
   it('evaluates custom HP formulas with every supported stat', () => {
@@ -37,5 +37,10 @@ describe('pokemon helpers', () => {
   it('resolves forme-dependent types', () => {
     const pokemon = normalizePokemon({ name: 'Morph', level: 1, stats: { HP: 1 }, types: { isFormeVariant: true, selectedForme: 'Sky', formes: { Sky: ['Flying'] } } });
     expect(pokemonTypes(pokemon)).toEqual(['Flying']);
+  });
+
+  it('uses a custom species image', () => {
+    const pokemon = normalizePokemon({ id: 900000, name: 'Warrior', image: ' https://example.com/warrior.png ', level: 1, stats: { HP: 1 }, types: ['Fire'] });
+    expect(pokemonImage(pokemon)).toBe('https://example.com/warrior.png');
   });
 });

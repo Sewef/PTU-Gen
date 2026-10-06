@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { generationParams, typesForFandexes } from './api';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { generationParams, loadCustom, typesForFandexes } from './api';
 import type { GeneratorSettings } from './types';
 
 const settings: GeneratorSettings = {
@@ -40,5 +40,32 @@ describe('typesForFandexes', () => {
 
   it('does not duplicate Nuclear when the API already returns it', () => {
     expect(typesForFandexes(['Fire', 'Nuclear'], ['uranium'])).toEqual(['Fire', 'Nuclear']);
+  });
+});
+
+describe('loadCustom', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('posts parsed template data to the species endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, count: 1 }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await loadCustom('species', { Warrior: { types: ['Fire'] } });
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/pokemon/custom/species', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ data: { Warrior: { types: ['Fire'] } } })
+    }));
+  });
+
+  it('posts HTTP inputs as template URLs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, count: 1 }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await loadCustom('moves', 'https://example.com/template_moves.json');
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/pokemon/custom/moves', expect.objectContaining({
+      body: JSON.stringify({ url: 'https://example.com/template_moves.json' })
+    }));
   });
 });

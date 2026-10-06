@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { generate, generatorOptions, loadCustom, metadata } from './lib/api';
+  import { generate, generatorOptions, loadCustom, metadata, type CustomizationKind } from './lib/api';
   import type { GeneratorSettings, HistoryEntry, Pokemon } from './lib/types';
   import { clearHistory, historyKey, listHistory, loadPokemon, owlbearHistoryScope, plainPokemon, removeHistory, savePokemon, SITE_HISTORY_SCOPE } from './lib/storage';
   import type { OwlbearPlayer } from './lib/owlbear';
@@ -42,7 +42,7 @@
   let customOpen = $state(false);
   let owlbearOpen = $state(false);
   let importOpen = $state(false);
-  let customInputs = $state({ pokemon: '', abilities: '', moves: '' });
+  let customInputs = $state<Record<CustomizationKind, string>>({ species: '', abilities: '', moves: '' });
   let customStatus = $state('');
   let selectedFiles = $state<File[]>([]);
   let currentPlayer = $state<OwlbearPlayer | null>(null);
@@ -191,13 +191,27 @@
     return [...new Set(settings.fandex.map(value => canonical.get(String(value).toLowerCase())).filter((value): value is string => Boolean(value)))];
   }
 
-  async function submitCustom(kind: 'pokemon' | 'abilities' | 'moves') {
+  const customKinds: { kind: CustomizationKind; label: string; template: string }[] = [
+    { kind: 'species', label: 'Species', template: '/template_species.json' },
+    { kind: 'abilities', label: 'Abilities', template: '/template_abilities.json' },
+    { kind: 'moves', label: 'Moves', template: '/template_moves.json' }
+  ];
+
+  async function submitCustom(kind: CustomizationKind, input: string | unknown = customInputs[kind]) {
     try {
-      await loadCustom(kind, customInputs[kind]);
-      customStatus = `${kind} loaded successfully.`;
+      const result = await loadCustom(kind, input) as { count?: number; totalCustom?: number };
+      customStatus = `${result.count ?? 0} custom ${kind} loaded (${result.totalCustom ?? result.count ?? 0} total).`;
       customInputs[kind] = '';
       await refreshMetadata();
     } catch (error) { customStatus = error instanceof Error ? error.message : 'Load failed'; }
+  }
+
+  async function submitCustomFile(kind: CustomizationKind, files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    try {
+      await submitCustom(kind, JSON.parse(await file.text()));
+    } catch (error) { customStatus = `${file.name}: ${error instanceof Error ? error.message : 'Invalid JSON'}`; }
   }
 
   function chooseFiles(files: FileList | null) {
@@ -305,8 +319,12 @@
 
         <button type="button" class="advanced-toggle" onclick={() => customOpen = !customOpen}><span>Customization</span><span>{customOpen ? '▲' : '▼'}</span></button>
         {#if customOpen}<div class="advanced-section open"><div class="advanced-content">
-          {#each ['pokemon', 'abilities', 'moves'] as kind}
-            <div class="form-group"><div class="field-label-row"><label for="custom-{kind}">Custom {kind}</label><button type="button" class="option-help" title={`Load custom ${kind} definitions. Duplicates will be overwritten.`} aria-label={`Help: Custom ${kind}`}>?</button></div><div class="input-button-row"><input id="custom-{kind}" bind:value={customInputs[kind as keyof typeof customInputs]} placeholder="Paste JSON or URL" /><button type="button" class="edit-bn" onclick={() => submitCustom(kind as any)}>Load</button></div></div>
+          {#each customKinds as item}
+            <div class="form-group custom-import-group">
+              <div class="field-label-row"><label for="custom-{item.kind}">Custom {item.label}</label><button type="button" class="option-help" title={`Import ${item.label.toLowerCase()} using the template format. Names already present are overwritten.`} aria-label={`Help: Custom ${item.label}`}>?</button><a class="template-link" href={item.template} download>Template</a></div>
+              <div class="custom-file-row"><input aria-label={`Import custom ${item.label} JSON file`} type="file" accept=".json,application/json" onchange={(event) => submitCustomFile(item.kind, event.currentTarget.files)} /></div>
+              <div class="input-button-row"><input id="custom-{item.kind}" bind:value={customInputs[item.kind]} placeholder="Or paste JSON / a URL" /><button type="button" class="edit-bn" onclick={() => submitCustom(item.kind)}>Load</button></div>
+            </div>
           {/each}
           {#if customStatus}<div class="info-box">{customStatus}</div>{/if}
         </div></div>{/if}
@@ -363,6 +381,7 @@
   .generation-settings-form>.form-row .form-group{min-width:0;margin:0}
   .advanced-toggle { width: 100%; border: 0; padding:.55rem .7rem; }
   .input-button-row input { flex: 1; }
+  .custom-import-group{display:grid;gap:.35rem}.custom-file-row input{box-sizing:border-box;width:100%;min-height:32px;padding:.25rem}.template-link{margin-left:auto;font-size:.8rem;font-weight:650}
   .autocomplete-suggestions.visible { display: block; position: relative; }
   .autocomplete-item { display: block; width: 100%; text-align: left; border: 0; padding: .45rem; background: transparent; cursor: pointer; }
   .group-label { display:block; font-size:.82rem; font-weight:650; margin-bottom:.25rem; }

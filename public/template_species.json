@@ -1,0 +1,55 @@
+{
+    "Warrior": {
+        "image": "https://i.imgur.com/2KVkaLl.jpeg",
+        "types": ["Water", "Fire"],
+        "basic_abilities": ["Soundproof", "Battle Armor"],
+        "advanced_abilities": ["Intimidate", "Moxie"],
+        "high_ability": ["Guts"],
+        "size": "Medium",
+        "weight_class": 2,
+        "base_stats": {
+            "hp": 8,
+            "atk": 12,
+            "def": 7,
+            "spA": 6,
+            "spD": 7,
+            "spe": 9
+        },
+        "skills": {
+            "athletics": "1d6",
+            "acrobatics": "1d4",
+            "combat": "1d4",
+            "stealth": "1d4",
+            "perception": "1d4",
+            "focus": "1d4"
+        },
+        "capabilities": {
+            "overland": 4,
+            "swim": 2,
+            "burrow": 0,
+            "sky": 0,
+            "jump": {
+                "high": 2,
+                "long": 4
+            },
+            "power": 6,
+            "other": "Underdog"
+        },
+        "evolution": {
+            "level": 16,
+            "evolves_to": "Champion"
+        },
+        "moves": {
+            "level_up": [
+                {"level": 1, "move": "Tackle"},
+                {"level": 5, "move": "Water Gun"},
+                {"level": 10, "move": "Flame Charge"},
+                {"level": 15, "move": "Aqua Tail"}
+            ],
+            "tutor": [
+                "Iron Defense",
+                "Dragon Pulse"
+            ]
+        }
+    }
+}

@@ -55,7 +55,7 @@ app.get('/api/info', (req, res) => {
       abilities: '/api/pokemon/abilities/:species',
       allMoves: '/api/pokemon/all-moves',
       allAbilities: '/api/pokemon/all-abilities',
-      customPokemon: 'POST /api/pokemon/custom/pokemon',
+      customSpecies: 'POST /api/pokemon/custom/species',
       customAbilities: 'POST /api/pokemon/custom/abilities',
       customMoves: 'POST /api/pokemon/custom/moves',
       customStatus: 'GET /api/pokemon/custom',

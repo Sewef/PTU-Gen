@@ -109,9 +109,9 @@
     if (pokemon.owlbear.tokenId) void action(() => requestOwlbear('get-token-state', { tokenId: pokemon.owlbear.tokenId! }));
   }
   function insert() {
-    const builder = (window as any).buildOwlbearItem;
+    const builder = (window as any).buildOwlbearItemWithImage;
     if (typeof builder !== 'function') { failed = true; status = 'Owlbear exporter unavailable'; return; }
-    void action(() => requestOwlbear('insert-token', { item: builder(pokemon).item }));
+    void action(async () => requestOwlbear('insert-token', { item: (await builder(pokemon)).item }));
   }
   function focus() {
     if (pokemon.owlbear.tokenId) void action(() => requestOwlbear('focus-token', { tokenId: pokemon.owlbear.tokenId }));
