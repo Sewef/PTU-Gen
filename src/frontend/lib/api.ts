@@ -60,6 +60,7 @@ export function generationParams(settings: GeneratorSettings, blank = false): UR
   if (settings.forceEvolution) params.set('forceEvolution', 'true');
   if (settings.ignoreBaseRelation) params.set('ignoreBaseRelation', settings.ignoreBaseRelation);
   if (settings.hpFormula) params.set('hpFormula', settings.hpFormula);
+  params.set('fiveStrikeMode', settings.fiveStrikeMode);
   params.set('owlbearVisible', String(settings.owlbearVisible));
   params.set('owlbearTrackers', settings.owlbearTrackers);
   params.set('owlbearInitiative', settings.owlbearInitiative);

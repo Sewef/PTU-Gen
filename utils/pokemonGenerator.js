@@ -572,7 +572,8 @@ class PokemonGenerator {
    * @param {boolean} options.shiny - Force shiny
    * @param {string} options.distribution - RANDOM (default), BALANCED, or MINMAXED
    * @param {string} options.ignoreBaseRelation - 'ALL' (all stats) or comma-separated list (e.g., 'HP,ATK,DEF')
-   * @param {string} options.hpFormula - Custom HP formula. Default: 'LEVEL + (HP * 3) + 10'
+  * @param {string} options.hpFormula - Custom HP formula. Default: 'LEVEL + (HP * 3) + 10'
+   * @param {string} options.fivestrikemode - Five Strike rule: multiplicative (default) or additive
    * @param {boolean|string} options.owlbearvisible - Owlbear token visibility
    * @param {string} options.owlbearplayerid - Owlbear created user id
    * @param {string} options.owlbeartrackers - Owlbear tracker integration: 'none' or 'owltrackers'
@@ -657,6 +658,7 @@ class PokemonGenerator {
     const distribution = (options.distribution || 'RANDOM').toUpperCase();
     const ignoreBaseRelation = this.normalizeIgnoreBaseRelation(options.ignorebaserelation);
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
+    const fiveStrikeMode = String(options.fivestrikemode || '').toLowerCase() === 'additive' ? 'additive' : 'multiplicative';
     const owlbear = {
       visible: options.owlbearvisible === undefined ? true : options.owlbearvisible === true || options.owlbearvisible === 'true',
       playerId: String(options.owlbearplayerid || '').trim(),
@@ -770,6 +772,7 @@ class PokemonGenerator {
       hitPoints: hitPointsMax,
       hitPointsMax: hitPointsMax,
       hpFormula: hpFormula,
+      fiveStrikeMode,
       ignoreBaseRelation: ignoreBaseRelation,
       owlbear,
       moves: this.selectMovesForPokemon(species, level, 6),
@@ -819,6 +822,7 @@ class PokemonGenerator {
     const parsedLevel = parseInt(options.level, 10);
     const level = Number.isNaN(parsedLevel) ? 1 : Math.min(Math.max(parsedLevel, 1), 100);
     const hpFormula = options.hpformula || 'LEVEL + (HP * 3) + 10';
+    const fiveStrikeMode = String(options.fivestrikemode || '').toLowerCase() === 'additive' ? 'additive' : 'multiplicative';
     const owlbear = {
       visible: options.owlbearvisible === undefined ? true : options.owlbearvisible === true || options.owlbearvisible === 'true',
       playerId: String(options.owlbearplayerid || '').trim(),
@@ -862,6 +866,7 @@ class PokemonGenerator {
       hitPoints: hitPointsMax,
       hitPointsMax,
       hpFormula,
+      fiveStrikeMode,
       owlbear,
       moves: [],
       item: '',
@@ -1027,6 +1032,7 @@ class PokemonGenerator {
         level,
         dataset,
         hpformula: hpFormula,
+        fivestrikemode: options.fivestrikemode,
         includelegendaries: includeLegendaries,
         naturemode: options.naturemode,
         nature: options.nature,

@@ -143,6 +143,7 @@ export function normalizePokemon(raw: any): Pokemon {
   pokemon.owlbear.initiative ||= 'none';
   pokemon.owlbear.diceRoller ||= 'none';
   pokemon.hpFormula ||= pokemon.hp_formula || 'LEVEL + (HP * 3) + 10';
+  pokemon.fiveStrikeMode = String(pokemon.fiveStrikeMode || '').toLowerCase() === 'additive' ? 'additive' : 'multiplicative';
   pokemon.hitPointsMax = Number(pokemon.hitPointsMax) || calculateHp(pokemon.level, pokemon.stats, pokemon.hpFormula);
   if (pokemon.hitPoints === undefined || pokemon.hitPoints === null) pokemon.hitPoints = pokemon.hitPointsMax;
   pokemon.tutorPoints ??= Math.floor(pokemon.level / 5) + 1;

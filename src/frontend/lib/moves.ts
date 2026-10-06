@@ -141,8 +141,11 @@ export function fiveStrikeCases(pokemon: Pokemon, move: JsonRecord) {
   const rolls = ['1', '2–3', '4–6', '7', '8'];
   return ([1, 2, 3, 4, 5] as const).map((hits, index) => {
     const attack = attackValue(pokemon, move);
+    const multipliedDb = pokemon.fiveStrikeMode === 'additive'
+      ? baseDamageBase(move) + 2 * (hits - 1)
+      : baseDamageBase(move) * hits;
     const hitDamage = move.damageBase
-      ? damageBase(baseDamageBase(move) * hits + (move.damageBase.stab ? 2 : 0))
+      ? damageBase(multipliedDb + (move.damageBase.stab ? 2 : 0))
       : null;
     return {
       hits,

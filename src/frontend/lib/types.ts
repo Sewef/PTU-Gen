@@ -51,6 +51,7 @@ export interface Pokemon extends JsonRecord {
   hitPoints?: number;
   hitPointsMax?: number;
   hpFormula?: string;
+  fiveStrikeMode?: 'multiplicative' | 'additive';
   tutorPoints?: number;
   typeEffectivenessOverrides?: Record<string, number>;
   owlbear: OwlbearSettings;
@@ -89,6 +90,7 @@ export interface GeneratorSettings {
   nature: string;
   ignoreBaseRelation: string;
   hpFormula: string;
+  fiveStrikeMode: 'multiplicative' | 'additive';
   owlbearVisible: boolean;
   owlbearPlayerId: string;
   owlbearTrackers: string;

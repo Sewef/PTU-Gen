@@ -16,7 +16,7 @@
     levelMode: 'fixed', level: 50, minLevel: 30, maxLevel: 70, species: '', randomForm: false,
     habitat: '', type: '', shinyMode: 'odds', shinyOdds: 1, includeLegendaries: false,
     forceEvolution: false, distribution: 'RANDOM', natureMode: 'random', nature: '',
-    ignoreBaseRelation: '', hpFormula: 'LEVEL + (HP * 3) + 10', owlbearVisible: true,
+    ignoreBaseRelation: '', hpFormula: 'LEVEL + (HP * 3) + 10', fiveStrikeMode: 'multiplicative', owlbearVisible: true,
     owlbearPlayerId: '', owlbearTrackers: 'none', owlbearInitiative: 'none', owlbearDiceRoller: 'none'
   };
   const helpTitles = {
@@ -24,7 +24,8 @@
     distribution: 'Random: Completely unpredictable distribution\nBalanced: Equal distribution across all stats\nMinmaxed: Specializes — high stats get higher, low stats get lower',
     nature: "Random: Chooses any nature\nOptimal: Raises the species' highest base stat and lowers its lowest base stat\nFixed: Uses the selected nature from the dropdown\nTies currently use Composed",
     ignoreBaseRelation: 'Use ALL to disable Base Relation for every stat, or list specific stats separated by commas. Accepted stats: HP, ATK, DEF, SPA, SPD, SPE.',
-    hpFormula: 'Formula placeholders: LEVEL, HP, ATK, DEF, SPA, SPD, SPE. Example: LEVEL + (HP * 3) + DEF.'
+    hpFormula: 'Formula placeholders: LEVEL, HP, ATK, DEF, SPA, SPD, SPE. Example: LEVEL + (HP * 3) + DEF.',
+    fiveStrike: 'Multiplicative: multiply the base DB by the number of hits.\nAdditive: add 2 DB for each hit after the first.'
   };
 
   let settings = $state<GeneratorSettings>({ ...defaults });
@@ -62,7 +63,7 @@
   const optionsChanged = $derived(settings.includeLegendaries !== defaults.includeLegendaries || settings.forceEvolution !== defaults.forceEvolution);
   const distributionChanged = $derived(settings.distribution !== defaults.distribution);
   const natureChanged = $derived(settings.natureMode !== defaults.natureMode || Boolean(settings.nature));
-  const advancedChanged = $derived(settings.ignoreBaseRelation !== defaults.ignoreBaseRelation || settings.hpFormula !== defaults.hpFormula);
+  const advancedChanged = $derived(settings.ignoreBaseRelation !== defaults.ignoreBaseRelation || settings.hpFormula !== defaults.hpFormula || settings.fiveStrikeMode !== defaults.fiveStrikeMode);
   const owlbearChanged = $derived(settings.owlbearVisible !== defaults.owlbearVisible || settings.owlbearPlayerId !== defaults.owlbearPlayerId || settings.owlbearTrackers !== defaults.owlbearTrackers || settings.owlbearInitiative !== defaults.owlbearInitiative || settings.owlbearDiceRoller !== defaults.owlbearDiceRoller);
 
   function readSettings(): GeneratorSettings {
@@ -299,6 +300,7 @@
         {#if advancedOpen}<div class="advanced-section open"><div class="advanced-content">
           <div class="form-group" class:pref-changed-group={settings.ignoreBaseRelation !== defaults.ignoreBaseRelation}><div class="field-label-row"><label for="ignoreBase">Ignore Base Relation</label><button type="button" class="option-help" title={helpTitles.ignoreBaseRelation} aria-label="Help: Ignore Base Relation">?</button></div><input id="ignoreBase" bind:value={settings.ignoreBaseRelation} placeholder="ALL or HP,ATK,DEF" /></div>
           <div class="form-group" class:pref-changed-group={settings.hpFormula !== defaults.hpFormula}><div class="field-label-row"><label for="hpFormula">HP Formula</label><button type="button" class="option-help" title={helpTitles.hpFormula} aria-label="Help: HP Formula">?</button></div><input id="hpFormula" bind:value={settings.hpFormula} /></div>
+          <div class="form-group" class:pref-changed-group={settings.fiveStrikeMode !== defaults.fiveStrikeMode}><div class="field-label-row"><span class="group-label">Five Strike</span><button type="button" class="option-help" title={helpTitles.fiveStrike} aria-label="Help: Five Strike">?</button></div><div class="radio-row"><label><input type="radio" bind:group={settings.fiveStrikeMode} value="multiplicative" /> Multiplicative (Vanilla)</label><label><input type="radio" bind:group={settings.fiveStrikeMode} value="additive" /> Additive (Homebrew)</label></div></div>
         </div></div>{/if}
 
         <button type="button" class="advanced-toggle" onclick={() => customOpen = !customOpen}><span>Customization</span><span>{customOpen ? '▲' : '▼'}</span></button>

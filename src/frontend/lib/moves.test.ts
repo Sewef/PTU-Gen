@@ -87,4 +87,16 @@ describe('move helpers', () => {
       { label: '5 hits · d8: 8', formula: '5d12+25+12', criticalFormula: '5d12+25+5d12+25+12' }
     ]);
   });
+
+  it('supports additive Five Strike before applying STAB and critical damage', () => {
+    const pokemon = normalizePokemon({ name: 'Test', level: 10, types: ['Normal'], stats: { HP: 5, atk: 12 }, fiveStrikeMode: 'additive' });
+    const move = { name: 'Fury Swipes', type: 'Normal', class: 'Physical', range: 'Melee, Five Strike', damageBase: damageBase(5, true) };
+    expect(fiveStrikeCases(pokemon, move).map(result => ({ formula: result.formula, criticalFormula: result.criticalFormula }))).toEqual([
+      { formula: '1d8+8+12', criticalFormula: '1d8+8+1d8+8+12' },
+      { formula: '2d6+10+12', criticalFormula: '2d6+10+2d6+10+12' },
+      { formula: '2d10+10+12', criticalFormula: '2d10+10+2d10+10+12' },
+      { formula: '3d10+10+12', criticalFormula: '3d10+10+3d10+10+12' },
+      { formula: '4d10+10+12', criticalFormula: '4d10+10+4d10+10+12' }
+    ]);
+  });
 });

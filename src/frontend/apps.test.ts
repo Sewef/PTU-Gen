@@ -81,6 +81,13 @@ describe('Svelte application surfaces', () => {
     expect(JSON.parse(localStorage.getItem('ptu-generator-preferences-v1') || '{}')).toMatchObject({ dataset: 'core', fandex: [] });
     await vi.waitFor(() => expect(fetchMock.mock.calls.some(([input]) => String(input).includes('dataset=core') && !String(input).includes('fandex='))).toBe(true));
 
+    const advancedToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Advanced'))!;
+    advancedToggle.click();
+    await tick();
+    const multiplicative = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="radio"]')).find(input => input.parentElement?.textContent?.includes('Multiplicative (Vanilla)'))!;
+    expect(multiplicative.checked).toBe(true);
+    expect(Array.from(document.querySelectorAll('label')).some(label => label.textContent?.includes('Additive (Homebrew)'))).toBe(true);
+
     const owlbearToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Owlbear Rodeo'))!;
     owlbearToggle.click();
     await tick();

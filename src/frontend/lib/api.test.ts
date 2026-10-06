@@ -7,7 +7,7 @@ const settings: GeneratorSettings = {
   levelMode: 'range', level: 50, minLevel: 20, maxLevel: 30, species: 'Pikachu', randomForm: true,
   habitat: 'Forest', type: 'Electric', shinyMode: 'odds', shinyOdds: 2.5, includeLegendaries: true,
   forceEvolution: true, distribution: 'BALANCED', natureMode: 'fixed', nature: 'Brave',
-  ignoreBaseRelation: 'HP', hpFormula: 'LEVEL + HP', owlbearVisible: false, owlbearPlayerId: 'player-1',
+  ignoreBaseRelation: 'HP', hpFormula: 'LEVEL + HP', fiveStrikeMode: 'additive', owlbearVisible: false, owlbearPlayerId: 'player-1',
   owlbearTrackers: 'owltrackers', owlbearInitiative: 'prettysordid', owlbearDiceRoller: 'justdices'
 };
 
@@ -20,6 +20,7 @@ describe('generationParams', () => {
     expect(params.get('fandex')).toBe('alpha,beta');
     expect(params.get('nature')).toBe('Brave');
     expect(params.get('owlbearVisible')).toBe('false');
+    expect(params.get('fiveStrikeMode')).toBe('additive');
   });
 
   it('omits species filters for blank Pokémon', () => {
