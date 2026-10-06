@@ -486,7 +486,7 @@ GET /api/pokemon/team?minLevel=20&maxLevel=80&minSize=3&maxSize=12&includeLegend
             <div class="example">
                 <div class="example-title">Example Request (JSON POST):</div>
                 <div class="example-code">
-curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/species \
+curl -X POST https://ptu-gen.sewef.workers.dev/api/pokemon/custom/species \
   -H "Content-Type: application/json" \
   -d '{
     "data": {
@@ -511,7 +511,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/species \
             <div class="example">
                 <div class="example-title">Example Request (URL):</div>
                 <div class="example-code">
-curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/species \
+curl -X POST https://ptu-gen.sewef.workers.dev/api/pokemon/custom/species \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://example.com/template_species.json"
@@ -636,7 +636,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/species \
 
             <div class="example">
                 <div class="example-title">Example Request:</div>
-                <div class="example-code">GET https://ptu-gen.onrender.com/api/pokemon/custom</div>
+                <div class="example-code">GET https://ptu-gen.sewef.workers.dev/api/pokemon/custom</div>
             </div>
 
             <div class="response-example">
@@ -664,7 +664,7 @@ curl -X POST https://ptu-gen.onrender.com/api/pokemon/custom/species \
 
             <div class="example">
                 <div class="example-title">Example Request:</div>
-                <div class="example-code">DELETE https://ptu-gen.onrender.com/api/pokemon/custom</div>
+                <div class="example-code">DELETE https://ptu-gen.sewef.workers.dev/api/pokemon/custom</div>
             </div>
 
             <div class="response-example">
@@ -1469,25 +1469,25 @@ LEVEL + (HP * 4)        // Increased HP gain<br>
             <div class="example">
                 <div class="example-title">Example: Generate Pokémon with custom data via URL:</div>
                 <div class="example-code">
-GET https://ptu-gen.onrender.com/api/pokemon/generate?
+GET https://ptu-gen.sewef.workers.dev/api/pokemon/generate?
   level=50&
-  customSpeciesUrl=https://ptu-gen.onrender.com/template_species.json
+  customSpeciesUrl=https://ptu-gen.sewef.workers.dev/template_species.json
                 </div>
             </div>
 
             <div class="example">
                 <div class="example-title">Example: Generate specific custom species:</div>
                 <div class="example-code">
-GET https://ptu-gen.onrender.com/api/pokemon/generate?
+GET https://ptu-gen.sewef.workers.dev/api/pokemon/generate?
   species=Warrior&
-  customSpeciesUrl=https://ptu-gen.onrender.com/template_species.json
+  customSpeciesUrl=https://ptu-gen.sewef.workers.dev/template_species.json
                 </div>
             </div>
 
             <div class="example">
                 <div class="example-title">Example: Generate team with multiple customizations:</div>
                 <div class="example-code">
-GET https://ptu-gen.onrender.com/api/pokemon/team?
+GET https://ptu-gen.sewef.workers.dev/api/pokemon/team?
   level=50&
   size=6&
   customSpeciesUrl=https://example.com/species.json&
