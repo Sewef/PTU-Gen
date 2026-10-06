@@ -3933,7 +3933,7 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     gap: 2px;
 }
 
-.double-strike-badge {
+.multi-strike-badge {
     padding: 2px 6px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--primary-color) 14%, transparent);
@@ -3943,7 +3943,7 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     white-space: nowrap;
 }
 
-.double-strike-cases {
+.multi-strike-cases {
     display: grid;
     flex: 1 0 100%;
     gap: 4px;
@@ -3952,7 +3952,7 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     width: 100%;
 }
 
-.double-strike-case {
+.multi-strike-case {
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr) max-content max-content;
     align-items: center;
@@ -3963,22 +3963,29 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     border-top: 1px solid var(--border-color);
 }
 
-.double-strike-label {
+.multi-strike-label {
     color: var(--text-secondary);
     font-size: .78em;
     white-space: nowrap;
 }
 
-.double-strike-case .db-formula {
+.multi-strike-case .db-formula {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.double-strike-case .copy-roll-formula-btn {
+.multi-strike-actions {
+    display: inline-flex;
+    gap: 2px;
+    min-width: 0;
+}
+
+.multi-strike-actions .copy-roll-formula-btn {
     box-sizing: border-box;
     min-width: 0;
     max-width: 100%;
+    padding-inline: 5px;
 }
 
 @media (max-width: 640px) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizePokemon } from './pokemon';
-import { damageBase, doubleStrikeCases, ensureStruggle, hasDoubleStrike, rollFormula, setDefaultStab, struggleTypes, toggleStab } from './moves';
+import { damageBase, doubleStrikeCases, ensureStruggle, fiveStrikeCases, hasDoubleStrike, hasFiveStrike, rollFormula, setDefaultStab, struggleTypes, toggleStab } from './moves';
 
 describe('move helpers', () => {
   it('builds the PTU damage base and roll formula', () => {
@@ -70,6 +70,21 @@ describe('move helpers', () => {
       { min: 24, avg: 31, max: 38 },
       { min: 30, avg: 40, max: 49 },
       { min: 36, avg: 49, max: 60 }
+    ]);
+  });
+
+  it('detects Five Strike in Range and multiplies DB before applying STAB', () => {
+    const pokemon = normalizePokemon({ name: 'Test', level: 10, types: ['Normal'], stats: { HP: 5, atk: 12 } });
+    const move = { name: 'Fury Swipes', type: 'Normal', class: 'Physical', range: 'Melee, 1 Target, Five Strike', damageBase: damageBase(5, true) };
+    expect(hasFiveStrike(move)).toBe(true);
+    expect(hasFiveStrike({ range: 'Melee, Five-Strike' })).toBe(false);
+    expect(hasFiveStrike({ effect: 'Five Strike' })).toBe(false);
+    expect(fiveStrikeCases(pokemon, move).map(result => ({ label: result.label, formula: result.formula, criticalFormula: result.criticalFormula }))).toEqual([
+      { label: '1 hit · d8: 1', formula: '1d8+8+12', criticalFormula: '1d8+8+1d8+8+12' },
+      { label: '2 hits · d8: 2–3', formula: '2d8+10+12', criticalFormula: '2d8+10+2d8+10+12' },
+      { label: '3 hits · d8: 4–6', formula: '3d10+10+12', criticalFormula: '3d10+10+3d10+10+12' },
+      { label: '4 hits · d8: 7', formula: '4d10+15+12', criticalFormula: '4d10+15+4d10+15+12' },
+      { label: '5 hits · d8: 8', formula: '5d12+25+12', criticalFormula: '5d12+25+5d12+25+12' }
     ]);
   });
 });

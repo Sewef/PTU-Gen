@@ -77,6 +77,10 @@ export function hasDoubleStrike(move: JsonRecord): boolean {
   return /\bDouble Strike\b/i.test(String(move.range || move.Range || ''));
 }
 
+export function hasFiveStrike(move: JsonRecord): boolean {
+  return /\bFive Strike\b/i.test(String(move.range || move.Range || ''));
+}
+
 export function baseDamageBase(move: JsonRecord): number {
   return Math.max(1, Number(move.damageBase?.baseDb) || moveDamageBase(move) - (move.damageBase?.stab ? 2 : 0));
 }
@@ -131,6 +135,27 @@ export function doubleStrikeCases(pokemon: Pokemon, move: JsonRecord) {
     formula: doubleStrikeFormula(pokemon, move, hits, criticals),
     range: doubleStrikeRange(pokemon, move, hits, criticals)
   }));
+}
+
+export function fiveStrikeCases(pokemon: Pokemon, move: JsonRecord) {
+  const rolls = ['1', '2–3', '4–6', '7', '8'];
+  return ([1, 2, 3, 4, 5] as const).map((hits, index) => {
+    const attack = attackValue(pokemon, move);
+    const hitDamage = move.damageBase
+      ? damageBase(baseDamageBase(move) * hits + (move.damageBase.stab ? 2 : 0))
+      : null;
+    return {
+      hits,
+      label: `${hits} hit${hits > 1 ? 's' : ''} · d8: ${rolls[index]}`,
+      formula: hitDamage && attack !== null ? `${hitDamage.dmg}+${attack}` : null,
+      criticalFormula: hitDamage && attack !== null ? `${hitDamage.dmg}+${hitDamage.dmg}+${attack}` : null,
+      range: hitDamage && attack !== null ? {
+        min: Number(hitDamage.min) + attack,
+        avg: Number(hitDamage.avg) + attack,
+        max: Number(hitDamage.max) + attack
+      } : null
+    };
+  });
 }
 
 export function damageRange(pokemon: Pokemon, move: any) {

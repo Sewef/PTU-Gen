@@ -324,11 +324,28 @@ describe('Svelte application surfaces', () => {
     await tick();
 
     const card = Array.from(document.querySelectorAll('.move')).find(item => item.textContent?.includes('Double Kick'))!;
-    expect(card.querySelectorAll('.double-strike-case')).toHaveLength(5);
-    expect(Array.from(card.querySelectorAll('.double-strike-label')).map(item => item.textContent)).toEqual([
+    expect(card.querySelectorAll('.multi-strike-case')).toHaveLength(5);
+    expect(Array.from(card.querySelectorAll('.multi-strike-label')).map(item => item.textContent)).toEqual([
       '1 hit · 0 crit', '1 hit · 1 crit', '2 hits · 0 crit', '2 hits · 1 crit', '2 hits · 2 crits'
     ]);
-    expect(card.querySelector('.double-strike-badge')?.textContent).toBe('Double Strike');
+    expect(card.querySelector('.multi-strike-badge')?.textContent).toBe('Double Strike');
+  });
+
+  it('shows all Five Strike hit outcomes', async () => {
+    const pokemon = normalizePokemon({
+      id: 190, name: 'Aipom', level: 12, types: ['Normal'], stats: { HP: 5, atk: 8, def: 5, spA: 3, spD: 4, spe: 6 },
+      moves: [{ name: 'Fury Swipes', type: 'Normal', class: 'Physical', range: 'Melee, 1 Target, Five Strike', damageBase: damageBase(3) }], capabilities: [], skills: {}
+    });
+    instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave: vi.fn() } }));
+    await tick();
+
+    const card = Array.from(document.querySelectorAll('.move')).find(item => item.textContent?.includes('Fury Swipes'))!;
+    expect(card.querySelectorAll('.multi-strike-case')).toHaveLength(5);
+    expect(Array.from(card.querySelectorAll('.multi-strike-label')).map(item => item.textContent)).toEqual([
+      '1 hit · d8: 1', '2 hits · d8: 2–3', '3 hits · d8: 4–6', '4 hits · d8: 7', '5 hits · d8: 8'
+    ]);
+    expect(card.querySelector('.multi-strike-badge')?.textContent).toBe('Five Strike');
+    expect(Array.from(card.querySelectorAll('.multi-strike-case')).every(row => Array.from(row.querySelectorAll('button')).some(button => button.textContent === 'Crit'))).toBe(true);
   });
 
   it('shows Nuclear in type effectiveness when Uranium was selected for generation', async () => {
