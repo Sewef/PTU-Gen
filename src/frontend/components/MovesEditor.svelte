@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
   import type { Pokemon } from '../lib/types';
   import { allMoves, availableMoves } from '../lib/api';
   import { frequencyUses, selectableTypes, slug } from '../lib/pokemon';
@@ -6,10 +6,12 @@
   import { requestOwlbear } from '../lib/owlbear';
   import PickerModal from './PickerModal.svelte';
   import TypePickerModal from './TypePickerModal.svelte';
+  import RangePickerModal from './RangePickerModal.svelte';
   let { pokemon, onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
   let picker = $state(false); let items = $state<any[]>([]); let loading = $state(false); let globalList = $state(false);
   let rolling = $state('');
-  let typeTarget = $state<any | null>(null);
+  let typeTarget = $state.raw<any | null>(null);
+  let rangeTarget = $state.raw<any | null>(null);
   let feedbackKey = $state('');
   let feedbackState = $state<'idle' | 'rolling' | 'success' | 'error'>('idle');
   const embedded = new URLSearchParams(location.search).get('embedded') === 'true';
@@ -45,6 +47,13 @@
     onsave();
   }
   function openTypePicker(move: any) { typeTarget = move; }
+  function changeRange(range: string) {
+    if (!rangeTarget) return;
+    rangeTarget.range = range;
+    rangeTarget = null;
+    onsave();
+  }
+  function openRangeEditor(move: any) { rangeTarget = move; }
   function toggleClass(move: any) { const value = String(move.class || '').toLowerCase(); if (value === 'physical' || value === 'special') { move.class = value === 'physical' ? 'special' : 'physical'; onsave(); } }
   async function useFormula(move: any, formula: string | null, variant: string) {
     if (!formula) return;
@@ -104,18 +113,19 @@
   <div class="section-list">
     <article class="section-card move struggle-card type-{slug(struggle.type)}">
       <div class="section-card-header"><div class="section-card-name">Struggle <button type="button" class="move-badge type-{slug(struggle.type)} move-type-picker" aria-label="Change Struggle type" onclick={() => openTypePicker(struggle)}>{struggle.type}</button> <button type="button" class="move-badge move-class-{slug(struggle.class)}" onclick={() => toggleClass(struggle)}>{struggle.class}</button></div></div>
-      <div class="move-meta-row"><div class="section-card-field"><strong>Range:</strong> {struggle.range}</div><label class="section-card-field"><strong>AC:</strong> <input class="struggle-ac-input" type="number" min="1" max="20" value={struggle.ac} onchange={(event) => { struggle.ac = Number(event.currentTarget.value); onsave(); }} /></label></div>
+      <div class="move-meta-row"><div class="section-card-field"><strong>Range:</strong> {struggle.range} <button type="button" class="edit-bn range-edit-bn" aria-label="Edit Struggle range keywords" onclick={() => openRangeEditor(struggle)}>✎</button></div><label class="section-card-field"><strong>AC:</strong> <input class="struggle-ac-input" type="number" min="1" max="20" value={struggle.ac} onchange={(event) => { struggle.ac = Number(event.currentTarget.value); onsave(); }} /></label></div>
       <div class="section-card-field db-field"><div class="db-summary"><span class="db-identity"><strong>{struggle.damageBase.short}</strong><button type="button" class="db-stab-badge" class:is-active={Boolean(struggle.damageBase.stab)} aria-label={stabLabel(struggle)} aria-pressed={Boolean(struggle.damageBase.stab)} title="Toggle STAB (+2 DB)" onclick={() => changeStab(struggle)}>STAB</button></span><span class="db-formula">{struggle.damageBase.dmg}<span class="db-attack-bonus">+{pokemon.stats[struggle.class === 'physical' ? 'atk' : 'spA']}</span></span>{#if damageRange(pokemon, struggle)}{@const range = damageRange(pokemon, struggle)!}<span class="db-range">{range.min}<span class="db-range-separator">|</span><strong>{range.avg}</strong><span class="db-range-separator">|</span>{range.max}</span>{/if}</div><div class="db-actions"><span class="db-stepper"><button type="button" class="db-adjust-btn" aria-label="Decrease damage base" onclick={() => adjustDb(struggle, -1)}>−</button><button type="button" class="db-adjust-btn" aria-label="Increase damage base" onclick={() => adjustDb(struggle, 1)}>+</button></span><button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(struggle) === 'success'} class:is-error={rollButtonState(struggle) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll directly with JustDices' : 'Copy the roll command'} onclick={() => useRoll(struggle)}>{rollLabel(struggle)}</button><button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(struggle, true) === 'success'} class:is-error={rollButtonState(struggle, true) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll critical damage directly with JustDices' : 'Copy the critical roll command'} onclick={() => useRoll(struggle, true)}>{rollLabel(struggle, true)}</button></div></div>
     </article>
     {#each pokemon.moves || [] as move, index}
       <article class="section-card move type-{slug(move.type)}">
         <div class="section-card-header">{#if move.editable}<input class="custom-move-name-input" bind:value={move.name} onchange={onsave} />{:else}<div class="section-card-name">{move.name}{#if move.type}<button type="button" class="move-badge type-{slug(move.type)} move-type-picker" aria-label={`Change ${move.name} type`} onclick={() => openTypePicker(move)}>{move.type}</button>{/if}{#if move.class}<button type="button" class="move-badge move-class-{slug(move.class)}" onclick={() => toggleClass(move)}>{move.class}</button>{/if}</div>{/if}<button type="button" class="remove-move-btn" onclick={() => remove(index)}>✕ Remove</button></div>
         {#if move.editable}<div class="editable-grid">
-          {#each ['frequency', 'class', 'range', 'ac'] as field}<label class="section-card-field"><strong>{field === 'ac' ? 'AC' : field[0].toUpperCase() + field.slice(1)}:</strong><input bind:value={move[field]} onchange={onsave} /></label>{/each}
+          {#each ['frequency', 'class', 'ac'] as field}<label class="section-card-field"><strong>{field === 'ac' ? 'AC' : field[0].toUpperCase() + field.slice(1)}:</strong><input bind:value={move[field]} onchange={onsave} /></label>{/each}
+          <div class="section-card-field"><strong>Range:</strong> {move.range || 'Add range keywords'} <button type="button" class="edit-bn range-edit-bn" aria-label={`Edit ${move.name} range keywords`} onclick={() => openRangeEditor(move)}>✎</button></div>
           <div class="section-card-field"><strong>Type:</strong><button type="button" class="move-badge type-{slug(move.type)} move-type-picker" aria-label={`Change ${move.name} type`} onclick={() => openTypePicker(move)}>{move.type || 'Select type'}</button></div>
           <label class="section-card-field wide"><strong>Effect:</strong><textarea bind:value={move.effect} onchange={onsave}></textarea></label>
         </div>{:else}
-          <div class="move-meta-row"><div class="section-card-field"><strong>Type:</strong> <button type="button" class="move-badge type-{slug(move.type)} move-type-picker" aria-label={`Change ${move.name} type`} onclick={() => openTypePicker(move)}>{move.type || 'N/A'}</button></div><div class="section-card-field"><strong>Class:</strong> {move.class || 'N/A'}</div><div class="section-card-field"><strong>Range:</strong> {move.range || 'N/A'}</div>{#if move.ac}<div class="section-card-field"><strong>AC:</strong> {move.ac}</div>{/if}</div>
+          <div class="move-meta-row"><div class="section-card-field"><strong>Type:</strong> <button type="button" class="move-badge type-{slug(move.type)} move-type-picker" aria-label={`Change ${move.name} type`} onclick={() => openTypePicker(move)}>{move.type || 'N/A'}</button></div><div class="section-card-field"><strong>Class:</strong> {move.class || 'N/A'}</div><div class="section-card-field"><strong>Range:</strong> {move.range || 'N/A'} <button type="button" class="edit-bn range-edit-bn" aria-label={`Edit ${move.name} range keywords`} onclick={() => openRangeEditor(move)}>✎</button></div>{#if move.ac}<div class="section-card-field"><strong>AC:</strong> {move.ac}</div>{/if}</div>
           <div class="section-card-field"><strong>Frequency:</strong> {move.frequency || 'N/A'}</div>
           {#if move.damageBase}
             {@const strike = strikeKeyword(move)}
@@ -153,5 +163,6 @@
 </div>
 {#if picker}<PickerModal title={loading ? 'Loading moves…' : globalList ? 'Add Move — Global List' : 'Add Move — Species List'} {items} selected={(pokemon.moves || []).map(item => item.name)} actionLabel={globalList ? 'Show species moves' : 'Search all moves'} actionDisabled={loading} onaction={() => loadPickerItems(!globalList)} onpick={pick} onclose={() => picker = false} />{/if}
 {#if typeTarget}<TypePickerModal title={`Select ${typeTarget.name || 'Move'} Type`} types={selectableTypes(pokemon)} selected={typeTarget.type ? [typeTarget.type] : []} onsave={changeType} onclose={() => typeTarget = null} />{/if}
+{#if rangeTarget}<RangePickerModal range={rangeTarget.range || ''} onsave={changeRange} onclose={() => rangeTarget = null} />{/if}
 
 <style>.editable-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.wide{grid-column:1/-1}.wide textarea{width:100%}.move-type-picker{border:0;cursor:pointer;font-family:inherit}.copy-roll-formula-btn.is-success{border-color:#62bd83;background:#d9f6e5;color:#187445}.copy-roll-formula-btn.is-error{border-color:#df7b7b;background:#fde1e1;color:#b12a2a}</style>

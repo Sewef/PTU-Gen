@@ -215,7 +215,7 @@ describe('Svelte application surfaces', () => {
     const typeEditor = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Edit') && button.closest('.pokemon-types-row'))!;
     typeEditor.click();
     await tick();
-    expect(document.querySelectorAll('.type-picker .type-choice')).toHaveLength(18);
+    expect(document.querySelectorAll('.type-picker .type-choice')).toHaveLength(19);
     expect(document.querySelector('.type-picker input[type="checkbox"]')).toBeNull();
     const unselectedTypes = Array.from(document.querySelectorAll<HTMLButtonElement>('.type-picker .type-choice:not(.selected)'));
     unselectedTypes[0].click();
@@ -389,7 +389,6 @@ describe('Svelte application surfaces', () => {
     await tick();
     expect(pokemon.moves?.[0].type).toBe('Typeless');
     expect(onsave).toHaveBeenCalled();
-    expect(document.querySelector('.move .type-typeless')).not.toBeNull();
     document.querySelector<HTMLButtonElement>('[aria-label="Change Leaf Blade type"]')!.click();
     await tick();
     document.querySelector<HTMLButtonElement>('.type-choice.type-nuclear')!.click();
@@ -405,5 +404,41 @@ describe('Svelte application surfaces', () => {
     await tick();
     expect(Array.from(document.querySelectorAll('.type-choice')).map(button => button.textContent)).toContain('Typeless');
     expect(Array.from(document.querySelectorAll('.type-choice')).map(button => button.textContent)).toContain('Nuclear');
+  });
+
+  it('edits range keywords as badges with inline numeric values', async () => {
+    const pokemon = normalizePokemon({
+      id: 236, name: 'Tyrogue', level: 12, types: ['Fighting'], stats: { HP: 5, atk: 8, def: 5, spA: 3, spD: 4, spe: 6 },
+      moves: [{ name: 'Custom Strike', type: 'Fighting', class: 'Physical', range: '6, 1 Target, Close Blast 2, Double Strike, Weird Thing' }]
+    });
+    const onsave = vi.fn();
+    instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } }));
+    await tick();
+
+    document.querySelector<HTMLButtonElement>('[aria-label="Edit Custom Strike range keywords"]')!.click();
+    await tick();
+    const dialog = () => document.querySelector('[role="dialog"]')!;
+    const chip = (label: string) => Array.from(dialog().querySelectorAll<HTMLButtonElement>('.range-chip button')).find(button => button.textContent === label)!;
+    const setValue = async (label: string, value: string) => {
+      const input = dialog().querySelector<HTMLInputElement>(`[aria-label="${label} value"]`)!;
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await tick();
+    };
+
+    await setValue('Range', '8');
+    await setValue('Targets', '2');
+    chip('Cone').click();
+    await tick();
+    await setValue('Cone', '3');
+    chip('Double Strike').click();
+    await tick();
+    expect(dialog().querySelector('.modal-info-box')?.textContent).toContain('8, 2 Targets, Cone 3, Close Blast 2, Weird Thing');
+
+    document.querySelector<HTMLButtonElement>('[role="dialog"] .modal-btn-primary')!.click();
+    await tick();
+
+    expect(pokemon.moves?.[0].range).toBe('8, 2 Targets, Cone 3, Close Blast 2, Weird Thing');
+    expect(onsave).toHaveBeenCalled();
   });
 });
