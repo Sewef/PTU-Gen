@@ -8,9 +8,10 @@ const struggleCapabilities = [
   ['Zapper','Electric'],['Firestarter','Fire'],['Guster','Flying'],['Fountain','Water'],['Freezer','Ice'],['Materializer','Rock'],['Intoxicator','Poison']
 ];
 
-export function damageBase(value: number, stab = false) {
+export function damageBase(value: number, stab = false, originalDb?: number) {
   const db = Math.max(1, Math.min(28, Math.trunc(value) || 4));
-  return { short: `DB${db}`, ...DAMAGE_BASE_TABLE[db], stab };
+  const baseDb = Math.max(1, Math.trunc(originalDb ?? (db - (stab ? 2 : 0))));
+  return { short: `DB${db}`, ...DAMAGE_BASE_TABLE[db], stab, baseDb };
 }
 
 export function moveDamageBase(move: JsonRecord): number {
@@ -32,7 +33,7 @@ export function setDefaultStab(pokemon: Pokemon, move: JsonRecord): JsonRecord {
   if (!move.stabCustomized && isOffensiveMove(move) && hasSameType(pokemon, move) && !move.damageBase.stab) {
     const db = moveDamageBase(move);
     move.db = Math.min(28, db + 2);
-    move.damageBase = damageBase(move.db, true);
+    move.damageBase = damageBase(move.db, true, db);
   }
   return move;
 }
@@ -40,9 +41,10 @@ export function setDefaultStab(pokemon: Pokemon, move: JsonRecord): JsonRecord {
 export function toggleStab(move: JsonRecord): void {
   if (!move.damageBase) return;
   const active = Boolean(move.damageBase.stab);
-  const db = moveDamageBase(move) + (active ? -2 : 2);
+  const currentDb = moveDamageBase(move);
+  const db = currentDb + (active ? -2 : 2);
   move.db = Math.max(1, Math.min(28, db));
-  move.damageBase = damageBase(move.db, !active);
+  move.damageBase = damageBase(move.db, !active, active ? undefined : currentDb);
   move.stabCustomized = true;
 }
 
@@ -71,10 +73,64 @@ export function attackValue(pokemon: Pokemon, move: any): number | null {
   return key ? Number(pokemon.stats[key] || 0) : null;
 }
 
+export function hasDoubleStrike(move: JsonRecord): boolean {
+  return /\bDouble Strike\b/i.test(String(move.range || move.Range || ''));
+}
+
+export function baseDamageBase(move: JsonRecord): number {
+  return Math.max(1, Number(move.damageBase?.baseDb) || moveDamageBase(move) - (move.damageBase?.stab ? 2 : 0));
+}
+
 export function rollFormula(pokemon: Pokemon, move: any, critical = false): string | null {
   if (!move.damageBase?.dmg) return null;
   const attack = attackValue(pokemon, move); if (attack === null) return null;
   return critical ? `${move.damageBase.dmg}+${move.damageBase.dmg}+${attack}` : `${move.damageBase.dmg}+${attack}`;
+}
+
+function multiplyDamageFormula(formula: string, multiplier: number): string {
+  const match = formula.match(/^(\d+)d(\d+)([+-]\d+)?$/);
+  if (!match) return Array(multiplier).fill(formula).join('+');
+  const bonus = Number(match[3] || 0) * multiplier;
+  return `${Number(match[1]) * multiplier}d${match[2]}${bonus >= 0 ? '+' : ''}${bonus}`;
+}
+
+export function doubleStrikeFormula(pokemon: Pokemon, move: JsonRecord, hits: 1 | 2, criticals: number): string | null {
+  if (!move.damageBase?.dmg || criticals < 0 || criticals > hits) return null;
+  const attack = attackValue(pokemon, move);
+  if (attack === null) return null;
+  const baseDb = baseDamageBase(move);
+  const hitDamage = damageBase(baseDb * hits + (move.damageBase.stab ? 2 : 0));
+  const criticalDamage = damageBase(baseDb);
+  const parts = [hitDamage.dmg];
+  if (criticals > 0) parts.push(multiplyDamageFormula(criticalDamage.dmg, criticals));
+  parts.push(String(attack));
+  return parts.join('+');
+}
+
+export function doubleStrikeRange(pokemon: Pokemon, move: JsonRecord, hits: 1 | 2, criticals: number) {
+  if (!move.damageBase || criticals < 0 || criticals > hits) return null;
+  const attack = attackValue(pokemon, move);
+  if (attack === null) return null;
+  const baseDb = baseDamageBase(move);
+  const hitDamage = damageBase(baseDb * hits + (move.damageBase.stab ? 2 : 0));
+  const criticalDamage = damageBase(baseDb);
+  return {
+    min: Number(hitDamage.min) + criticals * Number(criticalDamage.min) + attack,
+    avg: Number(hitDamage.avg) + criticals * Number(criticalDamage.avg) + attack,
+    max: Number(hitDamage.max) + criticals * Number(criticalDamage.max) + attack
+  };
+}
+
+export function doubleStrikeCases(pokemon: Pokemon, move: JsonRecord) {
+  return ([
+    [1, 0], [1, 1], [2, 0], [2, 1], [2, 2]
+  ] as const).map(([hits, criticals]) => ({
+    hits,
+    criticals,
+    label: `${hits} hit${hits > 1 ? 's' : ''} · ${criticals} crit${criticals > 1 ? 's' : ''}`,
+    formula: doubleStrikeFormula(pokemon, move, hits, criticals),
+    range: doubleStrikeRange(pokemon, move, hits, criticals)
+  }));
 }
 
 export function damageRange(pokemon: Pokemon, move: any) {

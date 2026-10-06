@@ -2,7 +2,7 @@
   import type { Pokemon } from '../lib/types';
   import { allMoves, availableMoves } from '../lib/api';
   import { frequencyUses, slug } from '../lib/pokemon';
-  import { damageBase, damageRange, moveDamageBase, rollFormula, setDefaultStab, struggleTypes, toggleStab } from '../lib/moves';
+  import { damageBase, damageRange, doubleStrikeCases, hasDoubleStrike, moveDamageBase, rollFormula, setDefaultStab, struggleTypes, toggleStab } from '../lib/moves';
   import { requestOwlbear } from '../lib/owlbear';
   import PickerModal from './PickerModal.svelte';
   let { pokemon, onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
@@ -22,15 +22,17 @@
   function usage(move: any, index: number) { move.usageCount = move.usageCount === index + 1 ? index : index + 1; onsave(); }
   function adjustDb(move: any, delta: number) {
     const db = moveDamageBase(move) + delta;
-    move.db = Math.max(1, Math.min(28, db)); move.damageBase = damageBase(move.db, Boolean(move.damageBase?.stab)); onsave();
+    const activeStab = Boolean(move.damageBase?.stab);
+    const baseDb = activeStab ? Number(move.damageBase?.baseDb || moveDamageBase(move) - 2) + delta : undefined;
+    move.db = Math.max(1, Math.min(28, db)); move.damageBase = damageBase(move.db, activeStab, baseDb); onsave();
   }
   function changeStab(move: any) { toggleStab(move); onsave(); }
   function stabLabel(move: any) { return move.damageBase?.stab ? `Remove STAB from ${move.name}` : `Apply STAB to ${move.name}`; }
   function cycleStruggleType() { const types = struggleTypes(pokemon); struggle.type = types[(types.indexOf(struggle.type) + 1) % types.length]; onsave(); }
   function toggleClass(move: any) { const value = String(move.class || '').toLowerCase(); if (value === 'physical' || value === 'special') { move.class = value === 'physical' ? 'special' : 'physical'; onsave(); } }
-  async function useRoll(move: any, critical = false) {
-    const formula = rollFormula(pokemon, move, critical); if (!formula) return;
-    const key = `${move.name || 'move'}:${critical}`;
+  async function useFormula(move: any, formula: string | null, variant: string) {
+    if (!formula) return;
+    const key = `${move.name || 'move'}:${variant}`;
     rolling = key;
     feedbackKey = key;
     feedbackState = 'rolling';
@@ -53,6 +55,8 @@
       }, 1200);
     }
   }
+  function useRoll(move: any, critical = false) { return useFormula(move, rollFormula(pokemon, move, critical), critical ? 'critical' : 'normal'); }
+  function useDoubleStrikeRoll(move: any, hits: 1 | 2, criticals: number, formula: string | null) { return useFormula(move, formula, `double-strike-${hits}-${criticals}`); }
   function rollLabel(move: any, critical = false) {
     const state = rollButtonState(move, critical);
     if (state === 'rolling') return '…';
@@ -62,7 +66,15 @@
     return justDices ? 'Roll' : 'Copy';
   }
   function rollButtonState(move: any, critical = false) {
-    return feedbackKey === `${move.name || 'move'}:${critical}` ? feedbackState : 'idle';
+    return variantButtonState(move, critical ? 'critical' : 'normal');
+  }
+  function variantButtonState(move: any, variant: string) { return feedbackKey === `${move.name || 'move'}:${variant}` ? feedbackState : 'idle'; }
+  function variantRollLabel(move: any, variant: string) {
+    const state = variantButtonState(move, variant);
+    if (state === 'rolling') return '…';
+    if (state === 'success') return '✓';
+    if (state === 'error') return '!';
+    return justDices ? 'Roll' : 'Copy';
   }
 </script>
 
@@ -83,7 +95,32 @@
         </div>{:else}
           <div class="move-meta-row"><div class="section-card-field"><strong>Type:</strong> {move.type || 'N/A'}</div><div class="section-card-field"><strong>Class:</strong> {move.class || 'N/A'}</div><div class="section-card-field"><strong>Range:</strong> {move.range || 'N/A'}</div>{#if move.ac}<div class="section-card-field"><strong>AC:</strong> {move.ac}</div>{/if}</div>
           <div class="section-card-field"><strong>Frequency:</strong> {move.frequency || 'N/A'}</div>
-          {#if move.damageBase}<div class="section-card-field db-field"><div class="db-summary"><span class="db-identity"><strong>{move.damageBase.short}</strong><button type="button" class="db-stab-badge" class:is-active={Boolean(move.damageBase.stab)} aria-label={stabLabel(move)} aria-pressed={Boolean(move.damageBase.stab)} title="Toggle STAB (+2 DB)" onclick={() => changeStab(move)}>STAB</button></span><span class="db-formula">{move.damageBase.dmg}</span>{#if damageRange(pokemon, move)}{@const range = damageRange(pokemon, move)!}<span class="db-range">{range.min}<span class="db-range-separator">|</span><strong>{range.avg}</strong><span class="db-range-separator">|</span>{range.max}</span>{/if}</div><div class="db-actions"><span class="db-stepper"><button type="button" class="db-adjust-btn" aria-label={`Decrease ${move.name} damage base`} onclick={() => adjustDb(move, -1)}>−</button><button type="button" class="db-adjust-btn" aria-label={`Increase ${move.name} damage base`} onclick={() => adjustDb(move, 1)}>+</button></span>{#if rollFormula(pokemon, move)}<button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(move) === 'success'} class:is-error={rollButtonState(move) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll directly with JustDices' : 'Copy the roll command'} onclick={() => useRoll(move)}>{rollLabel(move)}</button><button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(move, true) === 'success'} class:is-error={rollButtonState(move, true) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll critical damage directly with JustDices' : 'Copy the critical roll command'} onclick={() => useRoll(move, true)}>{rollLabel(move, true)}</button>{/if}</div></div>{/if}
+          {#if move.damageBase}
+            <div class="section-card-field db-field" class:is-double-strike={hasDoubleStrike(move)}>
+              <div class="db-summary">
+                <span class="db-identity"><strong>{move.damageBase.short}</strong><button type="button" class="db-stab-badge" class:is-active={Boolean(move.damageBase.stab)} aria-label={stabLabel(move)} aria-pressed={Boolean(move.damageBase.stab)} title="Toggle STAB (+2 DB)" onclick={() => changeStab(move)}>STAB</button></span>
+                {#if hasDoubleStrike(move)}
+                  <span class="double-strike-badge">Double Strike</span>
+                {:else}
+                  <span class="db-formula">{move.damageBase.dmg}</span>
+                  {#if damageRange(pokemon, move)}{@const range = damageRange(pokemon, move)!}<span class="db-range">{range.min}<span class="db-range-separator">|</span><strong>{range.avg}</strong><span class="db-range-separator">|</span>{range.max}</span>{/if}
+                {/if}
+              </div>
+              <div class="db-actions"><span class="db-stepper"><button type="button" class="db-adjust-btn" aria-label={`Decrease ${move.name} damage base`} onclick={() => adjustDb(move, -1)}>−</button><button type="button" class="db-adjust-btn" aria-label={`Increase ${move.name} damage base`} onclick={() => adjustDb(move, 1)}>+</button></span>{#if !hasDoubleStrike(move) && rollFormula(pokemon, move)}<button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(move) === 'success'} class:is-error={rollButtonState(move) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll directly with JustDices' : 'Copy the roll command'} onclick={() => useRoll(move)}>{rollLabel(move)}</button><button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(move, true) === 'success'} class:is-error={rollButtonState(move, true) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll critical damage directly with JustDices' : 'Copy the critical roll command'} onclick={() => useRoll(move, true)}>{rollLabel(move, true)}</button>{/if}</div>
+              {#if hasDoubleStrike(move)}
+                <div class="double-strike-cases">
+                  {#each doubleStrikeCases(pokemon, move) as result}
+                    <div class="double-strike-case">
+                      <strong class="double-strike-label">{result.label}</strong>
+                      <span class="db-formula">{result.formula}</span>
+                      {#if result.range}<span class="db-range">{result.range.min}<span class="db-range-separator">|</span><strong>{result.range.avg}</strong><span class="db-range-separator">|</span>{result.range.max}</span>{/if}
+                      <button type="button" class="copy-roll-formula-btn" class:is-success={variantButtonState(move, `double-strike-${result.hits}-${result.criticals}`) === 'success'} class:is-error={variantButtonState(move, `double-strike-${result.hits}-${result.criticals}`) === 'error'} disabled={Boolean(rolling)} title={justDices ? `Roll ${result.label}` : `Copy ${result.label}`} onclick={() => useDoubleStrikeRoll(move, result.hits, result.criticals, result.formula)}>{variantRollLabel(move, `double-strike-${result.hits}-${result.criticals}`)}</button>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {/if}
           {#if move.effect}<div class="section-card-field"><strong>Effect:</strong> {move.effect}</div>{/if}
         {/if}
         {#if move.frequency}<div class="usage-tracker"><span class="usage-label">Uses:</span><div class="usage-boxes">{#each Array(frequencyUses(move.frequency)) as _, use}<button type="button" aria-label={`Use ${use + 1}`} class:checked={(move.usageCount || 0) > use} class="usage-checkbox" onclick={() => usage(move, use)}></button>{/each}</div></div>{/if}

@@ -175,6 +175,8 @@ function convertDamageBase(damageBaseNumber, hasStab = false) {
   
   if (isNaN(dbNumber)) return null;
 
+  const baseDb = dbNumber;
+
   // Apply STAB bonus (+2 to DB)
   if (hasStab) {
     dbNumber = Math.min(dbNumber + 2, 28); // Cap at DB28
@@ -190,7 +192,8 @@ function convertDamageBase(damageBaseNumber, hasStab = false) {
     min: dbData.min,
     avg: dbData.avg,
     max: dbData.max,
-    stab: hasStab
+    stab: hasStab,
+    baseDb
   };
 }
 

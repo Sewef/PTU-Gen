@@ -315,6 +315,22 @@ describe('Svelte application surfaces', () => {
     expect(onsave).toHaveBeenCalledOnce();
   });
 
+  it('shows all Double Strike damage outcomes instead of the regular rolls', async () => {
+    const pokemon = normalizePokemon({
+      id: 236, name: 'Tyrogue', level: 12, types: ['Fighting'], stats: { HP: 5, atk: 8, def: 5, spA: 3, spD: 4, spe: 6 },
+      moves: [{ name: 'Double Kick', type: 'Fighting', class: 'Physical', range: 'Melee, 1 Target, Double Strike', damageBase: damageBase(3) }], capabilities: [], skills: {}
+    });
+    instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave: vi.fn() } }));
+    await tick();
+
+    const card = Array.from(document.querySelectorAll('.move')).find(item => item.textContent?.includes('Double Kick'))!;
+    expect(card.querySelectorAll('.double-strike-case')).toHaveLength(5);
+    expect(Array.from(card.querySelectorAll('.double-strike-label')).map(item => item.textContent)).toEqual([
+      '1 hit · 0 crit', '1 hit · 1 crit', '2 hits · 0 crit', '2 hits · 1 crit', '2 hits · 2 crits'
+    ]);
+    expect(card.querySelector('.double-strike-badge')?.textContent).toBe('Double Strike');
+  });
+
   it('shows Nuclear in type effectiveness when Uranium was selected for generation', async () => {
     const pokemon = normalizePokemon({
       id: 1, name: 'Orchynx', level: 1, types: ['Grass', 'Steel'], stats: { HP: 1 }, fandex: ['uranium']
