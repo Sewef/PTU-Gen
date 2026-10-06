@@ -4,6 +4,7 @@ import GeneratorApp from './GeneratorApp.svelte';
 import DetailsApp from './DetailsApp.svelte';
 import MovesEditor from './components/MovesEditor.svelte';
 import TypeEffectiveness from './components/TypeEffectiveness.svelte';
+import { damageBase } from './lib/moves';
 import { normalizePokemon } from './lib/pokemon';
 
 let instances: any[] = [];
@@ -292,6 +293,26 @@ describe('Svelte application surfaces', () => {
 
     expect(Array.from(document.querySelectorAll('button')).some(button => button.textContent === 'Roll')).toBe(true);
     expect(Array.from(document.querySelectorAll('button')).some(button => button.textContent === 'Crit')).toBe(true);
+  });
+
+  it('shows STAB as a toggle that updates the damage base', async () => {
+    const onsave = vi.fn();
+    const pokemon = normalizePokemon({
+      id: 25, name: 'Pikachu', level: 12, types: ['Electric'], stats: { HP: 5, atk: 6, def: 4, spA: 7, spD: 5, spe: 8 },
+      moves: [{ name: 'Thunder Shock', type: 'Electric', class: 'Special', damageBase: damageBase(4) }], capabilities: [], skills: {}
+    });
+    instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } }));
+    await tick();
+
+    const stab = document.querySelector<HTMLButtonElement>('[aria-label="Remove STAB from Thunder Shock"]')!;
+    expect(stab).not.toBeNull();
+    expect(stab.getAttribute('aria-pressed')).toBe('true');
+    expect(stab.closest('.db-identity')?.textContent).toContain('DB6');
+
+    stab.click();
+    await tick();
+    expect(pokemon.moves?.[0]).toMatchObject({ damageBase: { short: 'DB4', stab: false }, stabCustomized: true });
+    expect(onsave).toHaveBeenCalledOnce();
   });
 
   it('shows Nuclear in type effectiveness when Uranium was selected for generation', async () => {

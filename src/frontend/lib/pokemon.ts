@@ -1,5 +1,5 @@
 import type { BattleOnlyForm, JsonRecord, Pokemon } from './types';
-import { ensureStruggle } from './moves';
+import { ensureStruggle, setDefaultStab } from './moves';
 
 export const ALL_TYPES = [
   'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground',
@@ -118,7 +118,7 @@ export function normalizePokemon(raw: any): Pokemon {
   pokemon.statBonuses = Object.fromEntries(
     STAT_KEYS.map(stat => [stat, Number(storedStatBonuses[stat]) || 0])
   ) as Pokemon['statBonuses'];
-  pokemon.moves = Array.isArray(pokemon.moves) ? pokemon.moves : [];
+  pokemon.moves = (Array.isArray(pokemon.moves) ? pokemon.moves : []).map(move => setDefaultStab(pokemon, move));
   pokemon.abilities = Array.isArray(pokemon.abilities) ? pokemon.abilities : [];
   pokemon.pokeEdges = Array.isArray(pokemon.pokeEdges) ? pokemon.pokeEdges : [];
   pokemon.capabilities = Array.isArray(pokemon.capabilities) ? pokemon.capabilities : [];
@@ -146,7 +146,7 @@ export function normalizePokemon(raw: any): Pokemon {
   pokemon.hitPointsMax = Number(pokemon.hitPointsMax) || calculateHp(pokemon.level, pokemon.stats, pokemon.hpFormula);
   if (pokemon.hitPoints === undefined || pokemon.hitPoints === null) pokemon.hitPoints = pokemon.hitPointsMax;
   pokemon.tutorPoints ??= Math.floor(pokemon.level / 5) + 1;
-  ensureStruggle(pokemon);
+  setDefaultStab(pokemon, ensureStruggle(pokemon));
   delete pokemon.typeMultiplierMode;
   return pokemon;
 }
