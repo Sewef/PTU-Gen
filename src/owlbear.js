@@ -33,6 +33,7 @@ import { createTokenService } from './owlbear/tokens.js';
 
         try {
             let item = null;
+            let result = null;
             if (command === 'insert-token') {
                 item = await tokenService.insertSceneToken(payload.item, event.source);
             } else if (command === 'get-token-state') {
@@ -46,7 +47,7 @@ import { createTokenService } from './owlbear/tokens.js';
             } else if (command === 'sync-token') {
                 item = await tokenService.syncPokemonToSceneToken(payload.pokemon);
             } else if (command === 'roll-justdices') {
-                await diceService.sendJustDicesRoll(payload);
+                result = await diceService.sendJustDicesRoll(payload);
             } else {
                 throw new Error(`Unknown Owlbear command: ${command}`);
             }
@@ -55,6 +56,7 @@ import { createTokenService } from './owlbear/tokens.js';
                 type: 'ptu-owlbear-command-result',
                 requestId,
                 ok: true,
+                result,
                 token: tokenService.serializeToken(item)
             }, window.location.origin);
         } catch (error) {

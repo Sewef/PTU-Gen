@@ -6,6 +6,7 @@ import MovesEditor from './components/MovesEditor.svelte';
 import TypesEditor from './components/TypesEditor.svelte';
 import TypeEffectiveness from './components/TypeEffectiveness.svelte';
 import StatsEditor from './components/StatsEditor.svelte';
+import SkillsEditor from './components/SkillsEditor.svelte';
 import { damageBase } from './lib/moves';
 import { normalizePokemon } from './lib/pokemon';
 
@@ -84,13 +85,17 @@ describe('Svelte application surfaces', () => {
     await vi.waitFor(() => expect(fetchMock.mock.calls.some(([input]) => String(input).includes('dataset=core') && !String(input).includes('fandex='))).toBe(true));
 
     const advancedToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Advanced'))!;
+    const customizationToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Customization'))!;
+    const owlbearToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Owlbear Rodeo'))!;
+    expect(advancedToggle.querySelector('.advanced-menu-icon')?.textContent).toBe('⚡');
+    expect(customizationToggle.querySelector('.advanced-menu-icon')?.textContent).toBe('🎨');
+    expect(owlbearToggle.querySelector('.owlbear-menu-icon')).not.toBeNull();
     advancedToggle.click();
     await tick();
     const multiplicative = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="radio"]')).find(input => input.parentElement?.textContent?.includes('Multiplicative (Vanilla)'))!;
     expect(multiplicative.checked).toBe(true);
     expect(Array.from(document.querySelectorAll('label')).some(label => label.textContent?.includes('Additive (Homebrew)'))).toBe(true);
 
-    const owlbearToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Owlbear Rodeo'))!;
     owlbearToggle.click();
     await tick();
     expect(Array.from(document.querySelectorAll('label')).find(label => label.textContent?.includes('Token visible'))?.classList.contains('inline-option')).toBe(true);
@@ -158,7 +163,9 @@ describe('Svelte application surfaces', () => {
     expect(Array.from(document.querySelectorAll('.br-stat')).find(stat => stat.textContent === 'Atk')?.classList.contains('br-stat-ignored')).toBe(true);
     expect(document.querySelector<HTMLTextAreaElement>('.capability-no-value-input')?.value).toBe('Underdog');
     expect(document.querySelector<HTMLInputElement>('.capability-value-input')?.value).toBe('5');
-    expect(document.querySelector('button[aria-label="Roll Acrobatics"]')).not.toBeNull();
+    const skillRollButton = document.querySelector('button[aria-label="Roll Acrobatics"]');
+    expect(skillRollButton?.textContent).toBe('Roll');
+    expect(skillRollButton?.classList.contains('copy-roll-formula-btn')).toBe(true);
     expect(document.querySelector('.ability-source-slot')?.textContent).toContain('Basic Ability 1');
     const capabilitiesHeading = Array.from(document.querySelectorAll('.section-title')).find(heading => heading.textContent?.includes('Capabilities'))!;
     const battleFormsSection = document.querySelector('.battle-only-forms-section');
@@ -421,6 +428,20 @@ describe('Svelte application surfaces', () => {
     }));
     await tick();
     expect(document.querySelector('[data-stat="spe"] .base-modified-indicator')?.getAttribute('title')).toBe('Original base stat: 10');
+  });
+
+  it('uses a text action for copying skill rolls outside Owlbear', async () => {
+    const pokemon = normalizePokemon({
+      id: 1, name: 'Testmon', level: 10, types: ['Normal'], stats: { HP: 5 },
+      skills: { Acrobatics: '3d6' }, owlbear: { diceRoller: 'none' }
+    });
+    instances.push(mount(SkillsEditor, {
+      target: document.getElementById('app')!, props: { pokemon, embedded: false, onsave: vi.fn() }
+    }));
+    await tick();
+
+    expect(document.querySelector('button[aria-label="Copy Acrobatics roll"]')?.textContent).toBe('Copy Roll');
+    expect(document.body.textContent).not.toContain('🎲');
   });
 
   it('lets users change move types and offers Typeless and Uranium Nuclear for moves and species', async () => {

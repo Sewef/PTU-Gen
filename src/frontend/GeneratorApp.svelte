@@ -310,14 +310,14 @@
           <select aria-label="Fixed nature" bind:value={settings.nature} disabled={settings.natureMode !== 'fixed'}><option value="">Select nature</option>{#each natures as nature}<option value={natureName(nature)}>{natureLabel(nature)}</option>{/each}</select>
         </div></div>
 
-        <button type="button" class="advanced-toggle" class:has-hidden-changes={advancedChanged && !advancedOpen} onclick={() => advancedOpen = !advancedOpen}><span>Advanced</span><span>{advancedOpen ? '▲' : '▼'}</span></button>
+        <button type="button" class="advanced-toggle" class:has-hidden-changes={advancedChanged && !advancedOpen} onclick={() => advancedOpen = !advancedOpen}><span class="advanced-toggle-label"><span class="advanced-menu-icon" aria-hidden="true">⚡</span><span>Advanced</span></span><span>{advancedOpen ? '▲' : '▼'}</span></button>
         {#if advancedOpen}<div class="advanced-section open"><div class="advanced-content">
           <div class="form-group" class:pref-changed-group={settings.ignoreBaseRelation !== defaults.ignoreBaseRelation}><div class="field-label-row"><label for="ignoreBase">Ignore Base Relation</label><button type="button" class="option-help" title={helpTitles.ignoreBaseRelation} aria-label="Help: Ignore Base Relation">?</button></div><input id="ignoreBase" bind:value={settings.ignoreBaseRelation} placeholder="ALL or HP,ATK,DEF" /></div>
           <div class="form-group" class:pref-changed-group={settings.hpFormula !== defaults.hpFormula}><div class="field-label-row"><label for="hpFormula">HP Formula</label><button type="button" class="option-help" title={helpTitles.hpFormula} aria-label="Help: HP Formula">?</button></div><input id="hpFormula" bind:value={settings.hpFormula} /></div>
           <div class="form-group" class:pref-changed-group={settings.fiveStrikeMode !== defaults.fiveStrikeMode}><div class="field-label-row"><span class="group-label">Five Strike</span><button type="button" class="option-help" title={helpTitles.fiveStrike} aria-label="Help: Five Strike">?</button></div><div class="radio-row"><label><input type="radio" bind:group={settings.fiveStrikeMode} value="multiplicative" /> Multiplicative (Vanilla)</label><label><input type="radio" bind:group={settings.fiveStrikeMode} value="additive" /> Additive (Homebrew)</label></div></div>
         </div></div>{/if}
 
-        <button type="button" class="advanced-toggle" onclick={() => customOpen = !customOpen}><span>Customization</span><span>{customOpen ? '▲' : '▼'}</span></button>
+        <button type="button" class="advanced-toggle" onclick={() => customOpen = !customOpen}><span class="advanced-toggle-label"><span class="advanced-menu-icon" aria-hidden="true">🎨</span><span>Customization</span></span><span>{customOpen ? '▲' : '▼'}</span></button>
         {#if customOpen}<div class="advanced-section open"><div class="advanced-content">
           {#each customKinds as item}
             <div class="form-group custom-import-group">
@@ -329,7 +329,7 @@
           {#if customStatus}<div class="info-box">{customStatus}</div>{/if}
         </div></div>{/if}
 
-        <button type="button" class="advanced-toggle" class:has-hidden-changes={owlbearChanged && !owlbearOpen} onclick={() => owlbearOpen = !owlbearOpen}><span>Owlbear Rodeo</span><span>{owlbearOpen ? '▲' : '▼'}</span></button>
+        <button type="button" class="advanced-toggle" class:has-hidden-changes={owlbearChanged && !owlbearOpen} onclick={() => owlbearOpen = !owlbearOpen}><span class="advanced-toggle-label"><span class="advanced-menu-icon owlbear-menu-icon" aria-hidden="true"></span><span>Owlbear Rodeo</span></span><span>{owlbearOpen ? '▲' : '▼'}</span></button>
         {#if owlbearOpen}<div class="advanced-section open"><div class="advanced-content">
           <div class="form-group" class:pref-changed-group={settings.owlbearPlayerId !== defaults.owlbearPlayerId}><label for="owner">{embedded ? 'Owner' : 'Player ID'}</label>{#if embedded}<select id="owner" bind:value={settings.owlbearPlayerId} disabled={!currentPlayer}><option value="">{currentPlayer ? 'Select owner' : 'Loading players…'}</option>{#if currentPlayer}<option value={currentPlayer.id}>Me ({currentPlayer.name})</option>{/if}{#each roomPlayers.filter(player => player.id !== currentPlayer?.id) as player}<option value={player.id}>{player.name}</option>{/each}</select>{:else}<input id="owner" bind:value={settings.owlbearPlayerId} />{/if}</div>
           <div class="form-group" class:pref-changed-group={settings.owlbearVisible !== defaults.owlbearVisible}><label class="inline-option"><input type="checkbox" bind:checked={settings.owlbearVisible} /> Token visible</label></div>
@@ -380,6 +380,9 @@
   .generation-settings-form>.form-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}
   .generation-settings-form>.form-row .form-group{min-width:0;margin:0}
   .advanced-toggle { width: 100%; border: 0; padding:.55rem .7rem; }
+  .advanced-toggle-label{display:inline-flex;align-items:center;gap:.45rem;min-width:0}
+  .advanced-menu-icon{display:inline-flex;width:1.15rem;height:1.15rem;flex:0 0 1.15rem;align-items:center;justify-content:center;font-size:1rem;line-height:1}
+  .owlbear-menu-icon{background:currentColor;mask:url('/owlbear-icon.svg') center/contain no-repeat;-webkit-mask:url('/owlbear-icon.svg') center/contain no-repeat}
   .input-button-row input { flex: 1; }
   .custom-import-group{display:grid;gap:.35rem}.custom-file-row input{box-sizing:border-box;width:100%;min-height:32px;padding:.25rem}.template-link{margin-left:auto;font-size:.8rem;font-weight:650}
   .autocomplete-suggestions.visible { display: block; position: relative; }
