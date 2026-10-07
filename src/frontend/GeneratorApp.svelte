@@ -329,7 +329,7 @@
           {#if customStatus}<div class="info-box">{customStatus}</div>{/if}
         </div></div>{/if}
 
-        <button type="button" class="advanced-toggle" class:has-hidden-changes={owlbearChanged && !owlbearOpen} onclick={() => owlbearOpen = !owlbearOpen}><span class="advanced-toggle-label"><span class="advanced-menu-icon owlbear-menu-icon" aria-hidden="true"></span><span>Owlbear Rodeo</span></span><span>{owlbearOpen ? '▲' : '▼'}</span></button>
+        <button type="button" class="advanced-toggle" class:has-hidden-changes={owlbearChanged && !owlbearOpen} onclick={() => owlbearOpen = !owlbearOpen}><span class="advanced-toggle-label"><img class="advanced-menu-icon owlbear-menu-icon" src="/owlbear-logo.svg" alt="" aria-hidden="true" /><span>Owlbear Rodeo</span></span><span>{owlbearOpen ? '▲' : '▼'}</span></button>
         {#if owlbearOpen}<div class="advanced-section open"><div class="advanced-content">
           <div class="form-group" class:pref-changed-group={settings.owlbearPlayerId !== defaults.owlbearPlayerId}><label for="owner">{embedded ? 'Owner' : 'Player ID'}</label>{#if embedded}<select id="owner" bind:value={settings.owlbearPlayerId} disabled={!currentPlayer}><option value="">{currentPlayer ? 'Select owner' : 'Loading players…'}</option>{#if currentPlayer}<option value={currentPlayer.id}>Me ({currentPlayer.name})</option>{/if}{#each roomPlayers.filter(player => player.id !== currentPlayer?.id) as player}<option value={player.id}>{player.name}</option>{/each}</select>{:else}<input id="owner" bind:value={settings.owlbearPlayerId} />{/if}</div>
           <div class="form-group" class:pref-changed-group={settings.owlbearVisible !== defaults.owlbearVisible}><label class="inline-option"><input type="checkbox" bind:checked={settings.owlbearVisible} /> Token visible</label></div>
@@ -382,7 +382,7 @@
   .advanced-toggle { width: 100%; border: 0; padding:.55rem .7rem; }
   .advanced-toggle-label{display:inline-flex;align-items:center;gap:.45rem;min-width:0}
   .advanced-menu-icon{display:inline-flex;width:1.15rem;height:1.15rem;flex:0 0 1.15rem;align-items:center;justify-content:center;font-size:1rem;line-height:1}
-  .owlbear-menu-icon{background:currentColor;mask:url('/owlbear-icon.svg') center/contain no-repeat;-webkit-mask:url('/owlbear-icon.svg') center/contain no-repeat}
+  .owlbear-menu-icon{display:block;object-fit:contain}
   .input-button-row input { flex: 1; }
   .custom-import-group{display:grid;gap:.35rem}.custom-file-row input{box-sizing:border-box;width:100%;min-height:32px;padding:.25rem}.template-link{margin-left:auto;font-size:.8rem;font-weight:650}
   .autocomplete-suggestions.visible { display: block; position: relative; }

@@ -89,7 +89,7 @@ describe('Svelte application surfaces', () => {
     const owlbearToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Owlbear Rodeo'))!;
     expect(advancedToggle.querySelector('.advanced-menu-icon')?.textContent).toBe('⚡');
     expect(customizationToggle.querySelector('.advanced-menu-icon')?.textContent).toBe('🎨');
-    expect(owlbearToggle.querySelector('.owlbear-menu-icon')).not.toBeNull();
+    expect(owlbearToggle.querySelector('.owlbear-menu-icon')?.getAttribute('src')).toBe('/owlbear-logo.svg');
     advancedToggle.click();
     await tick();
     const multiplicative = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="radio"]')).find(input => input.parentElement?.textContent?.includes('Multiplicative (Vanilla)'))!;
