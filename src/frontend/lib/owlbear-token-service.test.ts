@@ -38,7 +38,8 @@ describe('Owlbear token service', () => {
     vi.useFakeTimers();
     const trackers: any[] = [
       { name: 'HP', value: 20, max: 40 },
-      { name: 'Injuries', value: 1 }
+      { name: 'Injuries', value: 1 },
+      { name: 'Temp HP', variant: 'value', color: 3, value: 2 }
     ];
     let nameWrites = 0;
     const item = new Proxy<any>({ id: 'token-1', name: 'Testmon', metadata: { [OWL_TRACKERS_METADATA_KEY]: trackers } }, {
@@ -59,7 +60,7 @@ describe('Owlbear token service', () => {
     const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
     await service.getSceneToken('token-1', {});
     service.schedulePokemonTokenSync({
-      name: 'Testmon', nickname: '', hitPoints: 17, hitPointsMax: 40,
+      name: 'Testmon', nickname: '', hitPoints: 17, hitPointsMax: 40, tempHitPoints: 9,
       captureState: { standardCounts: { injuries: 4 } },
       owlbear: { tokenId: 'token-1', trackers: 'owltrackers' }
     });
@@ -68,9 +69,40 @@ describe('Owlbear token service', () => {
     const updatedTrackers = item.metadata[OWL_TRACKERS_METADATA_KEY];
     expect(updatedTrackers[0]).toMatchObject({ value: 17, max: 40 });
     expect(updatedTrackers[1]).toMatchObject({ value: 4 });
+    expect(updatedTrackers[2]).toMatchObject({ value: 9 });
+    expect(service.serializeToken(item)?.owlTrackers).toMatchObject({
+      hp: { value: 17, max: 40 }, injuries: 4, tempHp: 9
+    });
     expect(updatedTrackers).not.toBe(trackers);
     expect(nameWrites).toBe(0);
     expect(OBR.scene.items.updateItems).toHaveBeenCalledOnce();
+  });
+
+  it('adds the Temp HP tracker to an already linked Owl Trackers token', async () => {
+    const item: any = {
+      id: 'token-1', name: 'Testmon',
+      metadata: { [OWL_TRACKERS_METADATA_KEY]: [{ name: 'HP', value: 40, max: 40 }, { name: 'Injuries', value: 0 }] }
+    };
+    const OBR = {
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: {
+          getItems: vi.fn(async () => [item]),
+          updateItems: vi.fn(async (_ids: string[], update: (items: any[]) => void) => update([item]))
+        }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+
+    await service.syncPokemonToSceneToken({
+      name: 'Testmon', hitPoints: 40, hitPointsMax: 40, tempHitPoints: 6,
+      captureState: { standardCounts: { injuries: 0 } },
+      owlbear: { tokenId: 'token-1', trackers: 'owltrackers' }
+    });
+
+    expect(item.metadata[OWL_TRACKERS_METADATA_KEY]).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Temp HP', variant: 'value', color: 3, value: 6 })
+    ]));
   });
 
   it('synchronizes a transformed sprite without requiring Owl Trackers', async () => {

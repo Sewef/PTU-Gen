@@ -495,31 +495,14 @@ button {
 }
 
 .level-hp-info-row > .info-label {
-    grid-row: 1 / span 4;
-}
-
-.level-hp-info-row .level-hp-wrapper {
-    justify-content: flex-start;
-    margin: 0;
-}
-
-.level-hp-info-row .margin-top-8,
-.level-hp-info-row .hp-damage-controls {
-    margin-top: 0;
-}
-
-.level-hp-info-row .hp-damage-controls {
-    width: 100%;
-    min-width: 0;
-    grid-template-columns: minmax(76px, 82px) minmax(0, 1fr) minmax(0, 1fr) minmax(48px, auto);
-    justify-content: start;
+    grid-row: 1;
 }
 
 .nature-info-row {
     grid-template-columns: minmax(105px, .3fr) minmax(0, 1fr);
 }
 
-.nature-info-row .nature-control {
+.nature-info-row .nature-content {
     grid-column: 2;
     display: flex;
     align-items: center;
@@ -771,7 +754,7 @@ button {
     .pokemon-info-row > .info-label,
     .pokemon-types-row > .pokemon-types-content,
     .level-hp-info-row > :not(.info-label),
-    .nature-info-row .nature-control {
+    .nature-info-row .nature-content {
         grid-column: 1;
         grid-row: auto;
     }
@@ -785,13 +768,6 @@ button {
         grid-column: auto;
     }
 
-    .level-hp-info-row .hp-damage-controls {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .level-hp-info-row .hp-damage-btn {
-        grid-column: 1 / -1;
-    }
 }
 
 .errata-checkbox {
@@ -3563,30 +3539,6 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     border-radius: 0 0 4px 4px;
 }
 
-.level-hp-wrapper {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    justify-content: center;
-    margin-top: 8px;
-}
-
-.level-input-group {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.hp-display {
-    text-align: center;
-    min-width: 40px;
-}
-
-.hp-formula-input {
-    width: 100%;
-    margin-top: 8px;
-}
-
 .hp-damage-controls {
     display: grid;
     grid-template-columns: 68px 88px 82px auto;
@@ -4228,7 +4180,7 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 18%, transparent);
 }
 
-.nature-control .nature-select {
+.nature-content .nature-select {
     flex: 1 1 auto;
 }
 
@@ -4380,23 +4332,11 @@ body.details-page {
     margin-bottom: 3px;
 }
 
-.details-page .level-hp-wrapper {
-    gap: 12px;
-    margin-top: 4px;
-}
-
-.details-page .level-hp-info-row .level-hp-wrapper {
-    justify-content: flex-start;
-    margin: 0;
-}
-
 .details-page .margin-top-8,
 .details-page .hp-damage-controls {
     margin-top: 5px;
 }
 
-.details-page .level-hp-info-row .margin-top-8,
-.details-page .level-hp-info-row .hp-damage-controls,
 .details-page .nature-info-row .margin-top-8 {
     margin-top: 0;
 }

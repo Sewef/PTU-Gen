@@ -19,3 +19,13 @@ export function adjustHitPointsByTick(current: number, maximum: number, directio
   const next = (Number(current) || 0) + hitPointTick(maximum) * direction;
   return direction > 0 ? Math.min(injuredHitPointMaximum(maximum, injuries), next) : next;
 }
+
+export function applyDamageToHitPoints(current: number, temporary: number, damage: number): { hitPoints: number; tempHitPoints: number } {
+  const safeDamage = Math.max(0, Number(damage) || 0);
+  const safeTemporary = Math.max(0, Number(temporary) || 0);
+  const absorbed = Math.min(safeTemporary, safeDamage);
+  return {
+    hitPoints: (Number(current) || 0) - (safeDamage - absorbed),
+    tempHitPoints: safeTemporary - absorbed
+  };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adjustHitPointsByTick, calculateIncomingDamage, hitPointTick, injuredHitPointMaximum } from './combat';
+import { adjustHitPointsByTick, applyDamageToHitPoints, calculateIncomingDamage, hitPointTick, injuredHitPointMaximum } from './combat';
 
 describe('incoming damage', () => {
   it('subtracts the relevant defense before effectiveness', () => {
@@ -18,6 +18,11 @@ describe('incoming damage', () => {
   it('always applies at least one non-immune point of damage', () => {
     expect(calculateIncomingDamage(5, 99, 0.25)).toBe(1);
     expect(calculateIncomingDamage(5, 99, 0)).toBe(0);
+  });
+
+  it('spends temporary HP before regular HP', () => {
+    expect(applyDamageToHitPoints(30, 8, 5)).toEqual({ hitPoints: 30, tempHitPoints: 3 });
+    expect(applyDamageToHitPoints(30, 8, 12)).toEqual({ hitPoints: 26, tempHitPoints: 0 });
   });
 
   it('adjusts HP by ten-percent ticks and caps healing at maximum HP', () => {

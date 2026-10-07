@@ -151,6 +151,7 @@ export function normalizePokemon(raw: any): Pokemon {
   pokemon.fiveStrikeMode = String(pokemon.fiveStrikeMode || '').toLowerCase() === 'additive' ? 'additive' : 'multiplicative';
   pokemon.hitPointsMax = Number(pokemon.hitPointsMax) || calculateHp(pokemon.level, pokemon.stats, pokemon.hpFormula);
   if (pokemon.hitPoints === undefined || pokemon.hitPoints === null) pokemon.hitPoints = pokemon.hitPointsMax;
+  pokemon.tempHitPoints = Math.max(0, Math.trunc(Number(pokemon.tempHitPoints) || 0));
   pokemon.tutorPoints ??= Math.floor(pokemon.level / 5) + 1;
   setDefaultStab(pokemon, ensureStruggle(pokemon));
   delete pokemon.typeMultiplierMode;

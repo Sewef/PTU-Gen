@@ -5,19 +5,32 @@ function getFiniteNumber(value) {
     return Number.isFinite(number) ? number : null;
 }
 
+function createTempHpTracker(value) {
+    return {
+        id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        variant: 'value',
+        color: 3,
+        value,
+        name: 'Temp HP'
+    };
+}
+
 function getOwlTrackerState(item) {
     const trackers = item?.metadata?.[OWL_TRACKERS_METADATA_KEY];
     if (!Array.isArray(trackers)) return null;
 
     const hpTracker = trackers.find(tracker => String(tracker?.name || '').toLowerCase() === 'hp');
     const injuriesTracker = trackers.find(tracker => String(tracker?.name || '').toLowerCase() === 'injuries');
+    const tempHpTracker = trackers.find(tracker => String(tracker?.name || '').toLowerCase() === 'temp hp');
     const hpValue = getFiniteNumber(hpTracker?.value);
     const hpMax = getFiniteNumber(hpTracker?.max);
     const injuries = getFiniteNumber(injuriesTracker?.value);
+    const tempHp = getFiniteNumber(tempHpTracker?.value);
 
     return {
         hp: hpValue === null && hpMax === null ? null : { value: hpValue, max: hpMax },
-        injuries: injuries === null ? null : Math.max(0, Math.trunc(injuries))
+        injuries: injuries === null ? null : Math.max(0, Math.trunc(injuries)),
+        tempHp: tempHp === null ? null : Math.max(0, Math.trunc(tempHp))
     };
 }
 
@@ -193,9 +206,13 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         const injuriesTracker = Array.isArray(trackers)
             ? trackers.find(tracker => String(tracker?.name || '').toLowerCase() === 'injuries')
             : null;
+        const tempHpTracker = Array.isArray(trackers)
+            ? trackers.find(tracker => String(tracker?.name || '').toLowerCase() === 'temp hp')
+            : null;
         const desiredHp = getFiniteNumber(pokemon.hitPoints);
         const desiredHpMax = getFiniteNumber(pokemon.hitPointsMax);
         const desiredInjuries = Math.max(0, Math.trunc(getFiniteNumber(pokemon.captureState?.standardCounts?.injuries) || 0));
+        const desiredTempHp = Math.max(0, Math.trunc(getFiniteNumber(pokemon.tempHitPoints) || 0));
         const desiredImageUrl = String(pokemon.imageUrl || '').trim();
         const nameChanged = existing.name !== desiredName || (existing.text?.plainText !== undefined && existing.text.plainText !== desiredName);
         const imageChanged = Boolean(desiredImageUrl && existing.image?.url !== desiredImageUrl);
@@ -204,7 +221,8 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
             (desiredHpMax !== null && Number(hpTracker.max) !== desiredHpMax)
         );
         const injuriesChanged = trackersEnabled && injuriesTracker && Number(injuriesTracker.value) !== desiredInjuries;
-        if (!nameChanged && !imageChanged && !hpChanged && !injuriesChanged) return existing;
+        const tempHpChanged = trackersEnabled && Array.isArray(trackers) && (!tempHpTracker || Number(tempHpTracker.value) !== desiredTempHp);
+        if (!nameChanged && !imageChanged && !hpChanged && !injuriesChanged && !tempHpChanged) return existing;
 
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
@@ -229,8 +247,10 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
                         ...(desiredHpMax !== null ? { max: desiredHpMax } : {})
                     };
                     if (name === 'injuries') return { ...tracker, value: desiredInjuries };
+                    if (name === 'temp hp') return { ...tracker, value: desiredTempHp };
                     return tracker;
                 });
+                if (!tempHpTracker) updatedTrackers.push(createTempHpTracker(desiredTempHp));
                 item.metadata = {
                     ...(item.metadata || {}),
                     [OWL_TRACKERS_METADATA_KEY]: updatedTrackers

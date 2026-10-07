@@ -51,6 +51,7 @@ export interface Pokemon extends JsonRecord {
   otherInfo?: JsonRecord;
   hitPoints?: number;
   hitPointsMax?: number;
+  tempHitPoints?: number;
   hpFormula?: string;
   fiveStrikeMode?: 'multiplicative' | 'additive';
   tutorPoints?: number;

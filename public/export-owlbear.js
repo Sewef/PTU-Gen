@@ -110,6 +110,7 @@ function buildOwlbearItem(pokemon, position = { x: 0, y: 0 }, imageMetadata = {}
     const formulaMax = calculateOwlbearHPValue(pokemon.level, pokemon.stats, pokemon.hpFormula);
     const hpMax = Number.isFinite(Number(pokemon.hitPointsMax)) ? Number(pokemon.hitPointsMax) : formulaMax;
     const hpValue = Number.isFinite(Number(pokemon.hitPoints)) ? Number(pokemon.hitPoints) : hpMax;
+    const tempHpValue = Math.max(0, Math.trunc(Number(pokemon.tempHitPoints) || 0));
     const speed = String(Number.isFinite(Number(pokemon.stats?.spe)) ? Number(pokemon.stats?.spe) : 0);
     const scale = OWLBEAR_SIZE_SCALES[pokemon.otherInfo?.sizeCategory] || 1;
     const visible = pokemon.owlbear?.visible !== undefined ? Boolean(pokemon.owlbear.visible) : true;
@@ -141,6 +142,13 @@ function buildOwlbearItem(pokemon, position = { x: 0, y: 0 }, imageMetadata = {}
                 inlineMath: true,
                 value: Math.max(0, Math.trunc(Number(pokemon.captureState?.standardCounts?.injuries) || 0)),
                 name: 'Injuries'
+            },
+            {
+                id: generateOwlTrackersUUID(),
+                variant: 'value',
+                color: 3,
+                value: tempHpValue,
+                name: 'Temp HP'
             }
         ];
         metadata['com.owl-trackers/hidden'] = true;

@@ -11,8 +11,10 @@ export function applyTokenToPokemon(pokemon: Pokemon, token: Partial<OwlbearToke
     const hp = token.owlTrackers.hp?.value == null ? NaN : Number(token.owlTrackers.hp.value);
     const hpMax = token.owlTrackers.hp?.max == null ? NaN : Number(token.owlTrackers.hp.max);
     const injuries = token.owlTrackers.injuries == null ? NaN : Number(token.owlTrackers.injuries);
+    const tempHp = token.owlTrackers.tempHp == null ? NaN : Number(token.owlTrackers.tempHp);
     if (Number.isFinite(hp)) pokemon.hitPoints = Math.trunc(hp);
     if (Number.isFinite(hpMax) && hpMax > 0) pokemon.hitPointsMax = Math.trunc(hpMax);
+    if (Number.isFinite(tempHp)) pokemon.tempHitPoints = Math.max(0, Math.trunc(tempHp));
     if (Number.isFinite(injuries)) {
       const count = Math.max(0, Math.trunc(injuries));
       pokemon.captureState!.standardCounts.injuries = count;

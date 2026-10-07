@@ -12,7 +12,7 @@ const { buildOwlbearItem, computeOwlbearBounds } = helpers;
 describe('Owlbear token export', () => {
   it('keeps configured tracker and initiative metadata on inserted tokens', () => {
     const { item } = buildOwlbearItem({
-      id: 25, name: 'Pikachu', shiny: true, level: 12, stats: { HP: 5, spe: 8 }, hitPoints: 20, hitPointsMax: 37,
+      id: 25, name: 'Pikachu', shiny: true, level: 12, stats: { HP: 5, spe: 8 }, hitPoints: 20, hitPointsMax: 37, tempHitPoints: 7,
       otherInfo: { sizeCategory: 'Small' },
       captureState: { standardCounts: { injuries: 3 } },
       owlbear: { visible: true, playerId: 'player-1', trackers: 'owltrackers', initiative: 'prettysordid', diceRoller: 'justdices' }
@@ -23,7 +23,8 @@ describe('Owlbear token export', () => {
     expect(item.text.plainText).toBe('✨ Pikachu');
     expect(item.metadata['com.owl-trackers/trackers']).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'HP', value: 20, max: 37 }),
-      expect.objectContaining({ name: 'Injuries', value: 3 })
+      expect.objectContaining({ name: 'Injuries', value: 3 }),
+      expect.objectContaining({ name: 'Temp HP', variant: 'value', color: 3, value: 7 })
     ]));
     expect(item.metadata['com.pretty-initiative/metadata']).toMatchObject({ count: '8', active: false });
   });

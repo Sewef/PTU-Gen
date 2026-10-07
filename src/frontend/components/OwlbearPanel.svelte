@@ -36,6 +36,7 @@
     const shiny = Boolean(pokemon.shiny);
     const hitPoints = Number(pokemon.hitPoints);
     const hitPointsMax = Number(pokemon.hitPointsMax);
+    const tempHitPoints = Math.max(0, Math.trunc(Number(pokemon.tempHitPoints) || 0));
     const injuries = Math.max(0, Math.trunc(Number(pokemon.captureState?.standardCounts?.injuries) || 0));
     const battleOnlyFormIcon = String(pokemon.activeBattleOnlyFormIcon || '');
     const formChanged = formStateInitialized && battleOnlyFormIcon !== previousBattleOnlyFormIcon;
@@ -52,6 +53,7 @@
         shiny,
         hitPoints,
         hitPointsMax,
+        tempHitPoints,
         ...(formChanged ? { imageUrl: pokemonImage(pokemon, 'full') } : {}),
         captureState: { standardCounts: { injuries } },
         owlbear: { tokenId, trackers }

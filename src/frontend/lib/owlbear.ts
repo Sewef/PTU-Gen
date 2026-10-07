@@ -2,7 +2,7 @@ const pending = new Map<string, { resolve: (value: any) => void; reject: (error:
 export type OwlbearPlayer = { id: string; name: string };
 export type OwlbearTokenState = {
   tokenId: string; id?: string; exists: boolean; visible: boolean | null;
-  createdUserId: string | null; owlTrackers?: { hp?: { value: number | null; max: number | null } | null; injuries?: number | null } | null;
+  createdUserId: string | null; owlTrackers?: { hp?: { value: number | null; max: number | null } | null; injuries?: number | null; tempHp?: number | null } | null;
 };
 
 export function requestOwlbear(command: string, payload: Record<string, unknown> = {}): Promise<any> {
