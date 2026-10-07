@@ -115,7 +115,7 @@ function buildOwlbearItem(pokemon, position = { x: 0, y: 0 }, imageMetadata = {}
     const scale = OWLBEAR_SIZE_SCALES[pokemon.otherInfo?.sizeCategory] || 1;
     const visible = pokemon.owlbear?.visible !== undefined ? Boolean(pokemon.owlbear.visible) : true;
     const createdUserId = String(pokemon.owlbear?.playerId || '').trim();
-    const metadata = {};
+    const metadata = { 'com.sewef.ptu-gen/token': true };
 
     if (String(pokemon.owlbear?.initiative || 'none').toLowerCase() === 'prettysordid') {
         metadata['com.pretty-initiative/metadata'] = {

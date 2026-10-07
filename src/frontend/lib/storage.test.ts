@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearHistory, listHistory, loadPokemon, plainPokemon, removeHistory, savePokemon } from './storage';
+import { clearHistory, listHistory, loadPokemon, plainPokemon, removeHistory, savePokemon, settingsKey } from './storage';
 import { normalizePokemon } from './pokemon';
 
 describe('pokemon storage', () => {
   beforeEach(() => { localStorage.clear(); vi.stubGlobal('crypto', { randomUUID: () => 'record-1' }); });
+
+  it('uses a room-specific key for Owlbear generator settings', () => {
+    expect(settingsKey()).toBe('ptu-generator-preferences-v1');
+    expect(settingsKey('owlbear:room-42')).toBe('ptu-generator-preferences-v1:owlbear%3Aroom-42');
+    expect(settingsKey('owlbear:another-room')).not.toBe(settingsKey('owlbear:room-42'));
+  });
 
   it('keeps the selected record and history index in sync', () => {
     const pokemon = normalizePokemon({ id: 25, name: 'Pikachu', level: 12, stats: { HP: 5 }, types: ['Electric'] });

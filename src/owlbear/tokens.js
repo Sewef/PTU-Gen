@@ -1,4 +1,4 @@
-import { OWL_TRACKERS_HIDDEN_METADATA_KEY, OWL_TRACKERS_METADATA_KEY } from './constants.js';
+import { OWL_TRACKERS_HIDDEN_METADATA_KEY, OWL_TRACKERS_METADATA_KEY, PTU_TOKEN_METADATA_KEY } from './constants.js';
 
 function getFiniteNumber(value) {
     const number = Number(value);
@@ -37,6 +37,7 @@ function getOwlTrackerState(item) {
 export function createTokenService({ OBR, buildImage, owlbearReady }) {
     const trackedTokenWindows = new Map();
     const tokenSyncTimers = new Map();
+    const managedTokenIds = new Set();
 
     function serializeToken(item) {
         return item ? {
@@ -128,6 +129,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
 
         const existing = await OBR.scene.items.getItems([source.id]);
         if (existing.length > 0) {
+            managedTokenIds.add(source.id);
             registerTrackedToken(source.id, targetWindow);
             return existing[0];
         }
@@ -136,12 +138,16 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         const ownerRole = await getPlayerRole(String(source.createdUserId || ''));
         const token = buildSceneToken({
             ...source,
-            metadata: metadataForOwner(source.metadata, ownerRole)
+            metadata: metadataForOwner({
+                ...(source.metadata || {}),
+                [PTU_TOKEN_METADATA_KEY]: true
+            }, ownerRole)
         }, position);
         await OBR.scene.items.addItems([token]);
 
         const [inserted] = await OBR.scene.items.getItems([token.id]);
         if (!inserted) throw new Error('Owlbear did not confirm the inserted token.');
+        managedTokenIds.add(inserted.id);
         registerTrackedToken(inserted.id, targetWindow);
         return inserted;
     }
@@ -150,6 +156,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         await requireOwlbearScene();
         registerTrackedToken(tokenId, targetWindow);
         const [item] = await OBR.scene.items.getItems([tokenId]);
+        if (item) managedTokenIds.add(tokenId);
         return item || null;
     }
 
@@ -214,6 +221,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         const trackersHidden = player.role === 'GM';
         const items = await OBR.scene.items.getItems(item => (
             item.createdUserId === player.id &&
+            (item.metadata?.[PTU_TOKEN_METADATA_KEY] === true || managedTokenIds.has(item.id)) &&
             Array.isArray(item.metadata?.[OWL_TRACKERS_METADATA_KEY]) &&
             item.metadata?.[OWL_TRACKERS_HIDDEN_METADATA_KEY] !== trackersHidden
         ));

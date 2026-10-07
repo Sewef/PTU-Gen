@@ -21,6 +21,7 @@ describe('Owlbear token export', () => {
     expect(item.createdUserId).toBe('player-1');
     expect(item.name).toBe('✨ Pikachu');
     expect(item.text.plainText).toBe('✨ Pikachu');
+    expect(item.metadata['com.sewef.ptu-gen/token']).toBe(true);
     expect(item.metadata['com.owl-trackers/trackers']).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'HP', value: 20, max: 37 }),
       expect.objectContaining({ name: 'Injuries', value: 3 }),

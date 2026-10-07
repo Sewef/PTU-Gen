@@ -2,6 +2,7 @@ import type { HistoryEntry, Pokemon } from './types';
 import { pokemonImage } from './pokemon';
 
 export const HISTORY_KEY = 'ptu-pokemon-history-v1';
+export const SETTINGS_KEY = 'ptu-generator-preferences-v1';
 export const SITE_HISTORY_SCOPE = 'site';
 const RECORD_PREFIX = 'ptu-pokemon-record-';
 const MAX_HISTORY = 50;
@@ -12,6 +13,10 @@ export function owlbearHistoryScope(roomId: string) {
 
 export function historyKey(scope = SITE_HISTORY_SCOPE) {
   return scope === SITE_HISTORY_SCOPE ? HISTORY_KEY : `${HISTORY_KEY}:${encodeURIComponent(scope)}`;
+}
+
+export function settingsKey(scope = SITE_HISTORY_SCOPE) {
+  return scope === SITE_HISTORY_SCOPE ? SETTINGS_KEY : `${SETTINGS_KEY}:${encodeURIComponent(scope)}`;
 }
 
 function recordPrefix(scope = SITE_HISTORY_SCOPE) {

@@ -2,14 +2,13 @@
   import { onMount } from 'svelte';
   import { generate, generatorOptions, loadCustom, metadata, type CustomizationKind } from './lib/api';
   import type { GeneratorSettings, HistoryEntry, Pokemon } from './lib/types';
-  import { clearHistory, historyKey, listHistory, loadPokemon, owlbearHistoryScope, plainPokemon, removeHistory, savePokemon, SITE_HISTORY_SCOPE } from './lib/storage';
+  import { clearHistory, historyKey, listHistory, loadPokemon, owlbearHistoryScope, plainPokemon, removeHistory, savePokemon, settingsKey, SITE_HISTORY_SCOPE } from './lib/storage';
   import type { OwlbearPlayer } from './lib/owlbear';
   import { OWLBEAR_INTEGRATIONS } from './lib/owlbear-integrations';
   import { natureLabel, natureName } from './lib/natures';
   import PokemonCards from './components/PokemonCards.svelte';
   import ExportMenu from './components/ExportMenu.svelte';
 
-  const SETTINGS_KEY = 'ptu-generator-preferences-v1';
   const embedded = new URLSearchParams(location.search).get('owlbear') === 'true' && window.parent !== window;
   const defaults: GeneratorSettings = {
     dataset: 'core', fandex: [], countMode: 'fixed', count: 1, minCount: 1, maxCount: 6,
@@ -67,12 +66,14 @@
   const owlbearChanged = $derived(settings.owlbearVisible !== defaults.owlbearVisible || settings.owlbearPlayerId !== defaults.owlbearPlayerId || settings.owlbearTrackers !== defaults.owlbearTrackers || settings.owlbearInitiative !== defaults.owlbearInitiative || settings.owlbearDiceRoller !== defaults.owlbearDiceRoller);
 
   function readSettings(): GeneratorSettings {
-    try { return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') }; }
+    if (!historyScope) return { ...defaults, fandex: [...defaults.fandex] };
+    try { return { ...defaults, ...JSON.parse(localStorage.getItem(settingsKey(historyScope)) || '{}') }; }
     catch { return { ...defaults }; }
   }
 
   function persist() {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    if (!historyScope) return;
+    localStorage.setItem(settingsKey(historyScope), JSON.stringify(settings));
   }
 
   function resetSettings() {
@@ -103,10 +104,17 @@
       currentPlayer = event.data.currentPlayer?.id ? { id: String(event.data.currentPlayer.id), name: String(event.data.currentPlayer.name || 'Player') } : null;
       roomPlayers = (Array.isArray(event.data.players) ? event.data.players : []).filter((player: any) => player?.id).map((player: any) => ({ id: String(player.id), name: String(player.name || 'Player') }));
       if (embedded && event.data.roomId) {
-        historyScope = owlbearHistoryScope(String(event.data.roomId));
-        refreshHistory();
+        const roomScope = owlbearHistoryScope(String(event.data.roomId));
+        if (roomScope !== historyScope) {
+          historyScope = roomScope;
+          settings = readSettings();
+          if (fandexes.length) settings.fandex = normalizeSelectedFandexes(fandexes);
+          refreshHistory();
+          void refreshMetadata();
+        }
       }
       settings.owlbearPlayerId ||= currentPlayer?.id || '';
+      persist();
     };
     if (embedded) document.body.classList.add('owlbear-embedded');
     settings = readSettings();

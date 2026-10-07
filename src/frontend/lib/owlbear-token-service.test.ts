@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createTokenService } from '../../owlbear/tokens.js';
-import { OWL_TRACKERS_HIDDEN_METADATA_KEY, OWL_TRACKERS_METADATA_KEY } from '../../owlbear/constants.js';
+import { OWL_TRACKERS_HIDDEN_METADATA_KEY, OWL_TRACKERS_METADATA_KEY, PTU_TOKEN_METADATA_KEY } from '../../owlbear/constants.js';
 
 afterEach(() => vi.useRealTimers());
 
@@ -52,6 +52,7 @@ describe('Owlbear token service', () => {
     }, {});
 
     expect(OBR.player.getRole).toHaveBeenCalledOnce();
+    expect(builtItem.metadata[PTU_TOKEN_METADATA_KEY]).toBe(true);
     expect(builtItem.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(false);
   });
 
@@ -60,6 +61,7 @@ describe('Owlbear token service', () => {
       id: 'token-1',
       createdUserId: 'player-1',
       metadata: {
+        [PTU_TOKEN_METADATA_KEY]: true,
         [OWL_TRACKERS_METADATA_KEY]: [{ name: 'HP', value: 20, max: 40 }],
         [OWL_TRACKERS_HIDDEN_METADATA_KEY]: false
       }
@@ -118,13 +120,14 @@ describe('Owlbear token service', () => {
       id: 'token-1',
       createdUserId: 'player-1',
       metadata: {
+        [PTU_TOKEN_METADATA_KEY]: true,
         [OWL_TRACKERS_METADATA_KEY]: [{ name: 'HP', value: 20, max: 40 }],
         [OWL_TRACKERS_HIDDEN_METADATA_KEY]: true
       }
     };
     const unrelatedItem: any = {
       id: 'token-2',
-      createdUserId: 'player-2',
+      createdUserId: 'player-1',
       metadata: {
         [OWL_TRACKERS_METADATA_KEY]: [{ name: 'HP', value: 30, max: 30 }],
         [OWL_TRACKERS_HIDDEN_METADATA_KEY]: true
