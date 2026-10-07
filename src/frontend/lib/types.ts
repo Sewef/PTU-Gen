@@ -36,6 +36,7 @@ export interface Pokemon extends JsonRecord {
   statBonuses: Record<'HP' | 'atk' | 'def' | 'spA' | 'spD' | 'spe', number>;
   combatStages: Record<'atk' | 'def' | 'spA' | 'spD' | 'spe', number>;
   baseStats?: Record<string, number>;
+  baseStatsOriginal?: Record<string, number>;
   baseWithNature?: Record<string, number>;
   distributedPoints?: Record<string, number>;
   ignoreBaseRelation?: string;

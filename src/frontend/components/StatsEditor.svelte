@@ -10,6 +10,8 @@
   const multipliers: Record<number, number> = { [-6]: .4, [-5]: .5, [-4]: .6, [-3]: .7, [-2]: .8, [-1]: .9, 0: 1, 1: 1.2, 2: 1.4, 3: 1.6, 4: 1.8, 5: 2, 6: 2.2 };
 
   function rawBase(stat: StatKey) { return Number(pokemon.baseStats?.[baseKeys[stat]] ?? pokemon.baseWithNature?.[stat] ?? pokemon.stats[stat]) || 0; }
+  function originalBase(stat: StatKey) { return Number(pokemon.baseStatsOriginal?.[baseKeys[stat]] ?? rawBase(stat)) || 0; }
+  function isBaseModified(stat: StatKey) { return rawBase(stat) !== originalBase(stat); }
   function effectiveBase(stat: StatKey) { return Number(pokemon.baseWithNature?.[stat] ?? rawBase(stat)) || 0; }
   function natureModifier(stat: StatKey) { return effectiveBase(stat) - rawBase(stat); }
   function ignoredStats(): Set<StatKey> {
@@ -52,6 +54,8 @@
   function updateBase(stat: StatKey, value: number) {
     const points = levelPoints(stat);
     const modifier = natureModifier(stat);
+    pokemon.baseStatsOriginal ||= {};
+    pokemon.baseStatsOriginal[baseKeys[stat]] ??= rawBase(stat);
     pokemon.baseStats ||= {};
     pokemon.baseStats[baseKeys[stat]] = Math.max(0, (Number(value) || 0) - modifier);
     const calculator = (globalThis as any).PTUStatCalc;
@@ -117,7 +121,7 @@
             <label class="stat-relation-toggle" title="Keep this stat in Base Relation"><input class="stat-relation-checkbox" aria-label={`Keep ${STAT_LABELS[stat]} in Base Relation`} type="checkbox" checked={!ignoredStats().has(stat)} onchange={(event) => toggleRelation(stat, event.currentTarget.checked)} /></label>
           </span>
         </div>
-        <div class="stat-cell base-cell"><input aria-label={`${STAT_LABELS[stat]} base stat after Nature`} type="number" min="0" value={effectiveBase(stat)} onchange={(event) => updateBase(stat, Number(event.currentTarget.value))} /></div>
+        <div class="stat-cell base-cell" class:base-modified={isBaseModified(stat)}><input aria-label={`${STAT_LABELS[stat]} base stat after Nature`} type="number" min="0" value={effectiveBase(stat)} onchange={(event) => updateBase(stat, Number(event.currentTarget.value))} />{#if isBaseModified(stat)}<span class="base-modified-indicator" aria-label={`${STAT_LABELS[stat]} base stat modified`} title={`Original base stat: ${originalBase(stat)}`}></span>{/if}</div>
         <div class="stat-cell"><input aria-label={`${STAT_LABELS[stat]} level points`} type="number" value={levelPoints(stat)} onchange={(event) => updateLevel(stat, Number(event.currentTarget.value))} /></div>
         <div class="stat-cell"><input aria-label={`${STAT_LABELS[stat]} bonus`} type="number" value={statBonus(stat)} onchange={(event) => updateBonus(stat, Number(event.currentTarget.value))} /></div>
         <div class="stat-cell">
@@ -145,6 +149,9 @@
   .stat-label-actions{display:flex;flex:0 0 auto;align-items:center;gap:2px}
   .stat-cell{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0}
   .stat-cell input{box-sizing:border-box;width:100%;min-width:0;height:26px;padding:2px;text-align:center;font:inherit}
+  .base-cell{position:relative}
+  .base-modified-indicator{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:#d89b28;box-shadow:0 0 0 1px var(--bg-main);pointer-events:none}
+  .base-modified input{border-color:color-mix(in srgb,#d89b28 45%,var(--border-color))}
   .stat-total{text-align:center;font-weight:750;color:var(--primary-color)}
   .no-combat-stage{color:var(--text-tertiary);font-weight:700}
   .nature-indicator{flex:0 0 auto;border-radius:999px;padding:1px 4px;font-size:.62rem;font-weight:800;line-height:1.25}

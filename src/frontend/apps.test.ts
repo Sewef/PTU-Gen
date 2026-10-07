@@ -5,6 +5,7 @@ import DetailsApp from './DetailsApp.svelte';
 import MovesEditor from './components/MovesEditor.svelte';
 import TypesEditor from './components/TypesEditor.svelte';
 import TypeEffectiveness from './components/TypeEffectiveness.svelte';
+import StatsEditor from './components/StatsEditor.svelte';
 import { damageBase } from './lib/moves';
 import { normalizePokemon } from './lib/pokemon';
 
@@ -143,7 +144,8 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector('.base-relation-summary')?.textContent?.replace(/\s+/g, '')).toBe('Atk>SpAtk>Spd>HP=SpDef>Def');
     expect(document.querySelectorAll('.stat-relation-checkbox')).toHaveLength(6);
     expect(document.querySelectorAll('.nature-indicator')).toHaveLength(2);
-    expect(document.querySelector<HTMLInputElement>('input[aria-label="Attack base stat after Nature"]')?.value).toBe('8');
+    const attackBase = document.querySelector<HTMLInputElement>('input[aria-label="Attack base stat after Nature"]')!;
+    expect(attackBase.value).toBe('8');
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Attack level points"]')?.value).toBe('2');
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Attack bonus"]')?.value).toBe('0');
     expect(Array.from(document.querySelectorAll('.level-hp-field > span')).map(label => label.textContent)).toEqual(['Level', 'Current HP', 'Max HP']);
@@ -390,6 +392,35 @@ describe('Svelte application surfaces', () => {
     expect(onselect).toHaveBeenCalledWith('nuclear');
     nuclear.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     expect(onselect).toHaveBeenCalledTimes(2);
+  });
+
+  it('marks a manually modified base stat', async () => {
+    const pokemon = normalizePokemon({
+      id: 1, name: 'Testmon', level: 10, types: ['Normal'],
+      baseStats: { HP: 5, Attack: 6, Defense: 7, 'Special Attack': 8, 'Special Defense': 9, Speed: 10 },
+      baseWithNature: { HP: 5, atk: 6, def: 7, spA: 8, spD: 9, spe: 10 },
+      stats: { HP: 5, atk: 6, def: 7, spA: 8, spD: 9, spe: 10 },
+      nature: { name: 'Composed' }
+    });
+    const editor = mount(StatsEditor, {
+      target: document.getElementById('app')!, props: { pokemon, onsave: vi.fn() }
+    });
+    await tick();
+
+    expect(document.querySelector('.base-modified-indicator')).toBeNull();
+    const speedBase = document.querySelector<HTMLInputElement>('input[aria-label="Speed base stat after Nature"]')!;
+    speedBase.value = '11';
+    speedBase.dispatchEvent(new Event('change', { bubbles: true }));
+    await tick();
+
+    expect(pokemon.baseStats?.Speed).toBe(11);
+    await unmount(editor);
+    document.getElementById('app')!.innerHTML = '';
+    instances.push(mount(StatsEditor, {
+      target: document.getElementById('app')!, props: { pokemon, onsave: vi.fn() }
+    }));
+    await tick();
+    expect(document.querySelector('[data-stat="spe"] .base-modified-indicator')?.getAttribute('title')).toBe('Original base stat: 10');
   });
 
   it('lets users change move types and offers Typeless and Uranium Nuclear for moves and species', async () => {
