@@ -33,7 +33,13 @@
   }
 
   function applyTick(direction: 1 | -1) {
-    pokemon.hitPoints = adjustHitPointsByTick(Number(pokemon.hitPoints), Number(pokemon.hitPointsMax), direction, injuries);
+    if (direction < 0) {
+      const result = applyDamageToHitPoints(Number(pokemon.hitPoints), tempHitPoints, tick);
+      pokemon.hitPoints = result.hitPoints;
+      pokemon.tempHitPoints = result.tempHitPoints;
+    } else {
+      pokemon.hitPoints = adjustHitPointsByTick(Number(pokemon.hitPoints), Number(pokemon.hitPointsMax), direction, injuries);
+    }
     onsave();
   }
 

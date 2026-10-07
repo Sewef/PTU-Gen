@@ -4030,20 +4030,18 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     white-space: nowrap;
 }
 
-.type-effectiveness-button {
-    border: 0;
-    font-family: inherit;
-    line-height: inherit;
+.type-effectiveness-item {
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 
-.type-effectiveness-button:hover {
+.type-effectiveness-item:hover {
+    border-color: var(--primary-color);
     transform: translateY(-1px);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
 }
 
-.type-effectiveness-button:focus-visible {
+.type-effectiveness-item:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }
@@ -4080,10 +4078,11 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     background: var(--bg-secondary);
 }
 
-.type-effectiveness-item .type-effectiveness-button {
+.type-effectiveness-item .type-badge-table {
     width: 100%;
     min-width: 0;
     border-radius: 0;
+    pointer-events: none;
 }
 
 .type-effectiveness-item .type-eff-value-cell {

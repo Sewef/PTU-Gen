@@ -243,6 +243,13 @@ describe('Svelte application surfaces', () => {
     await tick();
     const afterTempHp = JSON.parse(localStorage.getItem('selectedPokemon')!);
     expect(afterTempHp.tempHitPoints).toBe(Math.floor(afterTempHp.hitPointsMax * .1));
+    tickButtons[1].click();
+    await tick();
+    const afterNegativeTick = JSON.parse(localStorage.getItem('selectedPokemon')!);
+    expect(afterNegativeTick.tempHitPoints).toBe(0);
+    expect(afterNegativeTick.hitPoints).toBe(afterTempHp.hitPoints);
+    tickButtons[2].click();
+    await tick();
     tickButtons[3].click();
     await tick();
     const afterInjury = JSON.parse(localStorage.getItem('selectedPokemon')!);
@@ -369,15 +376,20 @@ describe('Svelte application surfaces', () => {
     const pokemon = normalizePokemon({
       id: 1, name: 'Orchynx', level: 1, types: ['Grass', 'Steel'], stats: { HP: 1 }, fandex: ['uranium']
     });
+    const onselect = vi.fn();
     instances.push(mount(TypeEffectiveness, {
       target: document.getElementById('app')!,
-      props: { pokemon, selected: 'typeless', onselect: vi.fn(), onsave: vi.fn() }
+      props: { pokemon, selected: 'typeless', onselect, onsave: vi.fn() }
     }));
     await tick();
 
     expect(document.querySelectorAll('.type-effectiveness-item')).toHaveLength(20);
-    const nuclear = Array.from(document.querySelectorAll('.type-effectiveness-item')).find(item => item.textContent?.includes('Nuclear'));
+    const nuclear = Array.from(document.querySelectorAll<HTMLElement>('.type-effectiveness-item')).find(item => item.textContent?.includes('Nuclear'))!;
     expect(nuclear?.textContent).toContain('1x');
+    nuclear.querySelector<HTMLElement>('.type-eff-value-cell')!.click();
+    expect(onselect).toHaveBeenCalledWith('nuclear');
+    nuclear.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(onselect).toHaveBeenCalledTimes(2);
   });
 
   it('lets users change move types and offers Typeless and Uranium Nuclear for moves and species', async () => {
