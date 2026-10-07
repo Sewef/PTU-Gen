@@ -1,4 +1,4 @@
-import { OWL_TRACKERS_METADATA_KEY } from './constants.js';
+import { OWL_TRACKERS_HIDDEN_METADATA_KEY, OWL_TRACKERS_METADATA_KEY } from './constants.js';
 
 function getFiniteNumber(value) {
     const number = Number(value);
@@ -172,21 +172,49 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         const existing = await getSceneToken(tokenId, targetWindow);
         if (!existing) throw new Error('The linked token no longer exists in this scene.');
 
-        const validPlayerIds = new Set([
-            OBR.player.id,
-            ...(await OBR.party.getPlayers()).map(player => player.id)
-        ]);
-        if (!validPlayerIds.has(createdUserId)) throw new Error('The selected player is no longer in the room.');
+        const partyPlayers = await OBR.party.getPlayers();
+        const selectedPlayer = partyPlayers.find(player => player.id === createdUserId);
+        const isCurrentPlayer = createdUserId === OBR.player.id;
+        if (!isCurrentPlayer && !selectedPlayer) throw new Error('The selected player is no longer in the room.');
+        const ownerRole = isCurrentPlayer ? await OBR.player.getRole() : selectedPlayer.role;
 
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
                 item.createdUserId = createdUserId;
+                if (Array.isArray(item.metadata?.[OWL_TRACKERS_METADATA_KEY])) {
+                    item.metadata = {
+                        ...(item.metadata || {}),
+                        [OWL_TRACKERS_HIDDEN_METADATA_KEY]: ownerRole === 'GM'
+                    };
+                }
             });
         });
 
         const [updated] = await OBR.scene.items.getItems([tokenId]);
         if (!updated) throw new Error('The linked token could not be read after changing its owner.');
         return updated;
+    }
+
+    async function ensurePlayerOwnedOwlTrackersVisibility(player) {
+        if (!player?.id) return;
+
+        await requireOwlbearScene();
+        const trackersHidden = player.role === 'GM';
+        const items = await OBR.scene.items.getItems(item => (
+            item.createdUserId === player.id &&
+            Array.isArray(item.metadata?.[OWL_TRACKERS_METADATA_KEY]) &&
+            item.metadata?.[OWL_TRACKERS_HIDDEN_METADATA_KEY] !== trackersHidden
+        ));
+        if (items.length === 0) return;
+
+        await OBR.scene.items.updateItems(items.map(item => item.id), ownedItems => {
+            ownedItems.forEach(item => {
+                item.metadata = {
+                    ...(item.metadata || {}),
+                    [OWL_TRACKERS_HIDDEN_METADATA_KEY]: trackersHidden
+                };
+            });
+        });
     }
 
     async function syncPokemonToSceneToken(pokemon) {
@@ -280,6 +308,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         focusSceneToken,
         setSceneTokenVisibility,
         setSceneTokenOwner,
+        ensurePlayerOwnedOwlTrackersVisibility,
         syncPokemonToSceneToken,
         notifyTrackedTokenStates,
         schedulePokemonTokenSync,

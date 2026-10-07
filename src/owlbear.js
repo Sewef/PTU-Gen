@@ -17,7 +17,8 @@ import { createTokenService } from './owlbear/tokens.js';
     const owlbearContext = createOwlbearContext({
         OBR,
         resolveOwlbearReady,
-        notifyTrackedTokenStates: tokenService.notifyTrackedTokenStates
+        notifyTrackedTokenStates: tokenService.notifyTrackedTokenStates,
+        ensurePlayerOwnedOwlTrackersVisibility: tokenService.ensurePlayerOwnedOwlTrackersVisibility
     });
     const tabs = createTabManager({
         tabList,

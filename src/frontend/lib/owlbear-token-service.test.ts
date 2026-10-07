@@ -1,10 +1,111 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createTokenService } from '../../owlbear/tokens.js';
-import { OWL_TRACKERS_METADATA_KEY } from '../../owlbear/constants.js';
+import { OWL_TRACKERS_HIDDEN_METADATA_KEY, OWL_TRACKERS_METADATA_KEY } from '../../owlbear/constants.js';
 
 afterEach(() => vi.useRealTimers());
 
 describe('Owlbear token service', () => {
+  it('hides Owl Trackers when assigning a token to a GM', async () => {
+    const item: any = {
+      id: 'token-1',
+      createdUserId: 'player-1',
+      metadata: {
+        [OWL_TRACKERS_METADATA_KEY]: [{ name: 'HP', value: 20, max: 40 }],
+        [OWL_TRACKERS_HIDDEN_METADATA_KEY]: false
+      }
+    };
+    const OBR = {
+      player: { id: 'player-1', getRole: vi.fn(async () => 'PLAYER') },
+      party: { getPlayers: vi.fn(async () => [{ id: 'gm-1', role: 'GM' }]) },
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: {
+          getItems: vi.fn(async () => [item]),
+          updateItems: vi.fn(async (_ids: string[], update: (items: any[]) => void) => update([item]))
+        }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+
+    await service.setSceneTokenOwner('token-1', 'gm-1', {});
+
+    expect(item.createdUserId).toBe('gm-1');
+    expect(item.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(true);
+    expect(OBR.player.getRole).not.toHaveBeenCalled();
+  });
+
+  it('shows Owl Trackers when assigning a token to a player', async () => {
+    const item: any = {
+      id: 'token-1',
+      createdUserId: 'gm-1',
+      metadata: {
+        [OWL_TRACKERS_METADATA_KEY]: [{ name: 'HP', value: 20, max: 40 }],
+        [OWL_TRACKERS_HIDDEN_METADATA_KEY]: true
+      }
+    };
+    const OBR = {
+      player: { id: 'player-1', getRole: vi.fn(async () => 'PLAYER') },
+      party: { getPlayers: vi.fn(async () => []) },
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: {
+          getItems: vi.fn(async () => [item]),
+          updateItems: vi.fn(async (_ids: string[], update: (items: any[]) => void) => update([item]))
+        }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+
+    await service.setSceneTokenOwner('token-1', 'player-1', {});
+
+    expect(item.createdUserId).toBe('player-1');
+    expect(item.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(false);
+    expect(OBR.player.getRole).toHaveBeenCalledOnce();
+  });
+
+  it('updates Owl Trackers visibility when its owner changes role', async () => {
+    const ownedItem: any = {
+      id: 'token-1',
+      createdUserId: 'player-1',
+      metadata: {
+        [OWL_TRACKERS_METADATA_KEY]: [{ name: 'HP', value: 20, max: 40 }],
+        [OWL_TRACKERS_HIDDEN_METADATA_KEY]: true
+      }
+    };
+    const unrelatedItem: any = {
+      id: 'token-2',
+      createdUserId: 'player-2',
+      metadata: {
+        [OWL_TRACKERS_METADATA_KEY]: [{ name: 'HP', value: 30, max: 30 }],
+        [OWL_TRACKERS_HIDDEN_METADATA_KEY]: true
+      }
+    };
+    const items = [ownedItem, unrelatedItem];
+    const OBR = {
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: {
+          getItems: vi.fn(async (filter: (item: any) => boolean) => items.filter(filter)),
+          updateItems: vi.fn(async (ids: string[], update: (items: any[]) => void) => (
+            update(items.filter(item => ids.includes(item.id)))
+          ))
+        }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+
+    await service.ensurePlayerOwnedOwlTrackersVisibility({ id: 'player-1', role: 'PLAYER' });
+
+    expect(ownedItem.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(false);
+    expect(unrelatedItem.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(true);
+    expect(OBR.scene.items.updateItems).toHaveBeenCalledWith(['token-1'], expect.any(Function));
+
+    await service.ensurePlayerOwnedOwlTrackersVisibility({ id: 'player-1', role: 'GM' });
+
+    expect(ownedItem.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(true);
+    expect(unrelatedItem.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(true);
+  });
+
   it('centers a focused token without changing the viewport scale', async () => {
     const item = { id: 'token-1', name: 'Testmon', metadata: {} };
     const OBR = {

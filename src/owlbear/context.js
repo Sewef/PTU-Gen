@@ -1,4 +1,9 @@
-export function createOwlbearContext({ OBR, resolveOwlbearReady, notifyTrackedTokenStates }) {
+export function createOwlbearContext({
+    OBR,
+    resolveOwlbearReady,
+    notifyTrackedTokenStates,
+    ensurePlayerOwnedOwlTrackersVisibility
+}) {
     let currentPlayer = null;
     let partyPlayers = [];
 
@@ -22,6 +27,12 @@ export function createOwlbearContext({ OBR, resolveOwlbearReady, notifyTrackedTo
         });
     }
 
+    function handlePlayerRole(player) {
+        ensurePlayerOwnedOwlTrackersVisibility(player).catch(error => {
+            console.error('Unable to update Owl Trackers visibility after a role change:', error);
+        });
+    }
+
     async function initializeOwlbearContext() {
         if (!OBR.isAvailable) {
             resolveOwlbearReady(false);
@@ -41,12 +52,14 @@ export function createOwlbearContext({ OBR, resolveOwlbearReady, notifyTrackedTo
 
                 OBR.party.onChange(players => {
                     partyPlayers = players.filter(player => player.id !== currentPlayer.id);
+                    players.forEach(handlePlayerRole);
                     broadcastOwlbearContext();
                 });
 
                 OBR.player.onChange(player => {
                     currentPlayer = { id: player.id, name: player.name };
                     partyPlayers = partyPlayers.filter(partyPlayer => partyPlayer.id !== player.id);
+                    handlePlayerRole(player);
                     broadcastOwlbearContext();
                 });
 

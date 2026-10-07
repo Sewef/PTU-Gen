@@ -16,7 +16,7 @@
   let roomPlayers = $state<OwlbearPlayer[]>([]);
   let formStateInitialized = false;
   let previousBattleOnlyFormIcon = '';
-  const linked = $derived(Boolean(pokemon.owlbear.tokenId));
+  let linked = $state(Boolean(pokemon.owlbear.tokenId));
 
   onMount(() => {
     if (!embedded) return;
@@ -59,11 +59,19 @@
         owlbear: { tokenId, trackers }
       };
       void requestOwlbear('sync-token', { pokemon: snapshot })
-        .then(() => {
+        .then((result) => {
+          if (!result?.token) {
+            unlinkToken(tokenId);
+            return;
+          }
           failed = false;
           status = 'Token linked';
         })
         .catch((cause) => {
+          if (isMissingTokenError(cause)) {
+            unlinkToken(tokenId);
+            return;
+          }
           failed = true;
           status = cause instanceof Error ? cause.message : 'Owlbear synchronization failed';
         });
@@ -74,6 +82,7 @@
 
   function confirm(token: Partial<OwlbearTokenState> & { id?: string }) {
     if (!applyTokenToPokemon(pokemon, token)) return;
+    linked = true;
     failed = false;
     status = 'Token linked';
     onsave();
@@ -82,33 +91,48 @@
   function applyTokenState(token: OwlbearTokenState) {
     if (!pokemon.owlbear.tokenId || token.tokenId !== pokemon.owlbear.tokenId) return;
     if (!token.exists) {
-      pokemon.owlbear.tokenId = '';
-      failed = true;
-      status = 'Token no longer in scene';
-      onsave();
+      unlinkToken(token.tokenId);
       return;
     }
     confirm({ ...token, id: token.id || token.tokenId });
   }
 
-  async function action(run: () => Promise<any>) {
+  function isMissingTokenError(cause: unknown) {
+    return cause instanceof Error && cause.message === 'The linked token no longer exists in this scene.';
+  }
+
+  function unlinkToken(expectedTokenId: string) {
+    if (pokemon.owlbear.tokenId !== expectedTokenId) return;
+    pokemon.owlbear.tokenId = '';
+    linked = false;
+    failed = true;
+    status = 'Token no longer in scene';
+    onsave();
+  }
+
+  async function action(run: () => Promise<any>, expectedTokenId = '') {
     busy = true;
     failed = false;
     status = 'Working…';
     try {
       const result = await run();
       if (result?.token) confirm(result.token);
+      else if (expectedTokenId) unlinkToken(expectedTokenId);
       else status = 'Done';
     } catch (cause) {
-      failed = true;
-      status = cause instanceof Error ? cause.message : 'Owlbear action failed';
+      if (expectedTokenId && isMissingTokenError(cause)) unlinkToken(expectedTokenId);
+      else {
+        failed = true;
+        status = cause instanceof Error ? cause.message : 'Owlbear action failed';
+      }
     } finally {
       busy = false;
     }
   }
 
   function refresh() {
-    if (pokemon.owlbear.tokenId) void action(() => requestOwlbear('get-token-state', { tokenId: pokemon.owlbear.tokenId! }));
+    const tokenId = String(pokemon.owlbear.tokenId || '');
+    if (tokenId) void action(() => requestOwlbear('get-token-state', { tokenId }), tokenId);
   }
   function insert() {
     const builder = (window as any).buildOwlbearItemWithImage;
@@ -116,18 +140,21 @@
     void action(async () => requestOwlbear('insert-token', { item: (await builder(pokemon)).item }));
   }
   function focus() {
-    if (pokemon.owlbear.tokenId) void action(() => requestOwlbear('focus-token', { tokenId: pokemon.owlbear.tokenId }));
+    const tokenId = String(pokemon.owlbear.tokenId || '');
+    if (tokenId) void action(() => requestOwlbear('focus-token', { tokenId }), tokenId);
   }
   function toggleVisibility() {
     const visible = pokemon.owlbear.visible === false;
     pokemon.owlbear.visible = visible;
     onsave();
-    if (pokemon.owlbear.tokenId) void action(() => requestOwlbear('set-token-visibility', { tokenId: pokemon.owlbear.tokenId, visible }));
+    const tokenId = String(pokemon.owlbear.tokenId || '');
+    if (tokenId) void action(() => requestOwlbear('set-token-visibility', { tokenId, visible }), tokenId);
   }
   function changeOwner(userId: string) {
     pokemon.owlbear.playerId = userId;
     onsave();
-    if (pokemon.owlbear.tokenId) void action(() => requestOwlbear('set-token-owner', { tokenId: pokemon.owlbear.tokenId, createdUserId: userId }));
+    const tokenId = String(pokemon.owlbear.tokenId || '');
+    if (tokenId) void action(() => requestOwlbear('set-token-owner', { tokenId, createdUserId: userId }), tokenId);
   }
 </script>
 
