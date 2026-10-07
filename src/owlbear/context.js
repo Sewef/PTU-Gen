@@ -42,12 +42,19 @@ export function createOwlbearContext({
         OBR.onReady(async () => {
             resolveOwlbearReady(true);
             try {
+                const [currentPlayerName, currentPlayerRole, players] = await Promise.all([
+                    OBR.player.getName(),
+                    OBR.player.getRole(),
+                    OBR.party.getPlayers()
+                ]);
                 currentPlayer = {
                     id: OBR.player.id,
-                    name: await OBR.player.getName()
+                    name: currentPlayerName,
+                    role: currentPlayerRole
                 };
-                partyPlayers = (await OBR.party.getPlayers())
-                    .filter(player => player.id !== currentPlayer.id);
+                partyPlayers = players.filter(player => player.id !== currentPlayer.id);
+                handlePlayerRole(currentPlayer);
+                partyPlayers.forEach(handlePlayerRole);
                 broadcastOwlbearContext();
 
                 OBR.party.onChange(players => {

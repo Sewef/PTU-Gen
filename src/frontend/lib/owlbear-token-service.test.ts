@@ -5,6 +5,56 @@ import { OWL_TRACKERS_HIDDEN_METADATA_KEY, OWL_TRACKERS_METADATA_KEY } from '../
 afterEach(() => vi.useRealTimers());
 
 describe('Owlbear token service', () => {
+  it('shows Owl Trackers when a player inserts a token', async () => {
+    const builtItem: any = { id: 'token-1', metadata: {} };
+    const builder: any = {};
+    for (const method of ['id', 'name', 'position', 'rotation', 'scale', 'visible', 'locked', 'layer']) {
+      builder[method] = vi.fn((value: any) => {
+        if (method === 'id') builtItem.id = value;
+        return builder;
+      });
+    }
+    builder.metadata = vi.fn((metadata: any) => {
+      builtItem.metadata = metadata;
+      return builder;
+    });
+    builder.build = vi.fn(() => builtItem);
+
+    const OBR = {
+      player: { id: 'player-1', getRole: vi.fn(async () => 'PLAYER') },
+      party: { getPlayers: vi.fn(async () => []) },
+      viewport: {
+        getWidth: vi.fn(async () => 1000),
+        getHeight: vi.fn(async () => 800),
+        inverseTransformPoint: vi.fn(async (point: any) => point)
+      },
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: {
+          getItems: vi.fn()
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([builtItem]),
+          addItems: vi.fn(async () => undefined)
+        }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(() => builder), owlbearReady: Promise.resolve(true) });
+
+    await service.insertSceneToken({
+      id: 'token-1',
+      name: 'Testmon',
+      image: { url: 'test.png' },
+      grid: { dpi: 70 },
+      metadata: {
+        [OWL_TRACKERS_METADATA_KEY]: [{ name: 'HP', value: 20, max: 40 }],
+        [OWL_TRACKERS_HIDDEN_METADATA_KEY]: true
+      }
+    }, {});
+
+    expect(OBR.player.getRole).toHaveBeenCalledOnce();
+    expect(builtItem.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(false);
+  });
+
   it('hides Owl Trackers when assigning a token to a GM', async () => {
     const item: any = {
       id: 'token-1',

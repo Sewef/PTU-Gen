@@ -89,6 +89,21 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         return OBR.viewport.inverseTransformPoint({ x: width / 2, y: height / 2 });
     }
 
+    async function getPlayerRole(playerId) {
+        if (!playerId || playerId === OBR.player.id) return OBR.player.getRole();
+        const player = (await OBR.party.getPlayers()).find(candidate => candidate.id === playerId);
+        if (!player) throw new Error('The selected player is no longer in the room.');
+        return player.role;
+    }
+
+    function metadataForOwner(metadata, ownerRole) {
+        if (!Array.isArray(metadata?.[OWL_TRACKERS_METADATA_KEY])) return metadata || {};
+        return {
+            ...(metadata || {}),
+            [OWL_TRACKERS_HIDDEN_METADATA_KEY]: ownerRole === 'GM'
+        };
+    }
+
     function buildSceneToken(source, position) {
         const builder = buildImage(source.image, source.grid)
             .id(source.id)
@@ -118,7 +133,11 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         }
 
         const position = await getViewportCenter();
-        const token = buildSceneToken(source, position);
+        const ownerRole = await getPlayerRole(String(source.createdUserId || ''));
+        const token = buildSceneToken({
+            ...source,
+            metadata: metadataForOwner(source.metadata, ownerRole)
+        }, position);
         await OBR.scene.items.addItems([token]);
 
         const [inserted] = await OBR.scene.items.getItems([token.id]);
@@ -172,20 +191,13 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         const existing = await getSceneToken(tokenId, targetWindow);
         if (!existing) throw new Error('The linked token no longer exists in this scene.');
 
-        const partyPlayers = await OBR.party.getPlayers();
-        const selectedPlayer = partyPlayers.find(player => player.id === createdUserId);
-        const isCurrentPlayer = createdUserId === OBR.player.id;
-        if (!isCurrentPlayer && !selectedPlayer) throw new Error('The selected player is no longer in the room.');
-        const ownerRole = isCurrentPlayer ? await OBR.player.getRole() : selectedPlayer.role;
+        const ownerRole = await getPlayerRole(createdUserId);
 
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
                 item.createdUserId = createdUserId;
                 if (Array.isArray(item.metadata?.[OWL_TRACKERS_METADATA_KEY])) {
-                    item.metadata = {
-                        ...(item.metadata || {}),
-                        [OWL_TRACKERS_HIDDEN_METADATA_KEY]: ownerRole === 'GM'
-                    };
+                    item.metadata = metadataForOwner(item.metadata, ownerRole);
                 }
             });
         });
