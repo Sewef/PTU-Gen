@@ -24,6 +24,25 @@ afterEach(async () => {
 });
 
 describe('OwlbearPanel', () => {
+  it('keeps the Visible label beside its checkbox outside the extension', () => {
+    const pokemon = normalizePokemon({
+      id: 25,
+      name: 'Pikachu',
+      level: 12,
+      types: ['Electric'],
+      stats: { HP: 5 }
+    });
+
+    instance = mount(OwlbearPanel, {
+      target: document.getElementById('app')!,
+      props: { pokemon, embedded: false, onsave: vi.fn() }
+    });
+
+    const label = document.querySelector<HTMLElement>('.owlbear-visible-option')!;
+    expect(label.firstElementChild).toMatchObject({ type: 'checkbox' });
+    expect(label.textContent?.trim()).toBe('Visible');
+  });
+
   it('offers insertion again when the linked token no longer exists', async () => {
     requestOwlbear.mockResolvedValue({ token: null });
     const onsave = vi.fn();

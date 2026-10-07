@@ -167,13 +167,13 @@
     </div>
   {:else}
     <ExportMenu {pokemon} />
-    <details class="owlbear-sheet-settings"><summary class="export-btn-main">⚙ Owlbear</summary><div class="owlbear-settings-popover"><label><input type="checkbox" bind:checked={pokemon.owlbear.visible} onchange={onsave} /> Visible</label><label>Owner ID <input bind:value={pokemon.owlbear.playerId} onchange={onsave} /></label>{#each Object.entries(OWLBEAR_INTEGRATIONS) as [kind, config]}<label>{config.label}<select bind:value={pokemon.owlbear[kind]} onchange={onsave}>{#each config.options as option}<option value={option.value}>{option.label}</option>{/each}</select></label>{/each}</div></details>
+    <details class="owlbear-sheet-settings"><summary class="export-btn-main">⚙ Owlbear</summary><div class="owlbear-settings-popover"><label class="owlbear-visible-option"><input type="checkbox" bind:checked={pokemon.owlbear.visible} onchange={onsave} /> Visible</label><label>Owner ID <input bind:value={pokemon.owlbear.playerId} onchange={onsave} /></label>{#each Object.entries(OWLBEAR_INTEGRATIONS) as [kind, config]}<label>{config.label}<select bind:value={pokemon.owlbear[kind]} onchange={onsave}>{#each config.options as option}<option value={option.value}>{option.label}</option>{/each}</select></label>{/each}</div></details>
   {/if}
 </div>
 
 <style>
   .header-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
   .owlbear-utilities-actions.compact{grid-template-columns:repeat(3,minmax(0,1fr))}.owlbear-primary-action{width:100%}
-  .owlbear-sheet-settings{position:relative;margin:0;align-self:center}.owlbear-sheet-settings summary{list-style:none;cursor:pointer;margin:0}.owlbear-settings-popover{position:absolute;right:0;z-index:20;display:grid;gap:.55rem;min-width:250px;padding:1rem;background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;box-shadow:0 8px 24px #0003}.owlbear-settings-popover label{display:grid;gap:.2rem}.owlbear-settings-popover input[type='checkbox']{width:auto}
+  .owlbear-sheet-settings{position:relative;margin:0;align-self:center}.owlbear-sheet-settings summary{list-style:none;cursor:pointer;margin:0}.owlbear-settings-popover{position:absolute;right:0;z-index:20;display:grid;gap:.55rem;min-width:250px;padding:1rem;background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;box-shadow:0 8px 24px #0003}.owlbear-settings-popover label{display:grid;gap:.2rem}.owlbear-settings-popover .owlbear-visible-option{display:flex;align-items:center;gap:.35rem}.owlbear-settings-popover input[type='checkbox']{width:auto;margin:0}
   @media(max-width:700px){.header-actions{width:100%}.owlbear-utilities-actions.compact{grid-template-columns:1fr 1fr}.owlbear-owner-select{grid-column:1/-1}}
 </style>
