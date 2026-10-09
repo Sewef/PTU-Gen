@@ -10,6 +10,17 @@ describe('move helpers', () => {
     expect(rollFormula(pokemon, move)).toBe('2d6+8+12');
   });
 
+  it('uses the total attack stat including combat stages', () => {
+    const pokemon = normalizePokemon({
+      name: 'Test', level: 10, types: ['Fire'],
+      stats: { HP: 5, atk: 12, def: 5, spA: 8, spD: 5, spe: 5 },
+      combatStages: { atk: 2 }
+    });
+    const move = { class: 'physical', damageBase: damageBase(6) };
+
+    expect(rollFormula(pokemon, move)).toBe('2d6+8+16');
+  });
+
   it('derives Struggle options from capabilities', () => {
     const pokemon = normalizePokemon({ name: 'Test', level: 10, types: ['Fire'], stats: { HP: 5, atk: 8, def: 5, spA: 12, spD: 5, spe: 5 }, capabilities: ['Firestarter 1'] });
     expect(struggleTypes(pokemon)).toEqual(['Normal', 'Fire']);
