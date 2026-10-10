@@ -483,7 +483,7 @@ function convertPokesheetsAbilities(abilities) {
  */
 function exportPokemonPokesheets(pokemon) {
     const pokesheetsData = convertToPokesheetsFormat(pokemon);
-    const dataStr = JSON.stringify(pokesheetsData, null, 4);
+    const dataStr = JSON.stringify(pokesheetsData);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');

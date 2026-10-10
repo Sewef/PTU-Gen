@@ -242,7 +242,7 @@ async function exportPokemonOwlbear(pokemon) {
         bounds: computeOwlbearBounds(shared)
     };
 
-    const jsonStr = JSON.stringify(result, null, 2);
+    const jsonStr = JSON.stringify(result);
     await navigator.clipboard.writeText(jsonStr);
     return jsonStr;
 }

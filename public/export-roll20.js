@@ -422,7 +422,7 @@ function buildAbilityInfo(ability) {
  */
 function exportPokemonRoll20(pokemon) {
     const roll20Data = convertToRoll20Format(pokemon);
-    const dataStr = JSON.stringify(roll20Data, null, 4);
+    const dataStr = JSON.stringify(roll20Data);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');

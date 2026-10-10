@@ -59,7 +59,7 @@ async function exportBulkPTUGen(pokemons) {
     }
     const zip = new JSZip();
     pokemons.forEach(p => {
-        zip.file(`${pokemonFilename(p)}.json`, JSON.stringify(p, null, 2));
+        zip.file(`${pokemonFilename(p)}.json`, JSON.stringify(p));
     });
     const blob = await zip.generateAsync({ type: 'blob' });
     bulkDownload(blob, `PTUGen_${pokemons.length}_pokemon.zip`);
@@ -75,7 +75,7 @@ async function exportBulkRoll20(pokemons) {
     const zip = new JSZip();
     pokemons.forEach(p => {
         const data = convertToRoll20Format(p);
-        zip.file(`${pokemonFilename(p, 'Roll20')}.json`, JSON.stringify(data, null, 4));
+        zip.file(`${pokemonFilename(p, 'Roll20')}.json`, JSON.stringify(data));
     });
     const blob = await zip.generateAsync({ type: 'blob' });
     bulkDownload(blob, `Roll20_${pokemons.length}_pokemon.zip`);
@@ -91,7 +91,7 @@ async function exportBulkPokesheets(pokemons) {
     const zip = new JSZip();
     pokemons.forEach(p => {
         const data = convertToPokesheetsFormat(p);
-        zip.file(`${pokemonFilename(p, 'Pokesheets')}.json`, JSON.stringify(data, null, 4));
+        zip.file(`${pokemonFilename(p, 'Pokesheets')}.json`, JSON.stringify(data));
     });
     const blob = await zip.generateAsync({ type: 'blob' });
     bulkDownload(blob, `Pokesheets_${pokemons.length}_pokemon.zip`);
@@ -122,6 +122,6 @@ async function exportBulkOwlbear(pokemons) {
         bounds: computeOwlbearBounds(shared)
     };
 
-    const jsonStr = JSON.stringify(merged, null, 2);
+    const jsonStr = JSON.stringify(merged);
     await navigator.clipboard.writeText(jsonStr);
 }

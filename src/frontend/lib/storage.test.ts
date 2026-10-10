@@ -19,6 +19,7 @@ describe('pokemon storage', () => {
     expect(listHistory()).toHaveLength(1);
     savePokemon(plainPokemon(pokemon));
     expect(listHistory()).toHaveLength(1);
+    expect(localStorage.getItem('selectedPokemon')).toBe(JSON.stringify(JSON.parse(localStorage.getItem('selectedPokemon')!)));
   });
 
   it('removes individual records and clears the complete history', () => {

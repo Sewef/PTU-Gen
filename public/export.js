@@ -8,7 +8,7 @@
  * @param {Object} pokemon - The Pokémon object to export
  */
 function exportPokemon(pokemon) {
-    const dataStr = JSON.stringify(pokemon, null, 2);
+    const dataStr = JSON.stringify(pokemon);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
