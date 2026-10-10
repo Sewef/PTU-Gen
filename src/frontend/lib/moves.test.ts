@@ -25,6 +25,17 @@ describe('move helpers', () => {
     const pokemon = normalizePokemon({ name: 'Test', level: 10, types: ['Fire'], stats: { HP: 5, atk: 8, def: 5, spA: 12, spD: 5, spe: 5 }, capabilities: ['Firestarter 1'] });
     expect(struggleTypes(pokemon)).toEqual(['Normal', 'Fire']);
     expect(ensureStruggle(pokemon).class).toBe('special');
+    expect(pokemon.struggle.damageBase).toMatchObject({ short: 'DB4', stab: false });
+  });
+
+  it('removes STAB from a saved Struggle without keeping its DB bonus', () => {
+    const pokemon = normalizePokemon({
+      name: 'Test', level: 10, types: ['Fire'], stats: { HP: 5, atk: 8, spA: 12 }, capabilities: ['Firestarter 1'],
+      struggle: { type: 'Fire', class: 'special', db: 6, damageBase: damageBase(6, true, 4), stabCustomized: true }
+    });
+
+    expect(pokemon.struggle).toMatchObject({ db: 4, damageBase: { short: 'DB4', stab: false, baseDb: 4 } });
+    expect(pokemon.struggle.stabCustomized).toBeUndefined();
   });
 
   it('enables STAB by default for an offensive move of the same type', () => {

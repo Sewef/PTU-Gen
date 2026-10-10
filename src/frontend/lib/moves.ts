@@ -64,7 +64,15 @@ export function ensureStruggle(pokemon: Pokemon) {
   else struggle.class = 'physical';
   
   if (!struggle.ac) struggle.ac = defaults.ac;
-  if (!struggle.damageBase) struggle.damageBase = damageBase(defaults.db);
+  if (struggle.damageBase?.stab) {
+    const db = baseDamageBase(struggle);
+    struggle.db = db;
+    struggle.damageBase = damageBase(db, false, db);
+  } else if (!struggle.damageBase) {
+    struggle.db = defaults.db;
+    struggle.damageBase = damageBase(defaults.db);
+  }
+  delete struggle.stabCustomized;
   pokemon.struggle = struggle;
   return struggle;
 }
