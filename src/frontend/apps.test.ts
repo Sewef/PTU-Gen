@@ -471,6 +471,11 @@ describe('Svelte application surfaces', () => {
     instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } }));
     await tick();
 
+    const moveCard = Array.from(document.querySelectorAll('.move')).find(card => card.textContent?.includes('Leaf Blade'))!;
+    expect(moveCard.querySelector('.section-card-header')?.textContent).toContain('Grass');
+    expect(moveCard.querySelector('.section-card-header')?.textContent).toContain('Physical');
+    expect(moveCard.querySelector('.move-meta-row')?.textContent).not.toContain('Type:');
+    expect(moveCard.querySelector('.move-meta-row')?.textContent).not.toContain('Class:');
     document.querySelector<HTMLButtonElement>('[aria-label="Change Leaf Blade type"]')!.click();
     await tick();
     expect(Array.from(document.querySelectorAll('.type-choice')).map(button => button.textContent)).toContain('Typeless');
