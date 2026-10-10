@@ -348,6 +348,24 @@ describe('Svelte application surfaces', () => {
     expect(onsave).toHaveBeenCalledOnce();
   });
 
+  it('lets an existing move AC be edited', async () => {
+    const onsave = vi.fn();
+    const pokemon = normalizePokemon({
+      id: 25, name: 'Pikachu', level: 12, types: ['Electric'], stats: { HP: 5, atk: 6, def: 4, spA: 7, spD: 5, spe: 8 },
+      moves: [{ name: 'Thunder Shock', type: 'Electric', class: 'Special', ac: 2, damageBase: damageBase(4) }], capabilities: [], skills: {}
+    });
+    instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } }));
+    await tick();
+
+    const ac = document.querySelector<HTMLInputElement>('[aria-label="Thunder Shock AC"]')!;
+    expect(ac.value).toBe('2');
+    ac.value = '4';
+    ac.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(pokemon.moves?.[0].ac).toBe(4);
+    expect(onsave).toHaveBeenCalledOnce();
+  });
+
   it('shows all Double Strike damage outcomes instead of the regular rolls', async () => {
     const pokemon = normalizePokemon({
       id: 236, name: 'Tyrogue', level: 12, types: ['Fighting'], stats: { HP: 5, atk: 8, def: 5, spA: 3, spD: 4, spe: 6 },
