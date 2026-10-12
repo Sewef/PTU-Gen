@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, tick, unmount } from 'svelte';
 import GeneratorApp from './GeneratorApp.svelte';
 import DetailsApp from './DetailsApp.svelte';
+import IncomingDamage from './components/IncomingDamage.svelte';
 import MovesEditor from './components/MovesEditor.svelte';
 import TypesEditor from './components/TypesEditor.svelte';
 import TypeEffectiveness from './components/TypeEffectiveness.svelte';
@@ -326,6 +327,28 @@ describe('Svelte application surfaces', () => {
 
     expect(Array.from(document.querySelectorAll('button')).some(button => button.textContent === 'Roll')).toBe(true);
     expect(Array.from(document.querySelectorAll('button')).some(button => button.textContent === 'Crit')).toBe(true);
+  });
+
+  it('uses combat-stage-adjusted defense for incoming damage', async () => {
+    const pokemon = normalizePokemon({
+      id: 25, name: 'Pikachu', level: 12, types: ['Electric'],
+      stats: { HP: 5, atk: 6, def: 10, spA: 7, spD: 8, spe: 8 },
+      combatStages: { def: 2, spD: -1 },
+      hitPoints: 100,
+      hitPointsMax: 100
+    });
+    instances.push(mount(IncomingDamage, {
+      target: document.getElementById('app')!,
+      props: { pokemon, damageType: 'typeless', onsave: vi.fn() }
+    }));
+    await tick();
+
+    const damageInput = document.querySelector<HTMLInputElement>('input[aria-label="Incoming damage"]')!;
+    damageInput.value = '30';
+    damageInput.dispatchEvent(new Event('input', { bubbles: true }));
+    await tick();
+
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('30 − 14');
   });
 
   it('shows STAB as a toggle that updates the damage base', async () => {

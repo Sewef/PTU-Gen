@@ -2,6 +2,7 @@
   import type { Pokemon } from '../lib/types';
   import { attackingTypes, typeEffectiveness } from '../lib/type-effectiveness';
   import { adjustHitPointsByTick, applyDamageToHitPoints, calculateIncomingDamage, hitPointTick, injuredHitPointMaximum } from '../lib/combat';
+  import { totalStat } from '../lib/stats';
 
   let { pokemon = $bindable(), damageType = $bindable('typeless'), onsave }: {
     pokemon: Pokemon;
@@ -13,7 +14,7 @@
   let category = $state<'physical' | 'special'>('physical');
   const damageTypes = $derived(attackingTypes(pokemon));
   const effectiveness = $derived(Number(typeEffectiveness(pokemon)[damageType] ?? 1));
-  const defense = $derived(Number(pokemon.stats[category === 'physical' ? 'def' : 'spD'] || 0));
+  const defense = $derived(totalStat(pokemon, category === 'physical' ? 'def' : 'spD'));
   const finalDamage = $derived(calculateIncomingDamage(amount ?? 0, defense, effectiveness));
   const tick = $derived(hitPointTick(Number(pokemon.hitPointsMax)));
   const tempHitPoints = $derived(Math.max(0, Math.trunc(Number(pokemon.tempHitPoints) || 0)));
