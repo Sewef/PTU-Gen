@@ -25,7 +25,7 @@ import { createTokenService } from './owlbear/tokens.js';
         panelList,
         historyScope: `owlbear:${OBR.room.id}`,
         sendOwlbearContext: owlbearContext.sendOwlbearContext,
-        schedulePokemonTokenSync: tokenService.schedulePokemonTokenSync
+        unregisterTrackedWindow: tokenService.unregisterTrackedWindow
     });
 
     async function handleOwlbearCommand(event) {

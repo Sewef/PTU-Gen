@@ -36,7 +36,7 @@ function getOwlTrackerState(item) {
 
 export function createTokenService({ OBR, buildImage, owlbearReady }) {
     const trackedTokenWindows = new Map();
-    const tokenSyncTimers = new Map();
+    const trackedTokenStates = new Map();
     const managedTokenIds = new Set();
 
     function serializeToken(item) {
@@ -53,6 +53,25 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         if (!tokenId || !targetWindow) return;
         if (!trackedTokenWindows.has(tokenId)) trackedTokenWindows.set(tokenId, new Set());
         trackedTokenWindows.get(tokenId).add(targetWindow);
+    }
+
+    function unregisterTrackedWindow(targetWindow) {
+        if (!targetWindow) return;
+        trackedTokenWindows.forEach((windows, tokenId) => {
+            windows.delete(targetWindow);
+            if (windows.size === 0) {
+                trackedTokenWindows.delete(tokenId);
+                trackedTokenStates.delete(tokenId);
+            }
+        });
+    }
+
+    function tokenStateFingerprint(item) {
+        return JSON.stringify(serializeToken(item));
+    }
+
+    function rememberTokenState(tokenId, item) {
+        trackedTokenStates.set(tokenId, tokenStateFingerprint(item));
     }
 
     function postTokenState(targetWindow, tokenId, item) {
@@ -72,7 +91,11 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
     function notifyTrackedTokenStates(items) {
         const itemsById = new Map(items.map(item => [item.id, item]));
         trackedTokenWindows.forEach((windows, tokenId) => {
-            windows.forEach(targetWindow => postTokenState(targetWindow, tokenId, itemsById.get(tokenId)));
+            const item = itemsById.get(tokenId);
+            const fingerprint = tokenStateFingerprint(item);
+            if (trackedTokenStates.get(tokenId) === fingerprint) return;
+            trackedTokenStates.set(tokenId, fingerprint);
+            windows.forEach(targetWindow => postTokenState(targetWindow, tokenId, item));
         });
     }
 
@@ -131,6 +154,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         if (existing.length > 0) {
             managedTokenIds.add(source.id);
             registerTrackedToken(source.id, targetWindow);
+            rememberTokenState(source.id, existing[0]);
             return existing[0];
         }
 
@@ -149,6 +173,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         if (!inserted) throw new Error('Owlbear did not confirm the inserted token.');
         managedTokenIds.add(inserted.id);
         registerTrackedToken(inserted.id, targetWindow);
+        rememberTokenState(inserted.id, inserted);
         return inserted;
     }
 
@@ -157,6 +182,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         registerTrackedToken(tokenId, targetWindow);
         const [item] = await OBR.scene.items.getItems([tokenId]);
         if (item) managedTokenIds.add(tokenId);
+        rememberTokenState(tokenId, item);
         return item || null;
     }
 
@@ -214,16 +240,18 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         return updated;
     }
 
-    async function ensurePlayerOwnedOwlTrackersVisibility(player) {
-        if (!player?.id) return;
+    async function ensurePlayerOwnedOwlTrackersVisibility(playerOrPlayers) {
+        const players = (Array.isArray(playerOrPlayers) ? playerOrPlayers : [playerOrPlayers])
+            .filter(player => player?.id);
+        if (players.length === 0) return;
 
         await requireOwlbearScene();
-        const trackersHidden = player.role === 'GM';
+        const hiddenByPlayerId = new Map(players.map(player => [player.id, player.role === 'GM']));
         const items = await OBR.scene.items.getItems(item => (
-            item.createdUserId === player.id &&
+            hiddenByPlayerId.has(item.createdUserId) &&
             (item.metadata?.[PTU_TOKEN_METADATA_KEY] === true || managedTokenIds.has(item.id)) &&
             Array.isArray(item.metadata?.[OWL_TRACKERS_METADATA_KEY]) &&
-            item.metadata?.[OWL_TRACKERS_HIDDEN_METADATA_KEY] !== trackersHidden
+            item.metadata?.[OWL_TRACKERS_HIDDEN_METADATA_KEY] !== hiddenByPlayerId.get(item.createdUserId)
         ));
         if (items.length === 0) return;
 
@@ -231,7 +259,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
             ownedItems.forEach(item => {
                 item.metadata = {
                     ...(item.metadata || {}),
-                    [OWL_TRACKERS_HIDDEN_METADATA_KEY]: trackersHidden
+                    [OWL_TRACKERS_HIDDEN_METADATA_KEY]: hiddenByPlayerId.get(item.createdUserId)
                 };
             });
         });
@@ -270,7 +298,10 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         );
         const injuriesChanged = trackersEnabled && injuriesTracker && Number(injuriesTracker.value) !== desiredInjuries;
         const tempHpChanged = trackersEnabled && Array.isArray(trackers) && (!tempHpTracker || Number(tempHpTracker.value) !== desiredTempHp);
-        if (!nameChanged && !imageChanged && !hpChanged && !injuriesChanged && !tempHpChanged) return existing;
+        if (!nameChanged && !imageChanged && !hpChanged && !injuriesChanged && !tempHpChanged) {
+            rememberTokenState(tokenId, existing);
+            return existing;
+        }
 
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
@@ -309,19 +340,6 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         return updated || existing;
     }
 
-    function schedulePokemonTokenSync(pokemon) {
-        const tokenId = String(pokemon?.owlbear?.tokenId || '').trim();
-        if (!tokenId || !trackedTokenWindows.has(tokenId)) return;
-
-        clearTimeout(tokenSyncTimers.get(tokenId));
-        tokenSyncTimers.set(tokenId, setTimeout(() => {
-            tokenSyncTimers.delete(tokenId);
-            syncPokemonToSceneToken(pokemon).catch(error => {
-                console.error('Unable to synchronize the Owlbear token:', error);
-            });
-        }, 300));
-    }
-
     return {
         insertSceneToken,
         getSceneToken,
@@ -331,7 +349,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         ensurePlayerOwnedOwlTrackersVisibility,
         syncPokemonToSceneToken,
         notifyTrackedTokenStates,
-        schedulePokemonTokenSync,
+        unregisterTrackedWindow,
         serializeToken
     };
 }

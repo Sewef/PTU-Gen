@@ -189,7 +189,6 @@ describe('Owlbear token service', () => {
   });
 
   it('synchronizes HP and injuries from the sheet to Owl Trackers', async () => {
-    vi.useFakeTimers();
     const trackers: any[] = [
       { name: 'HP', value: 20, max: 40 },
       { name: 'Injuries', value: 1 },
@@ -213,12 +212,11 @@ describe('Owlbear token service', () => {
     };
     const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
     await service.getSceneToken('token-1', {});
-    service.schedulePokemonTokenSync({
+    await service.syncPokemonToSceneToken({
       name: 'Testmon', nickname: '', hitPoints: 17, hitPointsMax: 40, tempHitPoints: 9,
       captureState: { standardCounts: { injuries: 4 } },
       owlbear: { tokenId: 'token-1', trackers: 'owltrackers' }
     });
-    await vi.advanceTimersByTimeAsync(301);
 
     const updatedTrackers = item.metadata[OWL_TRACKERS_METADATA_KEY];
     expect(updatedTrackers[0]).toMatchObject({ value: 17, max: 40 });
@@ -260,7 +258,6 @@ describe('Owlbear token service', () => {
   });
 
   it('synchronizes a transformed sprite without requiring Owl Trackers', async () => {
-    vi.useFakeTimers();
     const item: any = { id: 'token-1', name: 'Lucario', image: { url: 'base.png', width: 96, height: 96 }, metadata: {} };
     const originalImage = item.image;
     const OBR = {
@@ -274,15 +271,66 @@ describe('Owlbear token service', () => {
     };
     const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
     await service.getSceneToken('token-1', {});
-    service.schedulePokemonTokenSync({
+    await service.syncPokemonToSceneToken({
       name: 'Lucario', imageUrl: 'mega.png', captureState: { standardCounts: {} },
       owlbear: { tokenId: 'token-1', trackers: 'none' }
     });
-    await vi.advanceTimersByTimeAsync(301);
 
     expect(item.image).toMatchObject({ url: 'mega.png', width: 96, height: 96 });
     expect(item.image).toBe(originalImage);
     expect(OBR.scene.items.updateItems).toHaveBeenCalledOnce();
+  });
+
+  it('notifies tracked windows only when their token state changes', async () => {
+    const item: any = { id: 'token-1', name: 'Testmon', visible: true, metadata: {} };
+    const targetWindow = { postMessage: vi.fn() };
+    const OBR = {
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: { getItems: vi.fn(async () => [item]) }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+    await service.getSceneToken('token-1', targetWindow);
+
+    service.notifyTrackedTokenStates([item]);
+    expect(targetWindow.postMessage).not.toHaveBeenCalled();
+
+    item.visible = false;
+    service.notifyTrackedTokenStates([item]);
+    service.notifyTrackedTokenStates([item]);
+    expect(targetWindow.postMessage).toHaveBeenCalledOnce();
+
+    service.unregisterTrackedWindow(targetWindow);
+    item.visible = true;
+    service.notifyTrackedTokenStates([item]);
+    expect(targetWindow.postMessage).toHaveBeenCalledOnce();
+  });
+
+  it('checks tracker visibility for multiple players with one scene read', async () => {
+    const items: any[] = [
+      { id: 'token-1', createdUserId: 'player-1', metadata: { [PTU_TOKEN_METADATA_KEY]: true, [OWL_TRACKERS_METADATA_KEY]: [], [OWL_TRACKERS_HIDDEN_METADATA_KEY]: true } },
+      { id: 'token-2', createdUserId: 'gm-1', metadata: { [PTU_TOKEN_METADATA_KEY]: true, [OWL_TRACKERS_METADATA_KEY]: [], [OWL_TRACKERS_HIDDEN_METADATA_KEY]: false } }
+    ];
+    const OBR = {
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: {
+          getItems: vi.fn(async (filter: (item: any) => boolean) => items.filter(filter)),
+          updateItems: vi.fn(async (ids: string[], update: (ownedItems: any[]) => void) => update(items.filter(item => ids.includes(item.id))))
+        }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+
+    await service.ensurePlayerOwnedOwlTrackersVisibility([
+      { id: 'player-1', role: 'PLAYER' },
+      { id: 'gm-1', role: 'GM' }
+    ]);
+
+    expect(OBR.scene.items.getItems).toHaveBeenCalledOnce();
+    expect(items[0].metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(false);
+    expect(items[1].metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(true);
   });
 
   it('preserves a manually replaced image and token geometry when synchronizing', async () => {

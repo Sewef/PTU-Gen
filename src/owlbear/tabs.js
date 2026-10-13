@@ -23,7 +23,7 @@ function getTabLabel(pokemon) {
     return `${pokemon.nickname || pokemon.name} · Lv. ${pokemon.level}`;
 }
 
-export function createTabManager({ tabList, panelList, historyScope, sendOwlbearContext, schedulePokemonTokenSync }) {
+export function createTabManager({ tabList, panelList, historyScope, sendOwlbearContext, unregisterTrackedWindow }) {
     let tabs = [];
     let activeId = 'home';
     const scopeKey = encodeURIComponent(historyScope);
@@ -137,7 +137,10 @@ export function createTabManager({ tabList, panelList, historyScope, sendOwlbear
         const [tab] = tabs.splice(index, 1);
         localStorage.removeItem(tab.storageKey);
         document.querySelector(`[data-tab-id="${CSS.escape(id)}"]`)?.closest('.extension-tab')?.remove();
-        document.querySelector(`[data-panel-id="${CSS.escape(id)}"]`)?.remove();
+        const panel = document.querySelector(`[data-panel-id="${CSS.escape(id)}"]`);
+        const targetWindow = panel?.querySelector('iframe')?.contentWindow;
+        if (targetWindow) unregisterTrackedWindow(targetWindow);
+        panel?.remove();
 
         if (activeId === id) {
             switchTab(tabs[index - 1]?.id || tabs[index]?.id || 'home');
@@ -182,26 +185,31 @@ export function createTabManager({ tabList, panelList, historyScope, sendOwlbear
         const tab = tabs.find(item => item.storageKey === storageKey);
         if (!tab || !pokemon || typeof pokemon !== 'object') return;
 
-        tab.title = getTabLabel(pokemon);
-        tab.icon = getPokemonIcon(pokemon);
-        tab.hpPercent = getHpPercentage(pokemon);
+        const title = getTabLabel(pokemon);
+        const iconUrl = getPokemonIcon(pokemon);
+        const hpPercent = getHpPercentage(pokemon);
+        const tabChanged = tab.title !== title || tab.icon !== iconUrl || tab.hpPercent !== hpPercent;
+        tab.title = title;
+        tab.icon = iconUrl;
+        tab.hpPercent = hpPercent;
         const tabButton = document.querySelector(`[data-tab-id="${CSS.escape(tab.id)}"]`);
         const tabElement = tabButton?.closest('.extension-tab');
         const label = tabButton?.querySelector('.tab-label');
         const icon = tabButton?.querySelector('.tab-icon');
         const close = tabElement?.querySelector('.tab-close');
         const healthValue = tabButton?.querySelector('.tab-health-value');
-        if (label) label.textContent = tab.title;
-        if (icon) icon.src = tab.icon;
-        if (close) {
+        if (label && label.textContent !== tab.title) label.textContent = tab.title;
+        if (icon && icon.src !== tab.icon) icon.src = tab.icon;
+        if (close && close.title !== `Close ${tab.title}`) {
             close.setAttribute('aria-label', `Close ${tab.title}`);
             close.title = `Close ${tab.title}`;
         }
-        if (healthValue) healthValue.style.setProperty('--hp-percent', `${tab.hpPercent}%`);
+        if (healthValue && healthValue.style.getPropertyValue('--hp-percent') !== `${tab.hpPercent}%`) {
+            healthValue.style.setProperty('--hp-percent', `${tab.hpPercent}%`);
+        }
         const frame = document.querySelector(`[data-panel-id="${CSS.escape(tab.id)}"] iframe`);
-        if (frame) frame.title = `Details for ${tab.title}`;
-        persistTabs();
-        schedulePokemonTokenSync(pokemon);
+        if (frame && frame.title !== `Details for ${tab.title}`) frame.title = `Details for ${tab.title}`;
+        if (tabChanged) persistTabs();
     }
 
     function setupTabKeyboard() {

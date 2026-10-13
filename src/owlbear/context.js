@@ -6,6 +6,7 @@ export function createOwlbearContext({
 }) {
     let currentPlayer = null;
     let partyPlayers = [];
+    const playerRoles = new Map();
 
     function getOwlbearContextMessage() {
         return {
@@ -27,8 +28,14 @@ export function createOwlbearContext({
         });
     }
 
-    function handlePlayerRole(player) {
-        ensurePlayerOwnedOwlTrackersVisibility(player).catch(error => {
+    function handlePlayerRoles(players) {
+        const changedPlayers = players.filter(player => {
+            if (!player?.id || playerRoles.get(player.id) === player.role) return false;
+            playerRoles.set(player.id, player.role);
+            return true;
+        });
+        if (changedPlayers.length === 0) return;
+        ensurePlayerOwnedOwlTrackersVisibility(changedPlayers).catch(error => {
             console.error('Unable to update Owl Trackers visibility after a role change:', error);
         });
     }
@@ -53,20 +60,19 @@ export function createOwlbearContext({
                     role: currentPlayerRole
                 };
                 partyPlayers = players.filter(player => player.id !== currentPlayer.id);
-                handlePlayerRole(currentPlayer);
-                partyPlayers.forEach(handlePlayerRole);
+                handlePlayerRoles([currentPlayer, ...partyPlayers]);
                 broadcastOwlbearContext();
 
                 OBR.party.onChange(players => {
                     partyPlayers = players.filter(player => player.id !== currentPlayer.id);
-                    players.forEach(handlePlayerRole);
+                    handlePlayerRoles(players);
                     broadcastOwlbearContext();
                 });
 
                 OBR.player.onChange(player => {
-                    currentPlayer = { id: player.id, name: player.name };
+                    currentPlayer = { id: player.id, name: player.name, role: player.role };
                     partyPlayers = partyPlayers.filter(partyPlayer => partyPlayer.id !== player.id);
-                    handlePlayerRole(player);
+                    handlePlayerRoles([player]);
                     broadcastOwlbearContext();
                 });
 

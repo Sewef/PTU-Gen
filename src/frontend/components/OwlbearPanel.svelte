@@ -17,6 +17,23 @@
   let formStateInitialized = false;
   let previousBattleOnlyFormIcon = '';
   let linked = $state(Boolean(pokemon.owlbear.tokenId));
+  let tokenStateLoaded = $state(!Boolean(pokemon.owlbear.tokenId));
+  let lastConfirmedSyncKey = '';
+
+  function currentSyncKey() {
+    return JSON.stringify([
+      String(pokemon.owlbear.tokenId || '').trim(),
+      pokemon.owlbear.trackers,
+      String(pokemon.name || 'Pokémon'),
+      String(pokemon.nickname || ''),
+      Boolean(pokemon.shiny),
+      Number(pokemon.hitPoints),
+      Number(pokemon.hitPointsMax),
+      Math.max(0, Math.trunc(Number(pokemon.tempHitPoints) || 0)),
+      Math.max(0, Math.trunc(Number(pokemon.captureState?.standardCounts?.injuries) || 0)),
+      String(pokemon.activeBattleOnlyFormIcon || '')
+    ]);
+  }
 
   onMount(() => {
     if (!embedded) return;
@@ -43,7 +60,11 @@
     previousBattleOnlyFormIcon = battleOnlyFormIcon;
     formStateInitialized = true;
 
-    if (!embedded || !tokenId) return;
+    const syncKey = JSON.stringify([
+      tokenId, trackers, name, nickname, shiny, hitPoints, hitPointsMax,
+      tempHitPoints, injuries, battleOnlyFormIcon
+    ]);
+    if (!embedded || !tokenId || !tokenStateLoaded || syncKey === lastConfirmedSyncKey) return;
 
     const timer = window.setTimeout(() => {
       // Keep this payload plain: Svelte's reactive proxies cannot be cloned by postMessage.
@@ -81,11 +102,15 @@
   });
 
   function confirm(token: Partial<OwlbearTokenState> & { id?: string }) {
-    if (!applyTokenToPokemon(pokemon, token)) return;
+    const id = String(token.id || token.tokenId || '');
+    if (!id) return;
+    const changed = applyTokenToPokemon(pokemon, token);
     linked = true;
+    tokenStateLoaded = true;
+    lastConfirmedSyncKey = currentSyncKey();
     failed = false;
     status = 'Token linked';
-    onsave();
+    if (changed) onsave();
   }
 
   function applyTokenState(token: OwlbearTokenState) {
@@ -105,6 +130,8 @@
     if (pokemon.owlbear.tokenId !== expectedTokenId) return;
     pokemon.owlbear.tokenId = '';
     linked = false;
+    tokenStateLoaded = true;
+    lastConfirmedSyncKey = '';
     failed = true;
     status = 'Token no longer in scene';
     onsave();
@@ -132,7 +159,10 @@
 
   function refresh() {
     const tokenId = String(pokemon.owlbear.tokenId || '');
-    if (tokenId) void action(() => requestOwlbear('get-token-state', { tokenId }), tokenId);
+    if (tokenId) {
+      void action(() => requestOwlbear('get-token-state', { tokenId }), tokenId)
+        .finally(() => { tokenStateLoaded = true; });
+    }
   }
   function insert() {
     const builder = (window as any).buildOwlbearItemWithImage;
