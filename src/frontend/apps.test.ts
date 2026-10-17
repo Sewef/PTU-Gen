@@ -133,7 +133,7 @@ describe('Svelte application surfaces', () => {
       id: 25, name: 'Pikachu', level: 12, types: ['Electric'], stats: { HP: 7, atk: 10, def: 6, spA: 8, spD: 7, spe: 10 },
       baseStats: { HP: 5, Attack: 6, Defense: 4, 'Special Attack': 7, 'Special Defense': 5, Speed: 8 },
       baseWithNature: { HP: 5, atk: 8, def: 4, spA: 7, spD: 5, spe: 6 }, nature: { name: 'Brave', raise: 'Attack', lower: 'Speed' },
-      moves: [], abilities: [{ name: 'Static', sourceTier: 'basic', sourceSlot: 'Basic Ability 1' }], capabilities: ['Overland 5', 'Underdog'], skills: { Acrobatics: '3d6+2' }, pokeEdges: [], otherInfo: { sizeCategory: 'Small', hatch_rate: 10, gender: 'Female' },
+      moves: [], abilities: [{ name: 'Static', frequency: 'Static', target: 'The user', effect: 'Paralyzes on contact.', customRule: 'Also works in rain.', requirements: ['Electric Type', 'Novice Focus'], sourceTier: 'basic', sourceSlot: 'Basic Ability 1' }], capabilities: ['Overland 5', 'Underdog'], skills: { Acrobatics: '3d6+2' }, pokeEdges: [], otherInfo: { sizeCategory: 'Small', hatch_rate: 10, gender: 'Female' },
       battleOnlyForms: [{ name: 'Charged Form', icon: '25-charged', types: ['Unchanged'], stats: { atk: 4, def: 2, spA: 2, spe: 2 }, ability: { name: 'Adaptability' } }],
       owlbear: { trackers: 'owltrackers', initiative: 'none', diceRoller: 'justdices', visible: true }
     }));
@@ -168,6 +168,10 @@ describe('Svelte application surfaces', () => {
     expect(skillRollButton?.textContent).toBe('Roll');
     expect(skillRollButton?.classList.contains('copy-roll-formula-btn')).toBe(true);
     expect(document.querySelector('.ability-source-slot')?.textContent).toContain('Basic Ability 1');
+    const abilityCard = document.querySelector('.section-card .ability-property')?.parentElement;
+    expect(abilityCard?.textContent).toContain('Target: The user');
+    expect(abilityCard?.textContent).toContain('Custom Rule: Also works in rain.');
+    expect(abilityCard?.textContent).toContain('Requirements: Electric Type, Novice Focus');
     const capabilitiesHeading = Array.from(document.querySelectorAll('.section-title')).find(heading => heading.textContent?.includes('Capabilities'))!;
     const battleFormsSection = document.querySelector('.battle-only-forms-section');
     expect(capabilitiesHeading.compareDocumentPosition(battleFormsSection!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -160,7 +160,10 @@ function setCaseInsensitive(record, name, value) {
 
 function templateAbilityToDatabase(name, value) {
   const ability = requireObject(value, `Ability "${name}"`);
+  const templateFields = new Set(['frequency', 'trigger', 'effect', 'bonus', 'special', 'note', 'table']);
+  const additionalFields = Object.fromEntries(Object.entries(ability).filter(([key]) => !templateFields.has(key)));
   return {
+    ...additionalFields,
     Name: name,
     Frequency: requireString(ability.frequency, `Ability "${name}".frequency`),
     ...(ability.trigger === undefined ? {} : { Trigger: String(ability.trigger) }),
@@ -1636,16 +1639,20 @@ class PokemonGenerator {
    * Normalize ability object fields to camelCase
    */
   static normalizeAbilityFields(abilityName, definition) {
-    return {
-      name: abilityName,
-      frequency: definition.Frequency,
-      trigger: definition.Trigger,
-      effect: definition.Effect,
-      bonus: definition.Bonus,
-      special: definition.Special,
-      note: definition.Note,
-      table: definition.table || definition.Table
+    const knownFields = {
+      Name: 'name', Frequency: 'frequency', Trigger: 'trigger', Target: 'target', Effect: 'effect',
+      Bonus: 'bonus', Special: 'special', Note: 'note', Table: 'table'
     };
+    const normalized = {};
+
+    Object.entries(definition || {}).forEach(([key, value]) => {
+      if (key === 'Name' || key === 'name') return;
+      const normalizedKey = knownFields[key]
+        || key.replace(/[ _-]+(.)/g, (_, character) => character.toUpperCase()).replace(/^./, character => character.toLowerCase());
+      normalized[normalizedKey] = value;
+    });
+
+    return { name: abilityName, ...normalized };
   }
 
   /**
@@ -2401,21 +2408,15 @@ class PokemonGenerator {
         // Format: Object with ability names as keys
         abilitiesList = Object.entries(abilitiesData)
           .filter(([key]) => isNaN(parseInt(key))) // Skip numeric keys
-          .map(([name, data]) => ({
-            Name: name,
-            Frequency: data['Frequency'] || 'N/A',
-            Effect: data['Effect'] || 'N/A',
-            table: data.table || data.Table
-          }));
+          .map(([name, data]) => ({ Name: name, ...data }));
       }
 
       // Organize all abilities
       const result = {
         all: abilitiesList.map(ability => ({
-          name: ability.Name || ability.name,
-          frequency: ability.Frequency || ability.frequency || 'N/A',
-          effect: ability.Effect || ability.effect || 'N/A',
-          table: ability.table || ability.Table
+          frequency: 'N/A',
+          effect: 'N/A',
+          ...this.normalizeAbilityFields(ability.Name || ability.name, ability)
         }))
       };
 

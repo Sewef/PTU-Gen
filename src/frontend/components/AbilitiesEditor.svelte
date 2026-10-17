@@ -17,6 +17,28 @@
   function blank() { pokemon.abilities!.push({ name: `Custom Ability ${pokemon.abilities!.length + 1}`, frequency: '', effect: '', usageCount: 0, editable: true }); onsave(); }
   function remove(index: number) { pokemon.abilities!.splice(index, 1); onsave(); }
   function usage(ability: any, index: number) { ability.usageCount = ability.usageCount === index + 1 ? index : index + 1; onsave(); }
+  const internalFields = new Set(['name', 'editable', 'usageCount', 'sourceTier', 'sourceSlot', 'table']);
+  const fieldOrder = ['frequency', 'trigger', 'target', 'effect', 'bonus', 'special', 'note'];
+  function hasValue(value: any) { return value !== undefined && value !== null && value !== ''; }
+  function displayFields(ability: any) {
+    const entries = Object.entries(ability || {}).filter(([key, value]) => !internalFields.has(key) && hasValue(value));
+    return entries.sort(([left], [right]) => {
+      const leftIndex = fieldOrder.indexOf(left);
+      const rightIndex = fieldOrder.indexOf(right);
+      return (leftIndex < 0 ? fieldOrder.length : leftIndex) - (rightIndex < 0 ? fieldOrder.length : rightIndex);
+    });
+  }
+  function additionalEditableFields(ability: any) { return displayFields(ability).filter(([key]) => !['frequency', 'effect'].includes(key)); }
+  function fieldLabel(key: string) {
+    const label = key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ');
+    return label.replace(/\b\w/g, character => character.toUpperCase());
+  }
+  function fieldValue(value: any) {
+    if (Array.isArray(value) && value.every(item => item === null || ['string', 'number', 'boolean'].includes(typeof item))) return value.join(', ');
+    if (typeof value === 'object') return JSON.stringify(value, null, 2);
+    return String(value);
+  }
+  function hasRowsTable(table: any) { return Array.isArray(table?.rows) && table.rows.length > 0; }
 </script>
 
 <div class="section">
@@ -29,16 +51,18 @@
         {#if ability.editable}
           <label class="section-card-field"><strong>Frequency:</strong><input bind:value={ability.frequency} onchange={onsave} /></label>
           <label class="section-card-field"><strong>Effect:</strong><textarea bind:value={ability.effect} onchange={onsave}></textarea></label>
+          {#each additionalEditableFields(ability) as [key, value]}
+            <div class="section-card-field ability-extra-field"><strong>{fieldLabel(key)}:</strong> <span class:structured-value={typeof value === 'object'}>{fieldValue(value)}</span></div>
+          {/each}
         {:else}
-          {#if ability.frequency}<div class="section-card-field"><strong>Frequency:</strong> {ability.frequency}</div>{/if}
-          {#if ability.trigger}<div class="section-card-field"><strong>Trigger:</strong> {ability.trigger}</div>{/if}
-          {#if ability.effect}<div class="section-card-field"><strong>Effect:</strong> {ability.effect}</div>{/if}
-          {#if ability.bonus}<div class="section-card-field"><strong>Bonus:</strong> {ability.bonus}</div>{/if}
-          {#if ability.special}<div class="section-card-field"><strong>Special:</strong> {ability.special}</div>{/if}
-          {#if Array.isArray(ability.table?.rows) && ability.table.rows.length > 1}
-            <div class="ability-table-wrap"><table class="ability-table"><thead><tr>{#each ability.table.rows[0] as header}<th>{header}</th>{/each}</tr></thead><tbody>{#each ability.table.rows.slice(1) as row}<tr>{#each row as value}<td>{value}</td>{/each}</tr>{/each}</tbody></table></div>
-          {/if}
-          {#if ability.note}<div class="section-card-field note"><strong>Note:</strong> {ability.note}</div>{/if}
+          {#each displayFields(ability) as [key, value]}
+            <div class="section-card-field ability-property" class:note={key === 'note'}><strong>{fieldLabel(key)}:</strong> <span class:structured-value={typeof value === 'object'}>{fieldValue(value)}</span></div>
+          {/each}
+        {/if}
+        {#if hasRowsTable(ability.table)}
+          <div class="ability-table-wrap"><table class="ability-table"><thead><tr>{#each ability.table.rows[0] as header}<th>{header}</th>{/each}</tr></thead><tbody>{#each ability.table.rows.slice(1) as row}<tr>{#each row as value}<td>{value}</td>{/each}</tr>{/each}</tbody></table></div>
+        {:else if hasValue(ability.table)}
+          <div class="section-card-field ability-property"><strong>Table:</strong> <span class="structured-value">{fieldValue(ability.table)}</span></div>
         {/if}
         {#if ability.frequency}<div class="usage-tracker"><span class="usage-label">Uses:</span><div class="usage-boxes">{#each Array(frequencyUses(ability.frequency)) as _, use}<button type="button" aria-label={`Use ${use + 1}`} class:checked={(ability.usageCount || 0) > use} class="usage-checkbox" onclick={() => usage(ability, use)}></button>{/each}</div></div>{/if}
       </article>
@@ -46,3 +70,7 @@
   </div>
 </div>
 {#if picker}<PickerModal title={loading ? 'Loading abilities…' : globalList ? 'Add Ability — Global List' : 'Add Ability — Species List'} {items} selected={(pokemon.abilities || []).map(item => item.name)} actionLabel={globalList ? 'Show species abilities' : 'Search all abilities'} actionDisabled={loading} onaction={() => loadPickerItems(!globalList)} onpick={pick} onclose={() => picker = false} />{/if}
+
+<style>
+  .structured-value { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
