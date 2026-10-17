@@ -393,6 +393,55 @@ describe('Svelte application surfaces', () => {
     expect(onsave).toHaveBeenCalledOnce();
   });
 
+  it('lays out custom moves like regular moves with compact fields', async () => {
+    const onsave = vi.fn();
+    const pokemon = normalizePokemon({
+      id: 25, name: 'Pikachu', level: 12, types: ['Electric'], stats: { HP: 5, atk: 6, def: 4, spA: 7, spD: 5, spe: 8 },
+      moves: [], capabilities: [], skills: {}
+    });
+    const editor = mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } });
+    instances.push(editor);
+    await tick();
+
+    const blank = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Blank'))!;
+    blank.click();
+    await tick();
+
+    expect(pokemon.moves?.[0]).toMatchObject({ type: 'Typeless', class: 'Physical', db: 4, damageBase: { short: 'DB4', stab: false }, editable: true });
+    await unmount(editor);
+    instances = [];
+    document.body.innerHTML = '<div id="app"></div>';
+    instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } }));
+    await tick();
+    const customCard = document.querySelector<HTMLElement>('.custom-move-heading')!.closest<HTMLElement>('.section-card.move')!;
+    const heading = customCard.querySelector('.custom-move-heading')!;
+    expect(Array.from(heading.children).map(element => [
+      element.classList.contains('custom-move-name-input'),
+      element.classList.contains('move-type-picker'),
+      element.classList.contains('custom-move-class-input')
+    ])).toEqual([
+      [true, false, false],
+      [false, true, false],
+      [false, false, true]
+    ]);
+    expect(customCard.querySelector('.move-type-picker')?.textContent).toBe('Typeless');
+    const classSelect = customCard.querySelector<HTMLSelectElement>('.custom-move-class-input')!;
+    expect(classSelect.classList.contains('move-badge')).toBe(true);
+    expect(classSelect.classList.contains('move-class-physical')).toBe(true);
+    expect(Array.from(classSelect.options).map(option => option.value)).toEqual(['Physical', 'Special', 'Status', 'Versatile']);
+    expect(classSelect.value).toBe('Physical');
+    const range = customCard.querySelector('.custom-move-meta-row .section-card-field:first-child')!;
+    const ac = customCard.querySelector<HTMLInputElement>('.custom-move-ac-input')!;
+    expect(range.textContent).toContain('Range:');
+    expect(range.compareDocumentPosition(ac) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const frequency = customCard.querySelector<HTMLInputElement>('.custom-move-frequency-input')!;
+    expect(ac.compareDocumentPosition(frequency) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const dbBand = customCard.querySelector('.db-field')!;
+    expect(dbBand.querySelector('.db-identity')?.textContent).toContain('DB4STAB');
+    expect(Array.from(dbBand.querySelectorAll('.copy-roll-formula-btn')).map(button => button.textContent)).toEqual(['Copy', 'Crit']);
+    expect(dbBand.querySelector('.db-formula')?.textContent).toBe('1d8+6+6');
+  });
+
   it('shows all Double Strike damage outcomes instead of the regular rolls', async () => {
     const pokemon = normalizePokemon({
       id: 236, name: 'Tyrogue', level: 12, types: ['Fighting'], stats: { HP: 5, atk: 8, def: 5, spA: 3, spD: 4, spe: 6 },

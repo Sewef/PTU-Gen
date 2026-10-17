@@ -21,7 +21,7 @@
   async function loadPickerItems(all = false) { loading = true; try { items = flatten(all ? await allMoves(pokemon) : await availableMoves(pokemon)); globalList = all; } finally { loading = false; } }
   async function openPicker() { picker = true; await loadPickerItems(false); }
   function pick(item: any) { const index = pokemon.moves!.findIndex(move => move.name === item.name); if (index >= 0) pokemon.moves!.splice(index, 1); else pokemon.moves!.push(setDefaultStab(pokemon, { ...item, damageBase: item.damageBase ? { ...item.damageBase } : item.damageBase, usageCount: 0 })); onsave(); }
-  function blank() { pokemon.moves!.push({ name: `Custom Move ${pokemon.moves!.length + 1}`, type: '', frequency: '', class: '', range: '', ac: '', effect: '', usageCount: 0, editable: true }); onsave(); }
+  function blank() { pokemon.moves!.push({ name: `Custom Move ${pokemon.moves!.length + 1}`, type: 'Typeless', frequency: '', class: 'Physical', range: '', ac: '', db: 4, damageBase: damageBase(4), effect: '', usageCount: 0, editable: true }); onsave(); }
   function remove(index: number) { pokemon.moves!.splice(index, 1); onsave(); }
   function usage(move: any, index: number) { move.usageCount = move.usageCount === index + 1 ? index : index + 1; onsave(); }
   function adjustDb(move: any, delta: number) {
@@ -56,6 +56,19 @@
   }
   function openRangeEditor(move: any) { rangeTarget = move; }
   function toggleClass(move: any) { const value = String(move.class || '').toLowerCase(); if (value === 'physical' || value === 'special') { move.class = value === 'physical' ? 'special' : 'physical'; onsave(); } }
+  function changeCustomClass(move: any, moveClass: string) {
+    move.class = moveClass;
+    if (!move.stabCustomized && move.damageBase) {
+      if (moveClass === 'Status' && move.damageBase.stab) {
+        const db = baseDamageBase(move);
+        move.db = db;
+        move.damageBase = damageBase(db, false, db);
+      } else {
+        setDefaultStab(pokemon, move);
+      }
+    }
+    onsave();
+  }
   async function useFormula(move: any, formula: string | null, variant: string) {
     if (!formula) return;
     const key = `${move.name || 'move'}:${variant}`;
@@ -119,43 +132,44 @@
     </article>
     {#each pokemon.moves || [] as move, index}
       <article class="section-card move type-{slug(move.type)}">
-        <div class="section-card-header">{#if move.editable}<div class="section-card-name"><input class="custom-move-name-input" bind:value={move.name} onchange={onsave} /><button type="button" class="move-badge type-{slug(move.type)} move-type-picker" aria-label={`Change ${move.name} type`} onclick={() => openTypePicker(move)}>{move.type || 'Select type'}</button><input class="custom-move-class-input" aria-label={`${move.name} class`} placeholder="Class" bind:value={move.class} onchange={onsave} /></div>{:else}<div class="section-card-name">{move.name}{#if move.type}<button type="button" class="move-badge type-{slug(move.type)} move-type-picker" aria-label={`Change ${move.name} type`} onclick={() => openTypePicker(move)}>{move.type}</button>{/if}{#if move.class}<button type="button" class="move-badge move-class-{slug(move.class)}" onclick={() => toggleClass(move)}>{move.class}</button>{/if}</div>{/if}<button type="button" class="remove-move-btn" onclick={() => remove(index)}>✕ Remove</button></div>
-        {#if move.editable}<div class="editable-grid">
-          {#each ['frequency', 'ac'] as field}<label class="section-card-field"><strong>{field === 'ac' ? 'AC' : field[0].toUpperCase() + field.slice(1)}:</strong><input bind:value={move[field]} onchange={onsave} /></label>{/each}
-          <div class="section-card-field"><strong>Range:</strong> {move.range || 'Add range keywords'} <button type="button" class="edit-bn range-edit-bn" aria-label={`Edit ${move.name} range keywords`} onclick={() => openRangeEditor(move)}>✎</button></div>
-          <label class="section-card-field wide"><strong>Effect:</strong><textarea bind:value={move.effect} onchange={onsave}></textarea></label>
-        </div>{:else}
+        <div class="section-card-header">{#if move.editable}<div class="section-card-name custom-move-heading"><input class="custom-move-name-input" aria-label="Custom move name" bind:value={move.name} onchange={onsave} /><button type="button" class="move-badge type-{slug(move.type)} move-type-picker" aria-label={`Change ${move.name} type`} onclick={() => openTypePicker(move)}>{move.type || 'Typeless'}</button><select class="move-badge custom-move-class-input move-class-{slug(move.class)}" aria-label={`${move.name} class`} value={move.class} onchange={(event) => changeCustomClass(move, event.currentTarget.value)}>{#each ['Physical', 'Special', 'Status', 'Versatile'] as moveClass}<option value={moveClass}>{moveClass}</option>{/each}</select></div>{:else}<div class="section-card-name">{move.name}{#if move.type}<button type="button" class="move-badge type-{slug(move.type)} move-type-picker" aria-label={`Change ${move.name} type`} onclick={() => openTypePicker(move)}>{move.type}</button>{/if}{#if move.class}<button type="button" class="move-badge move-class-{slug(move.class)}" onclick={() => toggleClass(move)}>{move.class}</button>{/if}</div>{/if}<button type="button" class="remove-move-btn" onclick={() => remove(index)}>✕ Remove</button></div>
+        {#if move.editable}
+          <div class="move-meta-row custom-move-meta-row"><div class="section-card-field"><strong>Range:</strong> {move.range || 'Add range keywords'} <button type="button" class="edit-bn range-edit-bn" aria-label={`Edit ${move.name} range keywords`} onclick={() => openRangeEditor(move)}>✎</button></div><label class="section-card-field"><strong>AC:</strong> <input class="struggle-ac-input custom-move-ac-input" aria-label={`${move.name} AC`} type="number" min="1" max="20" value={move.ac} onchange={(event) => { move.ac = event.currentTarget.value === '' ? '' : Number(event.currentTarget.value); onsave(); }} /></label></div>
+          <label class="section-card-field custom-move-frequency"><strong>Frequency:</strong> <input class="custom-move-frequency-input" aria-label={`${move.name} frequency`} bind:value={move.frequency} onchange={onsave} /></label>
+        {:else}
           <div class="move-meta-row"><div class="section-card-field"><strong>Range:</strong> {move.range || 'N/A'} <button type="button" class="edit-bn range-edit-bn" aria-label={`Edit ${move.name} range keywords`} onclick={() => openRangeEditor(move)}>✎</button></div>{#if move.ac !== undefined && move.ac !== null && move.ac !== ''}<label class="section-card-field"><strong>AC:</strong> <input class="struggle-ac-input" aria-label={`${move.name} AC`} type="number" min="1" max="20" value={move.ac} onchange={(event) => { move.ac = Number(event.currentTarget.value); onsave(); }} /></label>{/if}</div>
           <div class="section-card-field"><strong>Frequency:</strong> {move.frequency || 'N/A'}</div>
-          {#if move.damageBase}
-            {@const strike = strikeKeyword(move)}
-            <div class="section-card-field db-field" class:is-multi-strike={Boolean(strike)}>
-              <div class="db-summary">
-                <span class="db-identity"><strong>{move.damageBase.short}</strong><button type="button" class="db-stab-badge" class:is-active={Boolean(move.damageBase.stab)} aria-label={stabLabel(move)} aria-pressed={Boolean(move.damageBase.stab)} title="Toggle STAB (+2 DB)" onclick={() => changeStab(move)}>STAB</button></span>
-                {#if strike}
-                  <span class="multi-strike-badge">{strike}</span>
-                {:else}
-                  <span class="db-formula">{move.damageBase.dmg}</span>
-                  {#if damageRange(pokemon, move)}{@const range = damageRange(pokemon, move)!}<span class="db-range">{range.min}<span class="db-range-separator">|</span><strong>{range.avg}</strong><span class="db-range-separator">|</span>{range.max}</span>{/if}
-                {/if}
-              </div>
-              <div class="db-actions"><span class="db-stepper"><button type="button" class="db-adjust-btn" aria-label={`Decrease ${move.name} damage base`} onclick={() => adjustDb(move, -1)}>−</button><button type="button" class="db-adjust-btn" aria-label={`Increase ${move.name} damage base`} onclick={() => adjustDb(move, 1)}>+</button></span>{#if !strike && rollFormula(pokemon, move)}<button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(move) === 'success'} class:is-error={rollButtonState(move) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll directly with JustDices' : 'Copy the roll command'} onclick={() => useRoll(move)}>{rollLabel(move)}</button><button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(move, true) === 'success'} class:is-error={rollButtonState(move, true) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll critical damage directly with JustDices' : 'Copy the critical roll command'} onclick={() => useRoll(move, true)}>{rollLabel(move, true)}</button>{/if}</div>
+        {/if}
+        {#if move.damageBase}
+          {@const strike = strikeKeyword(move)}
+          <div class="section-card-field db-field" class:is-multi-strike={Boolean(strike)}>
+            <div class="db-summary">
+              <span class="db-identity"><strong>{move.damageBase.short}</strong><button type="button" class="db-stab-badge" class:is-active={Boolean(move.damageBase.stab)} aria-label={stabLabel(move)} aria-pressed={Boolean(move.damageBase.stab)} title="Toggle STAB (+2 DB)" onclick={() => changeStab(move)}>STAB</button></span>
               {#if strike}
-                <div class="multi-strike-cases">
-                  {#each strikeCases(move) as result}
-                    <div class="multi-strike-case">
-                      <strong class="multi-strike-label">{result.label}</strong>
-                      <span class="db-formula">{result.formula}</span>
-                      {#if result.range}<span class="db-range">{result.range.min}<span class="db-range-separator">|</span><strong>{result.range.avg}</strong><span class="db-range-separator">|</span>{result.range.max}</span>{/if}
-                      <span class="multi-strike-actions"><button type="button" class="copy-roll-formula-btn" class:is-success={variantButtonState(move, result.variant) === 'success'} class:is-error={variantButtonState(move, result.variant) === 'error'} disabled={Boolean(rolling)} title={justDices ? `Roll ${result.label}` : `Copy ${result.label}`} onclick={() => useFormula(move, result.formula, result.variant)}>{variantRollLabel(move, result.variant)}</button>{#if result.criticalFormula}<button type="button" class="copy-roll-formula-btn" class:is-success={variantButtonState(move, result.criticalVariant) === 'success'} class:is-error={variantButtonState(move, result.criticalVariant) === 'error'} disabled={Boolean(rolling)} title={justDices ? `Roll critical damage for ${result.label}` : `Copy critical damage for ${result.label}`} onclick={() => useFormula(move, result.criticalFormula, result.criticalVariant)}>{variantRollLabel(move, result.criticalVariant, 'Crit')}</button>{/if}</span>
-                    </div>
-                  {/each}
-                </div>
+                <span class="multi-strike-badge">{strike}</span>
+              {:else}
+                <span class="db-formula">{move.damageBase.dmg}{#if attackValue(pokemon, move) !== null}<span class="db-attack-bonus">+{attackValue(pokemon, move)}</span>{/if}</span>
+                {#if damageRange(pokemon, move)}{@const range = damageRange(pokemon, move)!}<span class="db-range">{range.min}<span class="db-range-separator">|</span><strong>{range.avg}</strong><span class="db-range-separator">|</span>{range.max}</span>{/if}
               {/if}
             </div>
-          {/if}
-          {#if move.effect}<div class="section-card-field"><strong>Effect:</strong> {move.effect}</div>{/if}
+            <div class="db-actions"><span class="db-stepper"><button type="button" class="db-adjust-btn" aria-label={`Decrease ${move.name} damage base`} onclick={() => adjustDb(move, -1)}>−</button><button type="button" class="db-adjust-btn" aria-label={`Increase ${move.name} damage base`} onclick={() => adjustDb(move, 1)}>+</button></span>{#if !strike && rollFormula(pokemon, move)}<button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(move) === 'success'} class:is-error={rollButtonState(move) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll directly with JustDices' : 'Copy the roll command'} onclick={() => useRoll(move)}>{rollLabel(move)}</button><button type="button" class="copy-roll-formula-btn" class:is-success={rollButtonState(move, true) === 'success'} class:is-error={rollButtonState(move, true) === 'error'} disabled={Boolean(rolling)} title={justDices ? 'Roll critical damage directly with JustDices' : 'Copy the critical roll command'} onclick={() => useRoll(move, true)}>{rollLabel(move, true)}</button>{/if}</div>
+            {#if strike}
+              <div class="multi-strike-cases">
+                {#each strikeCases(move) as result}
+                  <div class="multi-strike-case">
+                    <strong class="multi-strike-label">{result.label}</strong>
+                    <span class="db-formula">{result.formula}</span>
+                    {#if result.range}<span class="db-range">{result.range.min}<span class="db-range-separator">|</span><strong>{result.range.avg}</strong><span class="db-range-separator">|</span>{result.range.max}</span>{/if}
+                    <span class="multi-strike-actions"><button type="button" class="copy-roll-formula-btn" class:is-success={variantButtonState(move, result.variant) === 'success'} class:is-error={variantButtonState(move, result.variant) === 'error'} disabled={Boolean(rolling)} title={justDices ? `Roll ${result.label}` : `Copy ${result.label}`} onclick={() => useFormula(move, result.formula, result.variant)}>{variantRollLabel(move, result.variant)}</button>{#if result.criticalFormula}<button type="button" class="copy-roll-formula-btn" class:is-success={variantButtonState(move, result.criticalVariant) === 'success'} class:is-error={variantButtonState(move, result.criticalVariant) === 'error'} disabled={Boolean(rolling)} title={justDices ? `Roll critical damage for ${result.label}` : `Copy critical damage for ${result.label}`} onclick={() => useFormula(move, result.criticalFormula, result.criticalVariant)}>{variantRollLabel(move, result.criticalVariant, 'Crit')}</button>{/if}</span>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
         {/if}
+        {#if move.editable}
+          <label class="section-card-field custom-move-effect"><strong>Effect:</strong><textarea bind:value={move.effect} onchange={onsave}></textarea></label>
+        {:else if move.effect}<div class="section-card-field"><strong>Effect:</strong> {move.effect}</div>{/if}
         {#if move.frequency}<div class="usage-tracker"><span class="usage-label">Uses:</span><div class="usage-boxes">{#each Array(frequencyUses(move.frequency)) as _, use}<button type="button" aria-label={`Use ${use + 1}`} class:checked={(move.usageCount || 0) > use} class="usage-checkbox" onclick={() => usage(move, use)}></button>{/each}</div></div>{/if}
       </article>
     {:else}<div class="empty-state compact">No moves yet.</div>{/each}
@@ -165,4 +179,19 @@
 {#if typeTarget}<TypePickerModal title={`Select ${typeTarget.name || 'Move'} Type`} types={selectableTypes(pokemon)} selected={typeTarget.type ? [typeTarget.type] : []} onsave={changeType} onclose={() => typeTarget = null} />{/if}
 {#if rangeTarget}<RangePickerModal range={rangeTarget.range || ''} onsave={changeRange} onclose={() => rangeTarget = null} />{/if}
 
-<style>.editable-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.wide{grid-column:1/-1}.wide textarea{width:100%}.move-type-picker{border:0;cursor:pointer;font-family:inherit}.custom-move-class-input{box-sizing:border-box;width:86px;min-width:0;padding:3px 6px;border:1px solid var(--border-color);border-radius:3px;background:var(--bg-main);color:var(--text-primary);font:inherit}.copy-roll-formula-btn.is-success{border-color:#62bd83;background:#d9f6e5;color:#187445}.copy-roll-formula-btn.is-error{border-color:#df7b7b;background:#fde1e1;color:#b12a2a}</style>
+<style>
+  .move-type-picker{border:0;cursor:pointer;font-family:inherit}
+  .custom-move-heading{display:flex;align-items:center;flex:1;min-width:0;gap:6px;margin-bottom:0}
+  .custom-move-heading .move-badge{margin-left:0}
+  .custom-move-name-input{box-sizing:border-box;flex:0 1 155px;width:155px;min-width:85px;max-width:155px;padding:3px 6px}
+  .custom-move-class-input{box-sizing:border-box;flex:0 0 90px;width:90px;min-width:90px;max-width:90px;margin:0;padding:3px 22px 3px 8px;border:0;border-radius:3px;color:#fff;font-family:inherit;font-size:.75em;font-weight:600;line-height:normal;text-transform:uppercase;vertical-align:middle;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;background-size:10px 6px}
+  .custom-move-class-input option{background:var(--bg-main);color:var(--text-primary);font-size:1rem;text-transform:none}
+  .custom-move-meta-row{align-items:center}
+  .custom-move-frequency{display:flex;align-items:center;gap:5px}
+  .custom-move-frequency-input{box-sizing:border-box;width:120px;min-width:0;padding:2px 5px}
+  .custom-move-effect{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:5px}
+  .custom-move-effect textarea{box-sizing:border-box;width:100%;min-width:0}
+  .copy-roll-formula-btn.is-success{border-color:#62bd83;background:#d9f6e5;color:#187445}
+  .copy-roll-formula-btn.is-error{border-color:#df7b7b;background:#fde1e1;color:#b12a2a}
+  @media(max-width:480px){.custom-move-heading{flex-wrap:wrap}.custom-move-name-input{flex-basis:130px;width:130px}.custom-move-effect{grid-template-columns:1fr}}
+</style>
