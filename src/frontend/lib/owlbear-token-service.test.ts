@@ -185,6 +185,11 @@ describe('Owlbear token service', () => {
     };
     const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
 
+    OBR.scene.isReady.mockResolvedValueOnce(false);
+    await expect(service.ensurePlayerOwnedOwlTrackersVisibility({ id: 'player-1', role: 'PLAYER' })).resolves.toBeUndefined();
+    expect(OBR.scene.items.getItems).not.toHaveBeenCalled();
+    expect(OBR.scene.items.updateItems).not.toHaveBeenCalled();
+
     await service.ensurePlayerOwnedOwlTrackersVisibility({ id: 'player-1', role: 'PLAYER' });
 
     expect(ownedItem.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(false);

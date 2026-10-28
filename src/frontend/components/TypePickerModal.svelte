@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { slug } from '../lib/pokemon';
 
   let { title = 'Select Type', types, selected = [], multiple = false, onsave, onclose }: {
@@ -9,7 +10,8 @@
     onsave: (types: string[]) => void;
     onclose: () => void;
   } = $props();
-  let draft = $state([...selected]);
+  // Snapshot the selection once; edits stay local until Save.
+  let draft = $state(untrack(() => [...selected]));
 
   function toggle(type: string) {
     if (!multiple) {

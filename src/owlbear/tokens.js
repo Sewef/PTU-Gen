@@ -280,7 +280,8 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
             .filter(player => player?.id);
         if (players.length === 0) return;
 
-        await requireOwlbearScene();
+        // Role updates also arrive while the room has no scene or is loading one.
+        if (!await owlbearReady || !await OBR.scene.isReady()) return;
         const hiddenByPlayerId = new Map(players.map(player => [player.id, player.role === 'GM']));
         const items = await OBR.scene.items.getItems(item => (
             hiddenByPlayerId.has(item.createdUserId) &&

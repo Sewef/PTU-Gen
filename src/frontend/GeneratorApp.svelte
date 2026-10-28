@@ -12,7 +12,7 @@
   const embedded = new URLSearchParams(location.search).get('owlbear') === 'true' && window.parent !== window;
   const defaults: GeneratorSettings = {
     dataset: 'core', fandex: [], countMode: 'fixed', count: 1, minCount: 1, maxCount: 6,
-    levelMode: 'fixed', level: 50, minLevel: 30, maxLevel: 70, species: '', randomForm: false,
+    levelMode: 'fixed', level: 50, minLevel: 30, maxLevel: 70, speciesMode: 'random', species: '', randomForm: false,
     habitat: '', type: '', shinyMode: 'odds', shinyOdds: 1, includeLegendaries: false,
     matchEvolutionStageToLevel: false, distribution: 'RANDOM', natureMode: 'random', nature: '',
     ignoreBaseRelation: '', hpFormula: 'LEVEL + (HP * 3) + 10', fiveStrikeMode: 'multiplicative', owlbearVisible: true,
@@ -54,14 +54,13 @@
     : []);
   const datasetChanged = $derived(settings.dataset !== defaults.dataset);
   const fandexChanged = $derived(settings.fandex.length > 0);
-  const countChanged = $derived(settings.countMode !== defaults.countMode || settings.count !== defaults.count || settings.minCount !== defaults.minCount || settings.maxCount !== defaults.maxCount);
-  const levelChanged = $derived(settings.levelMode !== defaults.levelMode || settings.level !== defaults.level || settings.minLevel !== defaults.minLevel || settings.maxLevel !== defaults.maxLevel);
-  const speciesChanged = $derived(Boolean(settings.species || settings.randomForm));
-  const filtersChanged = $derived(Boolean(settings.habitat || settings.type));
-  const shinyChanged = $derived(settings.shinyMode !== defaults.shinyMode || settings.shinyOdds !== defaults.shinyOdds);
+  const countChanged = $derived(settings.countMode !== defaults.countMode || (settings.countMode === 'fixed' ? settings.count !== defaults.count : settings.minCount !== defaults.minCount || settings.maxCount !== defaults.maxCount));
+  const levelChanged = $derived(settings.levelMode !== defaults.levelMode || (settings.levelMode === 'fixed' ? settings.level !== defaults.level : settings.minLevel !== defaults.minLevel || settings.maxLevel !== defaults.maxLevel));
+  const speciesChanged = $derived(settings.speciesMode !== defaults.speciesMode || settings.randomForm);
+  const shinyChanged = $derived(settings.shinyMode !== defaults.shinyMode || (settings.shinyMode === 'odds' && settings.shinyOdds !== defaults.shinyOdds));
   const optionsChanged = $derived(settings.includeLegendaries !== defaults.includeLegendaries || settings.matchEvolutionStageToLevel !== defaults.matchEvolutionStageToLevel);
   const distributionChanged = $derived(settings.distribution !== defaults.distribution);
-  const natureChanged = $derived(settings.natureMode !== defaults.natureMode || Boolean(settings.nature));
+  const natureChanged = $derived(settings.natureMode !== defaults.natureMode || (settings.natureMode === 'fixed' && Boolean(settings.nature)));
   const advancedChanged = $derived(settings.ignoreBaseRelation !== defaults.ignoreBaseRelation || settings.hpFormula !== defaults.hpFormula || settings.fiveStrikeMode !== defaults.fiveStrikeMode);
   const owlbearChanged = $derived(settings.owlbearVisible !== defaults.owlbearVisible || settings.owlbearPlayerId !== defaults.owlbearPlayerId || settings.owlbearTrackers !== defaults.owlbearTrackers || settings.owlbearInitiative !== defaults.owlbearInitiative || settings.owlbearDiceRoller !== defaults.owlbearDiceRoller);
 
@@ -284,48 +283,61 @@
           {#if !fandexes.length}<span class="small-text text-secondary">No FanDex available</span>{/if}
           {#each fandexes as fandex}
             {@const key = fandexKey(fandex)}
-            <label class="inline-option"><input type="checkbox" checked={settings.fandex.includes(key)} onchange={(event) => toggleFandex(key, event.currentTarget.checked)} /> {nameOf(fandex)}</label>
+            <label class="inline-option"><input class:pref-changed-control={settings.fandex.includes(key)} type="checkbox" checked={settings.fandex.includes(key)} onchange={(event) => toggleFandex(key, event.currentTarget.checked)} /> {nameOf(fandex)}</label>
           {/each}
         </div></div>
 
         <div class="form-group" class:pref-changed-group={countChanged}><span class="group-label">Number of Pokémon</span>
-          <div class="inline-controls"><label><input type="radio" bind:group={settings.countMode} value="fixed" /> Fixed</label><input type="number" min="1" max="50" bind:value={settings.count} disabled={settings.countMode !== 'fixed'} />
-          <label><input type="radio" bind:group={settings.countMode} value="range" /> Range</label><input type="number" min="1" max="50" bind:value={settings.minCount} disabled={settings.countMode !== 'range'} /><span>to</span><input type="number" min="1" max="50" bind:value={settings.maxCount} disabled={settings.countMode !== 'range'} /></div>
+          <div class="inline-controls"><label><input class:pref-changed-control={settings.countMode !== defaults.countMode} type="radio" bind:group={settings.countMode} value="fixed" /> Fixed</label><input class:pref-changed-control={settings.count !== defaults.count} type="number" min="1" max="50" bind:value={settings.count} disabled={settings.countMode !== 'fixed'} />
+          <label><input class:pref-changed-control={settings.countMode !== defaults.countMode} type="radio" bind:group={settings.countMode} value="range" /> Range</label><input class:pref-changed-control={settings.minCount !== defaults.minCount} type="number" min="1" max="50" bind:value={settings.minCount} disabled={settings.countMode !== 'range'} /><span>to</span><input class:pref-changed-control={settings.maxCount !== defaults.maxCount} type="number" min="1" max="50" bind:value={settings.maxCount} disabled={settings.countMode !== 'range'} /></div>
         </div>
         <div class="form-group" class:pref-changed-group={levelChanged}><span class="group-label">Level</span>
-          <div class="inline-controls"><label><input type="radio" bind:group={settings.levelMode} value="fixed" /> Fixed</label><input type="number" min="1" max="100" bind:value={settings.level} disabled={settings.levelMode !== 'fixed'} />
-          <label><input type="radio" bind:group={settings.levelMode} value="range" /> Range</label><input type="number" min="1" max="100" bind:value={settings.minLevel} disabled={settings.levelMode !== 'range'} /><span>to</span><input type="number" min="1" max="100" bind:value={settings.maxLevel} disabled={settings.levelMode !== 'range'} /></div>
+          <div class="inline-controls"><label><input class:pref-changed-control={settings.levelMode !== defaults.levelMode} type="radio" bind:group={settings.levelMode} value="fixed" /> Fixed</label><input class:pref-changed-control={settings.level !== defaults.level} type="number" min="1" max="100" bind:value={settings.level} disabled={settings.levelMode !== 'fixed'} />
+          <label><input class:pref-changed-control={settings.levelMode !== defaults.levelMode} type="radio" bind:group={settings.levelMode} value="range" /> Range</label><input class:pref-changed-control={settings.minLevel !== defaults.minLevel} type="number" min="1" max="100" bind:value={settings.minLevel} disabled={settings.levelMode !== 'range'} /><span>to</span><input class:pref-changed-control={settings.maxLevel !== defaults.maxLevel} type="number" min="1" max="100" bind:value={settings.maxLevel} disabled={settings.levelMode !== 'range'} /></div>
         </div>
 
-        <div class="form-group form-group-autocomplete" class:pref-changed-group={speciesChanged}><label for="species">Species</label>
-          <input id="species" class:pref-changed-control={speciesChanged} type="text" bind:value={settings.species} placeholder="e.g. Pikachu, Charizard…" autocomplete="off" />
-          {#if filteredSpecies.length && !species.includes(settings.species)}<div class="autocomplete-suggestions visible">
-            {#each filteredSpecies as item}<button type="button" class="autocomplete-item" onclick={() => settings.species = item}>{item}</button>{/each}
-          </div>{/if}
-          <label class="inline-option"><input type="checkbox" bind:checked={settings.randomForm} /> Random form</label>
-        </div>
-        <div class="form-row" class:pref-changed-group={filtersChanged}>
-          <div class="form-group"><label for="habitat">Habitat</label><select id="habitat" class:pref-changed-control={Boolean(settings.habitat)} bind:value={settings.habitat}><option value="">Random Habitat</option>{#each habitats as item}<option value={item}>{item}</option>{/each}</select></div>
-          <div class="form-group"><label for="type">Type</label><select id="type" class:pref-changed-control={Boolean(settings.type)} bind:value={settings.type}><option value="">Random Type</option>{#each types as item}<option value={item}>{item}</option>{/each}</select></div>
-        </div>
+        <fieldset class="form-group species-selection" class:pref-changed-group={speciesChanged || optionsChanged}>
+          <legend class="group-label">Species selection</legend>
+          <div class="radio-row">
+            <label><input class:pref-changed-control={settings.speciesMode !== defaults.speciesMode} type="radio" bind:group={settings.speciesMode} value="random" /> Full random</label>
+            <label><input class:pref-changed-control={settings.speciesMode !== defaults.speciesMode} type="radio" bind:group={settings.speciesMode} value="species" /> Set species</label>
+            <label><input class:pref-changed-control={settings.speciesMode !== defaults.speciesMode} type="radio" bind:group={settings.speciesMode} value="habitat" /> By habitat</label>
+            <label><input class:pref-changed-control={settings.speciesMode !== defaults.speciesMode} type="radio" bind:group={settings.speciesMode} value="type" /> By type</label>
+          </div>
+          <div class="species-input-row">
+            {#if settings.speciesMode === 'species'}
+              <div class="species-autocomplete">
+                <input class:pref-changed-control={settings.species !== defaults.species} id="species" aria-label="Species" type="text" bind:value={settings.species} placeholder="e.g. Pikachu, Charizard…" autocomplete="off" required />
+                {#if filteredSpecies.length && !species.includes(settings.species)}<div class="autocomplete-suggestions visible">
+                  {#each filteredSpecies as item}<button type="button" class="autocomplete-item" onclick={() => { settings.species = item; persist(); }}>{item}</button>{/each}
+                </div>{/if}
+              </div>
+            {:else if settings.speciesMode === 'habitat'}
+              <select class:pref-changed-control={settings.habitat !== defaults.habitat} id="habitat" aria-label="Habitat" bind:value={settings.habitat} required><option value="" disabled>Select habitat</option>{#each habitats as item}<option value={item}>{item}</option>{/each}</select>
+            {:else if settings.speciesMode === 'type'}
+              <select class:pref-changed-control={settings.type !== defaults.type} id="type" aria-label="Type" bind:value={settings.type} required><option value="" disabled>Select type</option>{#each types as item}<option value={item}>{item}</option>{/each}</select>
+            {/if}
+            <label class="inline-option"><input class:pref-changed-control={settings.randomForm !== defaults.randomForm} type="checkbox" bind:checked={settings.randomForm} /> Random form</label>
+          </div>
+          <div class="options-grid species-options"><label><input class:pref-changed-control={settings.includeLegendaries !== defaults.includeLegendaries} type="checkbox" bind:checked={settings.includeLegendaries} /> Include legendaries</label><label title="Automatically select the evolution stage appropriate for the Pokémon’s level."><input class:pref-changed-control={settings.matchEvolutionStageToLevel !== defaults.matchEvolutionStageToLevel} type="checkbox" bind:checked={settings.matchEvolutionStageToLevel} /> Match evolution stage to level</label></div>
+        </fieldset>
         <div class="form-group" class:pref-changed-group={shinyChanged}><span class="group-label">Shiny</span><div class="inline-controls">
-          <label><input type="radio" bind:group={settings.shinyMode} value="force" /> Force</label>
-          <label><input type="radio" bind:group={settings.shinyMode} value="odds" /> Odds</label><input type="number" min="0" max="100" step="0.1" bind:value={settings.shinyOdds} disabled={settings.shinyMode !== 'odds'} /><span>%</span>
+          <label><input class:pref-changed-control={settings.shinyMode !== defaults.shinyMode} type="radio" bind:group={settings.shinyMode} value="force" /> Force</label>
+          <label><input class:pref-changed-control={settings.shinyMode !== defaults.shinyMode} type="radio" bind:group={settings.shinyMode} value="odds" /> Odds</label><input class:pref-changed-control={settings.shinyOdds !== defaults.shinyOdds} type="number" min="0" max="100" step="0.1" bind:value={settings.shinyOdds} disabled={settings.shinyMode !== 'odds'} /><span>%</span>
         </div></div>
-        <div class="form-group options-grid" class:pref-changed-group={optionsChanged}><label><input type="checkbox" bind:checked={settings.includeLegendaries} /> Include legendaries</label><label title="Automatically select the evolution stage appropriate for the Pokémon’s level."><input type="checkbox" bind:checked={settings.matchEvolutionStageToLevel} /> Match evolution stage to level</label></div>
         <div class="form-group" class:pref-changed-group={distributionChanged}><div class="field-label-row"><span class="group-label">Distribution</span><button type="button" class="option-help" title={helpTitles.distribution} aria-label="Help: Distribution">?</button></div><div class="radio-row">
-          {#each ['RANDOM', 'BALANCED', 'MINMAXED'] as value}<label><input type="radio" bind:group={settings.distribution} {value} /> {value}</label>{/each}
+          {#each ['RANDOM', 'BALANCED', 'MINMAXED'] as value}<label><input class:pref-changed-control={settings.distribution !== defaults.distribution} type="radio" bind:group={settings.distribution} {value} /> {value}</label>{/each}
         </div></div>
-        <div class="form-group" class:pref-changed-group={natureChanged}><div class="field-label-row"><span class="group-label">Nature</span><button type="button" class="option-help" title={helpTitles.nature} aria-label="Help: Nature">?</button></div><div class="radio-row">
-          <label><input type="radio" bind:group={settings.natureMode} value="random" /> Random</label><label><input type="radio" bind:group={settings.natureMode} value="optimal" /> Optimal</label><label><input type="radio" bind:group={settings.natureMode} value="fixed" /> Fixed</label>
-          <select aria-label="Fixed nature" bind:value={settings.nature} disabled={settings.natureMode !== 'fixed'}><option value="">Select nature</option>{#each natures as nature}<option value={natureName(nature)}>{natureLabel(nature)}</option>{/each}</select>
+        <div class="form-group nature-selection" class:pref-changed-group={natureChanged}><div class="field-label-row"><span class="group-label">Nature</span><button type="button" class="option-help" title={helpTitles.nature} aria-label="Help: Nature">?</button></div><div class="radio-row nature-controls">
+          <label><input class:pref-changed-control={settings.natureMode !== defaults.natureMode} type="radio" bind:group={settings.natureMode} value="random" /> Random</label><label><input class:pref-changed-control={settings.natureMode !== defaults.natureMode} type="radio" bind:group={settings.natureMode} value="optimal" /> Optimal</label><label><input class:pref-changed-control={settings.natureMode !== defaults.natureMode} type="radio" bind:group={settings.natureMode} value="fixed" /> Fixed</label>
+          <select class:pref-changed-control={settings.nature !== defaults.nature} aria-label="Fixed nature" bind:value={settings.nature} disabled={settings.natureMode !== 'fixed'}><option value="">Select nature</option>{#each natures as nature}<option value={natureName(nature)}>{natureLabel(nature)}</option>{/each}</select>
         </div></div>
 
         <button type="button" class="advanced-toggle" class:has-hidden-changes={advancedChanged && !advancedOpen} onclick={() => advancedOpen = !advancedOpen}><span class="advanced-toggle-label"><span class="advanced-menu-icon" aria-hidden="true">⚡</span><span>Advanced</span></span><span>{advancedOpen ? '▲' : '▼'}</span></button>
         {#if advancedOpen}<div class="advanced-section open"><div class="advanced-content">
-          <div class="form-group" class:pref-changed-group={settings.ignoreBaseRelation !== defaults.ignoreBaseRelation}><div class="field-label-row"><label for="ignoreBase">Ignore Base Relation</label><button type="button" class="option-help" title={helpTitles.ignoreBaseRelation} aria-label="Help: Ignore Base Relation">?</button></div><input id="ignoreBase" bind:value={settings.ignoreBaseRelation} placeholder="ALL or HP,ATK,DEF" /></div>
-          <div class="form-group" class:pref-changed-group={settings.hpFormula !== defaults.hpFormula}><div class="field-label-row"><label for="hpFormula">HP Formula</label><button type="button" class="option-help" title={helpTitles.hpFormula} aria-label="Help: HP Formula">?</button></div><input id="hpFormula" bind:value={settings.hpFormula} /></div>
-          <div class="form-group" class:pref-changed-group={settings.fiveStrikeMode !== defaults.fiveStrikeMode}><div class="field-label-row"><span class="group-label">Five Strike</span><button type="button" class="option-help" title={helpTitles.fiveStrike} aria-label="Help: Five Strike">?</button></div><div class="radio-row"><label><input type="radio" bind:group={settings.fiveStrikeMode} value="multiplicative" /> Multiplicative (Vanilla)</label><label><input type="radio" bind:group={settings.fiveStrikeMode} value="additive" /> Additive (Homebrew)</label></div></div>
+          <div class="form-group" class:pref-changed-group={settings.ignoreBaseRelation !== defaults.ignoreBaseRelation}><div class="field-label-row"><label for="ignoreBase">Ignore Base Relation</label><button type="button" class="option-help" title={helpTitles.ignoreBaseRelation} aria-label="Help: Ignore Base Relation">?</button></div><input class:pref-changed-control={settings.ignoreBaseRelation !== defaults.ignoreBaseRelation} id="ignoreBase" bind:value={settings.ignoreBaseRelation} placeholder="ALL or HP,ATK,DEF" /></div>
+          <div class="form-group" class:pref-changed-group={settings.hpFormula !== defaults.hpFormula}><div class="field-label-row"><label for="hpFormula">HP Formula</label><button type="button" class="option-help" title={helpTitles.hpFormula} aria-label="Help: HP Formula">?</button></div><input class:pref-changed-control={settings.hpFormula !== defaults.hpFormula} id="hpFormula" bind:value={settings.hpFormula} /></div>
+          <div class="form-group" class:pref-changed-group={settings.fiveStrikeMode !== defaults.fiveStrikeMode}><div class="field-label-row"><span class="group-label">Five Strike</span><button type="button" class="option-help" title={helpTitles.fiveStrike} aria-label="Help: Five Strike">?</button></div><div class="radio-row"><label><input class:pref-changed-control={settings.fiveStrikeMode !== defaults.fiveStrikeMode} type="radio" bind:group={settings.fiveStrikeMode} value="multiplicative" /> Multiplicative (Vanilla)</label><label><input class:pref-changed-control={settings.fiveStrikeMode !== defaults.fiveStrikeMode} type="radio" bind:group={settings.fiveStrikeMode} value="additive" /> Additive (Homebrew)</label></div></div>
         </div></div>{/if}
 
         <button type="button" class="advanced-toggle" onclick={() => customOpen = !customOpen}><span class="advanced-toggle-label"><span class="advanced-menu-icon" aria-hidden="true">🎨</span><span>Customization</span></span><span>{customOpen ? '▲' : '▼'}</span></button>
@@ -342,11 +354,11 @@
 
         <button type="button" class="advanced-toggle" class:has-hidden-changes={owlbearChanged && !owlbearOpen} onclick={() => owlbearOpen = !owlbearOpen}><span class="advanced-toggle-label"><img class="advanced-menu-icon owlbear-menu-icon" src="/owlbear-logo.svg" alt="" aria-hidden="true" /><span>Owlbear Rodeo</span></span><span>{owlbearOpen ? '▲' : '▼'}</span></button>
         {#if owlbearOpen}<div class="advanced-section open"><div class="advanced-content">
-          <div class="form-group" class:pref-changed-group={settings.owlbearPlayerId !== defaults.owlbearPlayerId}><label for="owner">{embedded ? 'Owner' : 'Player ID'}</label>{#if embedded}<select id="owner" bind:value={settings.owlbearPlayerId} disabled={!currentPlayer}><option value="">{currentPlayer ? 'Select owner' : 'Loading players…'}</option>{#if currentPlayer}<option value={currentPlayer.id}>Me ({currentPlayer.name})</option>{/if}{#each roomPlayers.filter(player => player.id !== currentPlayer?.id) as player}<option value={player.id}>{player.name}</option>{/each}</select>{:else}<input id="owner" bind:value={settings.owlbearPlayerId} />{/if}</div>
-          <div class="form-group" class:pref-changed-group={settings.owlbearVisible !== defaults.owlbearVisible}><label class="inline-option"><input type="checkbox" bind:checked={settings.owlbearVisible} /> Token visible</label></div>
-          <div class="form-group" class:pref-changed-group={settings.owlbearTrackers !== defaults.owlbearTrackers}><label for="trackers">{OWLBEAR_INTEGRATIONS.trackers.label}</label><select id="trackers" bind:value={settings.owlbearTrackers}>{#each OWLBEAR_INTEGRATIONS.trackers.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
-          <div class="form-group" class:pref-changed-group={settings.owlbearInitiative !== defaults.owlbearInitiative}><label for="initiative">{OWLBEAR_INTEGRATIONS.initiative.label}</label><select id="initiative" bind:value={settings.owlbearInitiative}>{#each OWLBEAR_INTEGRATIONS.initiative.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
-          <div class="form-group" class:pref-changed-group={settings.owlbearDiceRoller !== defaults.owlbearDiceRoller}><label for="dice">{OWLBEAR_INTEGRATIONS.diceRoller.label}</label><select id="dice" bind:value={settings.owlbearDiceRoller}>{#each OWLBEAR_INTEGRATIONS.diceRoller.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
+          <div class="form-group" class:pref-changed-group={settings.owlbearPlayerId !== defaults.owlbearPlayerId}><label for="owner">{embedded ? 'Owner' : 'Player ID'}</label>{#if embedded}<select class:pref-changed-control={settings.owlbearPlayerId !== defaults.owlbearPlayerId} id="owner" bind:value={settings.owlbearPlayerId} disabled={!currentPlayer}><option value="">{currentPlayer ? 'Select owner' : 'Loading players…'}</option>{#if currentPlayer}<option value={currentPlayer.id}>Me ({currentPlayer.name})</option>{/if}{#each roomPlayers.filter(player => player.id !== currentPlayer?.id) as player}<option value={player.id}>{player.name}</option>{/each}</select>{:else}<input class:pref-changed-control={settings.owlbearPlayerId !== defaults.owlbearPlayerId} id="owner" bind:value={settings.owlbearPlayerId} />{/if}</div>
+          <div class="form-group" class:pref-changed-group={settings.owlbearVisible !== defaults.owlbearVisible}><label class="inline-option"><input class:pref-changed-control={settings.owlbearVisible !== defaults.owlbearVisible} type="checkbox" bind:checked={settings.owlbearVisible} /> Token visible</label></div>
+          <div class="form-group" class:pref-changed-group={settings.owlbearTrackers !== defaults.owlbearTrackers}><label for="trackers">{OWLBEAR_INTEGRATIONS.trackers.label}</label><select class:pref-changed-control={settings.owlbearTrackers !== defaults.owlbearTrackers} id="trackers" bind:value={settings.owlbearTrackers}>{#each OWLBEAR_INTEGRATIONS.trackers.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
+          <div class="form-group" class:pref-changed-group={settings.owlbearInitiative !== defaults.owlbearInitiative}><label for="initiative">{OWLBEAR_INTEGRATIONS.initiative.label}</label><select class:pref-changed-control={settings.owlbearInitiative !== defaults.owlbearInitiative} id="initiative" bind:value={settings.owlbearInitiative}>{#each OWLBEAR_INTEGRATIONS.initiative.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
+          <div class="form-group" class:pref-changed-group={settings.owlbearDiceRoller !== defaults.owlbearDiceRoller}><label for="dice">{OWLBEAR_INTEGRATIONS.diceRoller.label}</label><select class:pref-changed-control={settings.owlbearDiceRoller !== defaults.owlbearDiceRoller} id="dice" bind:value={settings.owlbearDiceRoller}>{#each OWLBEAR_INTEGRATIONS.diceRoller.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
         </div></div>{/if}
 
         <div class="button-group"><button type="submit" class="btn-generate" disabled={loading}>🎲 Generate Pokémon</button><button type="button" class="btn-generate" onclick={() => create(true)} disabled={loading}>+ Blank Pokémon</button><button type="button" class="btn-reset" onclick={resetSettings}>↻ Reset</button></div>
@@ -379,17 +391,25 @@
 <style>
   .generation-settings-panel{container-type:inline-size}
   .generation-settings-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));align-items:start;gap:.65rem .8rem;font-size:.875rem;line-height:1.3}
-  .generation-settings-form>.form-group,.generation-settings-form>.form-row{min-width:0;margin:0}
+  .generation-settings-form>.form-group{min-width:0;margin:0}
   .generation-settings-form>.advanced-toggle,.generation-settings-form>.advanced-section,.generation-settings-form>.button-group{grid-column:1/-1}
   .generation-settings-form :is(input,select,button){font-size:inherit}
   .generation-settings-form :is(input:not([type='radio']):not([type='checkbox']),select){min-height:32px;padding:.38rem .5rem}
   .checkbox-wrap, .inline-controls, .radio-row, .input-button-row { display: flex; flex-wrap: wrap; gap: .35rem .55rem; align-items: center; }
   .inline-controls input[type='number'] { width: 4.25rem; }
+  .species-selection{border:0;padding:0;grid-column:1/-1}
+  .species-input-row{display:flex;align-items:flex-start;gap:.55rem;min-width:0;margin-top:.4rem}
+  .species-input-row>.inline-option{min-height:32px}
+  .species-autocomplete,.species-input-row>select{flex:1;min-width:0;max-width:32rem;margin:0}
+  .species-autocomplete>input{box-sizing:border-box;width:100%;margin:0}
+  .species-autocomplete>input,.species-input-row>select{box-sizing:border-box;height:32px;min-height:32px;line-height:1.3}
+  .species-options{margin-top:.5rem}
+  .nature-selection{grid-column:1/-1}
+  .nature-controls{flex-wrap:nowrap}
+  .nature-controls>select{flex:1;min-width:0;width:auto;max-width:24rem;box-sizing:border-box;height:32px;margin:0}
   .inline-option, .radio-row label, .options-grid label, .inline-controls label { display: inline-flex; flex:0 0 auto; gap: .3rem; align-items: center; margin:0; white-space:nowrap; }
   .inline-option input, .radio-row input, .options-grid input, .inline-controls input[type='radio'] { width: auto; }
   .options-grid { display:flex;flex-wrap:wrap;align-content:center;gap:.35rem .8rem; }
-  .generation-settings-form>.form-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}
-  .generation-settings-form>.form-row .form-group{min-width:0;margin:0}
   .advanced-toggle { width: 100%; border: 0; padding:.55rem .7rem; }
   .advanced-toggle-label{display:inline-flex;align-items:center;gap:.45rem;min-width:0}
   .advanced-menu-icon{display:inline-flex;width:1.15rem;height:1.15rem;flex:0 0 1.15rem;align-items:center;justify-content:center;font-size:1rem;line-height:1}
@@ -404,5 +424,5 @@
   .generation-status { margin-bottom: 1rem; }
   .generated-heading { align-items: center; }
   .generated-heading h2 { margin-block: 0; }
-  @container(max-width:500px){.generation-settings-form>.form-row{grid-template-columns:1fr}.generation-settings-form>.button-group{grid-template-columns:1fr}}
+  @container(max-width:500px){.generation-settings-form>.button-group{grid-template-columns:1fr}}
 </style>

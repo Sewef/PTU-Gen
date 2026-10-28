@@ -151,6 +151,24 @@ describe('Svelte application surfaces', () => {
     expect(dataset.value).toBe('core');
     expect(Array.from(document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')).find(input => input.parentElement?.textContent?.includes('Variant'))?.checked).toBe(false);
     expect(JSON.parse(localStorage.getItem('ptu-generator-preferences-v1') || '{}')).toMatchObject({ dataset: 'core', fandex: [] });
+    const forceShiny = document.querySelector<HTMLInputElement>('input[type="radio"][value="force"]')!;
+    const oddsMode = document.querySelector<HTMLInputElement>('input[type="radio"][value="odds"]')!;
+    const shinyGroup = forceShiny.closest('.form-group')!;
+    const odds = shinyGroup.querySelector<HTMLInputElement>('input[type="number"]')!;
+    forceShiny.click();
+    await tick();
+    expect(forceShiny.classList.contains('pref-changed-control')).toBe(true);
+    expect(odds.disabled).toBe(true);
+    expect(odds.classList.contains('pref-changed-control')).toBe(false);
+    oddsMode.click();
+    await tick();
+    odds.value = '5';
+    odds.dispatchEvent(new Event('input', { bubbles: true }));
+    await tick();
+    expect(odds.matches('.pref-changed-control:not(:disabled)')).toBe(true);
+    forceShiny.click();
+    await tick();
+    expect(odds.matches('.pref-changed-control:not(:disabled)')).toBe(false);
     await vi.waitFor(() => expect(fetchMock.mock.calls.some(([input]) => String(input).includes('dataset=core') && !String(input).includes('fandex='))).toBe(true));
 
     const advancedToggle = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent?.includes('Advanced'))!;
@@ -183,6 +201,8 @@ describe('Svelte application surfaces', () => {
     instances.push(mount(GeneratorApp, { target: document.getElementById('app')! }));
     await vi.waitFor(() => expect(Array.from(document.querySelectorAll('label')).some(label => label.textContent?.includes('Uranium'))).toBe(true));
 
+    document.querySelector<HTMLInputElement>('input[type="radio"][value="type"]')!.click();
+    await tick();
     const typeSelect = document.querySelector<HTMLSelectElement>('#type')!;
     expect(Array.from(typeSelect.options).some(option => option.value === 'Nuclear')).toBe(false);
     const uranium = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')).find(input => input.parentElement?.textContent?.includes('Uranium'))!;

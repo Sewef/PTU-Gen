@@ -45,9 +45,9 @@ export function generationParams(settings: GeneratorSettings, blank = false): UR
     params.set('minLevel', String(settings.minLevel));
     params.set('maxLevel', String(settings.maxLevel));
   } else params.set('level', String(settings.levelMode === 'range' ? settings.minLevel : settings.level));
-  if (!blank && settings.species.trim()) params.set('species', settings.species.trim());
-  if (!blank && settings.habitat) params.set('habitat', settings.habitat);
-  if (!blank && settings.type) params.set('type', settings.type);
+  if (!blank && settings.speciesMode === 'species' && settings.species.trim()) params.set('species', settings.species.trim());
+  if (!blank && settings.speciesMode === 'habitat' && settings.habitat) params.set('habitat', settings.habitat);
+  if (!blank && settings.speciesMode === 'type' && settings.type) params.set('type', settings.type);
   if (!blank && settings.randomForm) params.set('randomForm', 'true');
   if (!blank && settings.shinyMode === 'force') params.set('shiny', 'true');
   else if (!blank && settings.shinyOdds > 0) params.set('shinyOdds', String(settings.shinyOdds));

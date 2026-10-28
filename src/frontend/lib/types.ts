@@ -81,6 +81,7 @@ export interface GeneratorSettings {
   minLevel: number;
   maxLevel: number;
   species: string;
+  speciesMode: 'random' | 'species' | 'habitat' | 'type';
   randomForm: boolean;
   habitat: string;
   type: string;

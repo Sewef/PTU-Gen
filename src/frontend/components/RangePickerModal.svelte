@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
+
   type Group = 'reach' | 'target' | 'keyword';
   type Kind = {
     key: string;
@@ -46,7 +48,8 @@
     return { key: null, value: '', raw };
   }
 
-  let entries = $state<Entry[]>((range || '').split(',').map(part => part.trim()).filter(Boolean).map(parseEntry));
+  // Snapshot the range once; edits stay local until Save.
+  let entries = $state<Entry[]>(untrack(() => (range || '').split(',').map(part => part.trim()).filter(Boolean).map(parseEntry)));
   let custom = $state('');
 
   const kindOf = (entry: Entry) => KINDS.find(kind => kind.key === entry.key);

@@ -8,6 +8,7 @@
 :root {
     /* Light mode (default) */
     --primary-color: #667eea;
+    --modified-accent: #b77900;
     --primary-dark: #764ba2;
     --bg-gradient-1: #667eea;
     --bg-gradient-2: #764ba2;
@@ -37,6 +38,7 @@
 
 /* Dark mode - applies only when explicitly set on body */
 body.dark-mode {
+    --modified-accent: #f2b84b;
     --primary-color: #8899ff;
     --primary-dark: #9966ee;
     --bg-gradient-1: #1a1f3a;
@@ -67,6 +69,7 @@ body.dark-mode {
 
 /* Solarized dark mode */
 body.solarized-dark {
+    --modified-accent: #e6ad38;
     --primary-color: #268bd2;
     --primary-dark: #2aa198;
     --bg-gradient-1: #002b36;
@@ -302,7 +305,7 @@ label {
     font-size: 0.9em;
 }
 
-input, select {
+input:not([type='radio']), select {
     width: 100%;
     padding: 7px 9px;
     border: 1px solid var(--border-color);
@@ -321,22 +324,42 @@ input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--text-primary) !important;
 }
 
-input:focus, select:focus {
+input:not([type='radio']):focus, select:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.pref-changed-control {
-    border-color: #f59e0b !important;
-    /* box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.22); */
+input[type='radio'] {
+    width: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    accent-color: var(--primary-color);
 }
 
-.pref-changed-group {
-    background: linear-gradient(90deg, rgba(245, 158, 11, 0.08), transparent 65%);
-    border-left: 3px solid #f59e0b;
-    padding-left: 8px;
-    border-radius: 4px;
+input[type='radio']:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.pref-changed-control:not(:disabled):not([type='radio']):not([type='checkbox']) {
+    border-color: var(--modified-accent);
+}
+
+input.pref-changed-control:not(:disabled) {
+    --primary-color: var(--modified-accent);
+    accent-color: var(--modified-accent);
+}
+
+.pref-changed-control:not(:disabled):not([type='radio']):focus {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--modified-accent) 15%, transparent);
+}
+
+.pref-changed-group > :is(label, .group-label),
+.pref-changed-group > .field-label-row > :is(label, .group-label) {
+    color: var(--modified-accent);
 }
 
 .form-row {
@@ -1833,8 +1856,7 @@ button {
 }
 
 .advanced-toggle.has-hidden-changes {
-    border: 1px solid #f59e0b;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
+    color: var(--modified-accent);
 }
 
 .advanced-toggle:hover {

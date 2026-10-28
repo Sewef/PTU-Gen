@@ -4,7 +4,7 @@ import type { GeneratorSettings } from './types';
 
 const settings: GeneratorSettings = {
   dataset: 'community', fandex: ['alpha', 'beta'], countMode: 'fixed', count: 1, minCount: 1, maxCount: 6,
-  levelMode: 'range', level: 50, minLevel: 20, maxLevel: 30, species: 'Pikachu', randomForm: true,
+  levelMode: 'range', level: 50, minLevel: 20, maxLevel: 30, speciesMode: 'species', species: 'Pikachu', randomForm: true,
   habitat: 'Forest', type: 'Electric', shinyMode: 'odds', shinyOdds: 2.5, includeLegendaries: true,
   matchEvolutionStageToLevel: true, distribution: 'BALANCED', natureMode: 'fixed', nature: 'Brave',
   ignoreBaseRelation: 'HP', hpFormula: 'LEVEL + HP', fiveStrikeMode: 'additive', owlbearVisible: false, owlbearPlayerId: 'player-1',
@@ -51,6 +51,16 @@ describe('generation progress', () => {
 });
 
 describe('generationParams', () => {
+  it.each([
+    { mode: 'random', expected: [] },
+    { mode: 'species', expected: ['species'] },
+    { mode: 'habitat', expected: ['habitat'] },
+    { mode: 'type', expected: ['type'] }
+  ] as const)('sends only the selection filter for $mode', ({ mode, expected }) => {
+    const params = generationParams({ ...settings, speciesMode: mode });
+    expect(['species', 'habitat', 'type'].filter(key => params.has(key))).toEqual(expected);
+  });
+
   it('maps the complete reactive form state to the existing API contract', () => {
     const params = generationParams(settings);
     expect(params.get('minLevel')).toBe('20');
