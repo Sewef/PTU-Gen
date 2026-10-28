@@ -240,6 +240,41 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         return updated;
     }
 
+    async function setSceneTokenIntegrations(pokemon, targetWindow) {
+        const tokenId = String(pokemon?.owlbear?.tokenId || '').trim();
+        const existing = await getSceneToken(tokenId, targetWindow);
+        if (!existing) throw new Error('The linked token no longer exists in this scene.');
+        const ownerRole = await getPlayerRole(String(existing.createdUserId || ''));
+        const initiativeKey = 'com.pretty-initiative/metadata';
+        await OBR.scene.items.updateItems([tokenId], items => {
+            items.forEach(item => {
+                const metadata = { ...(item.metadata || {}) };
+                if (pokemon.owlbear.trackers === 'owltrackers') {
+                    const trackers = Array.isArray(metadata[OWL_TRACKERS_METADATA_KEY]) ? [...metadata[OWL_TRACKERS_METADATA_KEY]] : [];
+                    const defaults = [
+                        { id: crypto.randomUUID(), name: 'HP', variant: 'value-max', color: 2, value: pokemon.hitPoints, max: pokemon.hitPointsMax },
+                        { id: crypto.randomUUID(), name: 'Injuries', variant: 'counter', color: 2, inlineMath: true, value: pokemon.injuries },
+                        createTempHpTracker(Math.max(0, Math.trunc(Number(pokemon.tempHitPoints) || 0)))
+                    ];
+                    for (const tracker of defaults) {
+                        if (!trackers.some(current => String(current.name || '').toLowerCase() === tracker.name.toLowerCase())) trackers.push(tracker);
+                    }
+                    metadata[OWL_TRACKERS_METADATA_KEY] = trackers;
+                    metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY] = ownerRole === 'GM';
+                } else {
+                    delete metadata[OWL_TRACKERS_METADATA_KEY];
+                    delete metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY];
+                }
+                if (pokemon.owlbear.initiative === 'prettysordid') {
+                    metadata[initiativeKey] ||= { count: String(Number(pokemon.speed) || 0), active: false, group: 1 };
+                } else delete metadata[initiativeKey];
+                item.metadata = metadata;
+            });
+        });
+        const [updated] = await OBR.scene.items.getItems([tokenId]);
+        return updated || null;
+    }
+
     async function ensurePlayerOwnedOwlTrackersVisibility(playerOrPlayers) {
         const players = (Array.isArray(playerOrPlayers) ? playerOrPlayers : [playerOrPlayers])
             .filter(player => player?.id);
@@ -346,6 +381,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         focusSceneToken,
         setSceneTokenVisibility,
         setSceneTokenOwner,
+        setSceneTokenIntegrations,
         ensurePlayerOwnedOwlTrackersVisibility,
         syncPokemonToSceneToken,
         notifyTrackedTokenStates,

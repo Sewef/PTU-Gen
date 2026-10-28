@@ -7,9 +7,13 @@
   import { pokemonImage } from '../lib/pokemon';
   import ExportMenu from './ExportMenu.svelte';
   import OwlbearIntegrationBadges from './OwlbearIntegrationBadges.svelte';
+  import OwlbearSettingsModal from './OwlbearSettingsModal.svelte';
+  import type { OwlbearIntegrationKind } from '../lib/owlbear-integrations';
+  import type { OwlbearSettings } from '../lib/types';
 
   let { pokemon = $bindable(), embedded, onsave }: { pokemon: Pokemon; embedded: boolean; onsave: () => void } = $props();
   let busy = $state(false);
+  let settingsOpen = $state(false);
   let status = $state('');
   let failed = $state(false);
   let currentPlayer = $state<OwlbearPlayer | null>(null);
@@ -187,13 +191,28 @@
     const tokenId = String(pokemon.owlbear.tokenId || '');
     if (tokenId) void action(() => requestOwlbear('set-token-owner', { tokenId, createdUserId: userId }), tokenId);
   }
+
+  function saveIntegrations(settings: Pick<OwlbearSettings, OwlbearIntegrationKind>) {
+    Object.assign(pokemon.owlbear, settings);
+    settingsOpen = false;
+    onsave();
+    const tokenId = String(pokemon.owlbear.tokenId || '');
+    if (tokenId) {
+      const snapshot = {
+        owlbear: { tokenId, trackers: settings.trackers, initiative: settings.initiative },
+        hitPoints: pokemon.hitPoints, hitPointsMax: pokemon.hitPointsMax, tempHitPoints: pokemon.tempHitPoints,
+        injuries: pokemon.captureState?.standardCounts?.injuries || 0, speed: pokemon.stats.spe
+      };
+      void action(() => requestOwlbear('set-token-integrations', { pokemon: snapshot }), tokenId);
+    }
+  }
 </script>
 
 <div class="export-button-wrapper header-actions">
   {#if embedded}
     <div class="owlbear-utilities-panel" aria-label="Owlbear scene utilities">
       <div class="owlbear-utilities-header"><div class="owlbear-utilities-title">Owlbear Scene</div><div class="owlbear-utilities-header-actions"><span class="owlbear-token-status" class:is-error={failed} aria-live="polite">{status || (linked ? 'Token linked' : 'Token not in scene')}</span><div class="owlbear-header-export"><ExportMenu {pokemon} header /></div></div></div>
-      <OwlbearIntegrationBadges owlbear={pokemon.owlbear} />
+      <div class="owlbear-integration-config"><OwlbearIntegrationBadges owlbear={pokemon.owlbear} /><button type="button" class="edit-bn" aria-label="Configure Owlbear integrations" disabled={busy} onclick={() => settingsOpen = true}>⚙ Configure</button></div>
       <div class="owlbear-utilities-actions compact"><button type="button" class="owlbear-focus-btn owlbear-primary-action" disabled={busy} onclick={() => linked ? focus() : insert()}>{busy ? 'Working…' : linked ? 'Focus' : 'Insert'}</button><button type="button" class="owlbear-visibility-toggle" disabled={busy} data-visible={pokemon.owlbear.visible !== false} aria-pressed={pokemon.owlbear.visible !== false} aria-label="Token visibility" onclick={toggleVisibility}><span class="owlbear-visible-label">Visible</span><span class="owlbear-hidden-label">Hidden</span></button><select class="owlbear-owner-select" aria-label="Change token owner" disabled={!currentPlayer || busy} value={pokemon.owlbear.playerId || currentPlayer?.id || ''} onchange={(event) => changeOwner(event.currentTarget.value)}>{#if currentPlayer}<option value={currentPlayer.id}>Me ({currentPlayer.name})</option>{/if}{#each roomPlayers.filter(player => player.id !== currentPlayer?.id) as player}<option value={player.id}>{player.name}</option>{/each}</select></div>
     </div>
   {:else}
@@ -202,8 +221,13 @@
   {/if}
 </div>
 
+{#if settingsOpen}
+  <OwlbearSettingsModal settings={pokemon.owlbear} onsave={saveIntegrations} onclose={() => settingsOpen = false} />
+{/if}
+
 <style>
   .header-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+  .owlbear-integration-config{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
   .owlbear-utilities-actions.compact{grid-template-columns:repeat(3,minmax(0,1fr))}.owlbear-primary-action{width:100%}
   .owlbear-sheet-settings{position:relative;margin:0;align-self:center}.owlbear-sheet-settings summary{list-style:none;cursor:pointer;margin:0}.owlbear-settings-popover{position:absolute;right:0;z-index:20;display:grid;gap:.55rem;min-width:250px;padding:1rem;background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;box-shadow:0 8px 24px #0003}.owlbear-settings-popover label{display:grid;gap:.2rem}.owlbear-settings-popover .owlbear-visible-option{display:flex;align-items:center;gap:.35rem}.owlbear-settings-popover input[type='checkbox']{width:auto;margin:0}
   @media(max-width:700px){.header-actions{width:100%}.owlbear-utilities-actions.compact{grid-template-columns:1fr 1fr}.owlbear-owner-select{grid-column:1/-1}}

@@ -9,3 +9,6 @@ class MemoryStorage implements Storage {
 }
 
 Object.defineProperty(globalThis, 'localStorage', { value: new MemoryStorage(), configurable: true });
+
+// jsdom does not implement the native dialog API.
+HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };

@@ -266,6 +266,35 @@ describe('Svelte application surfaces', () => {
     expect(integrationBadges.map(badge => badge.textContent)).toEqual(['Owl Trackers', 'Initiative', 'JustDices']);
     expect(integrationBadges.map(badge => badge.classList.contains('active'))).toEqual([true, false, true]);
 
+    const configure = document.querySelector<HTMLButtonElement>('button[aria-label="Configure Owlbear integrations"]')!;
+    configure.click();
+    await tick();
+    let integrationDialog = document.querySelector<HTMLDialogElement>('dialog[aria-labelledby="owlbear-settings-title"]')!;
+    const selects = Array.from(integrationDialog.querySelectorAll('select'));
+    expect(selects.map(select => select.value)).toEqual(['owltrackers', 'none', 'justdices']);
+    selects[0].value = 'none';
+    selects[0].dispatchEvent(new Event('change', { bubbles: true }));
+    Array.from(integrationDialog.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent === 'Cancel')!.click();
+    await tick();
+    expect(JSON.parse(localStorage.getItem('selectedPokemon')!).owlbear.trackers).toBe('owltrackers');
+    expect(document.querySelector('dialog')).toBeNull();
+
+    configure.click();
+    await tick();
+    integrationDialog = document.querySelector<HTMLDialogElement>('dialog')!;
+    const savedSelections = Array.from(integrationDialog.querySelectorAll('select'));
+    expect(savedSelections[0].value).toBe('owltrackers');
+    ['none', 'prettysordid', 'none'].forEach((value, index) => {
+      savedSelections[index].value = value;
+      savedSelections[index].dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    integrationDialog.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+    await tick();
+    expect(document.querySelector('dialog')).toBeNull();
+    expect(JSON.parse(localStorage.getItem('selectedPokemon')!).owlbear).toMatchObject({ trackers: 'none', initiative: 'prettysordid', diceRoller: 'none' });
+    expect(integrationBadges.map(badge => badge.textContent)).toEqual(['Trackers', 'Pretty Sordid', 'Dice Roller']);
+    expect(integrationBadges.map(badge => badge.classList.contains('active'))).toEqual([false, true, false]);
+
     const attackLevel = document.querySelector<HTMLInputElement>('input[aria-label="Attack level points"]')!;
     attackLevel.value = '-2';
     attackLevel.dispatchEvent(new Event('change', { bubbles: true }));

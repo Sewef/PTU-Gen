@@ -45,6 +45,8 @@ import { createTokenService } from './owlbear/tokens.js';
                 item = await tokenService.setSceneTokenVisibility(payload.tokenId, payload.visible, event.source);
             } else if (command === 'set-token-owner') {
                 item = await tokenService.setSceneTokenOwner(payload.tokenId, payload.createdUserId, event.source);
+            } else if (command === 'set-token-integrations') {
+                item = await tokenService.setSceneTokenIntegrations(payload.pokemon, event.source);
             } else if (command === 'sync-token') {
                 item = await tokenService.syncPokemonToSceneToken(payload.pokemon);
             } else if (command === 'roll-justdices') {

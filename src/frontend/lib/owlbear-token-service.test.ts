@@ -5,6 +5,44 @@ import { OWL_TRACKERS_HIDDEN_METADATA_KEY, OWL_TRACKERS_METADATA_KEY, PTU_TOKEN_
 afterEach(() => vi.useRealTimers());
 
 describe('Owlbear token service', () => {
+  it.each(['PLAYER', 'GM'])('updates integrations on a linked token owned by a %s', async role => {
+    const item: any = { id: 'token-1', createdUserId: 'player-1', metadata: { custom: 'preserved' } };
+    const OBR = {
+      player: { id: 'player-1', getRole: vi.fn(async () => role) },
+      scene: {
+        isReady: vi.fn(async () => true),
+        items: {
+          getItems: vi.fn(async () => [item]),
+          updateItems: vi.fn(async (_ids: string[], update: (items: any[]) => void) => update([item]))
+        }
+      }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+    const pokemon = {
+      owlbear: { tokenId: 'token-1', trackers: 'owltrackers', initiative: 'prettysordid' },
+      hitPoints: 20, hitPointsMax: 35, tempHitPoints: 3, injuries: 2, speed: 15
+    };
+    await service.setSceneTokenIntegrations(pokemon, {});
+    expect(item.metadata[OWL_TRACKERS_METADATA_KEY]).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'HP', value: 20, max: 35 }),
+      expect.objectContaining({ name: 'Injuries', value: 2 }),
+      expect.objectContaining({ name: 'Temp HP', value: 3 })
+    ]));
+    expect(item.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(role === 'GM');
+    expect(item.metadata['com.pretty-initiative/metadata']).toMatchObject({ count: '15', active: false });
+    item.metadata[OWL_TRACKERS_METADATA_KEY][0].value = 12;
+    item.metadata['com.pretty-initiative/metadata'].active = true;
+    await service.setSceneTokenIntegrations(pokemon, {});
+    expect(item.metadata[OWL_TRACKERS_METADATA_KEY]).toHaveLength(3);
+    expect(item.metadata[OWL_TRACKERS_METADATA_KEY][0].value).toBe(12);
+    expect(item.metadata['com.pretty-initiative/metadata'].active).toBe(true);
+
+    pokemon.owlbear.trackers = 'none';
+    pokemon.owlbear.initiative = 'none';
+    await service.setSceneTokenIntegrations(pokemon, {});
+    expect(item.metadata).toEqual({ custom: 'preserved' });
+  });
+
   it('shows Owl Trackers when a player inserts a token', async () => {
     const builtItem: any = { id: 'token-1', metadata: {} };
     const builder: any = {};
