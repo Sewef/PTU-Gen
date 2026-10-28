@@ -151,15 +151,18 @@
   async function create(blank = false) {
     persist();
     loading = true;
-    message = blank ? 'Creating blank Pokémon…' : 'Generating Pokémon…';
+    pokemons = [];
+    message = blank ? 'Creating blank sheet…' : 'Loading generator data…';
+    let generationError = '';
     const count = blank ? 1 : settings.countMode === 'range'
       ? Math.floor(Math.random() * (Math.max(settings.minCount, settings.maxCount) - Math.min(settings.minCount, settings.maxCount) + 1)) + Math.min(settings.minCount, settings.maxCount)
       : settings.count;
     const results: Pokemon[] = [];
     for (let index = 0; index < Math.max(1, Math.min(50, count)); index++) {
       try {
-        message = `${blank ? 'Creating' : 'Generating'} ${index + 1}/${count}…`;
-        const pokemon = await generate(settings, blank);
+        const prefix = count > 1 ? `${index + 1}/${count} · ` : '';
+        message = `${prefix}${blank ? 'Creating blank sheet…' : 'Loading generator data…'}`;
+        const pokemon = await generate(settings, blank, stage => { message = `${prefix}${stage}`; });
         pokemon.owlbear = {
           ...pokemon.owlbear,
           visible: settings.owlbearVisible,
@@ -170,13 +173,13 @@
         };
         results.push(pokemon);
       } catch (error) {
-        message = `Pokémon ${index + 1}: ${error instanceof Error ? error.message : 'generation failed'}`;
+        generationError = `Pokémon ${index + 1}: ${error instanceof Error ? error.message : 'generation failed'}`;
       }
     }
     pokemons = results;
     sessionStorage.setItem('pokemon_count', String(results.length));
     loading = false;
-    message = results.length ? `${results.length} Pokémon ready.` : message;
+    message = generationError;
   }
 
   function toggleFandex(name: string, checked: boolean) {

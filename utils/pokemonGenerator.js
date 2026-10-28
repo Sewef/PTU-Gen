@@ -728,7 +728,8 @@ class PokemonGenerator {
    * @param {string} options.nature - Specific nature name to use when naturemode is fixed
    * @returns {Object} Generated Pokemon
    */
-  static async generatePokemon(options = {}) {
+  static async generatePokemon(options = {}, onProgress = (_stage) => {}) {
+    onProgress('Loading Pokédex and FanDex data…');
     // Switch dataset and apply FanDex if specified
     const dataset = (options.dataset || 'core').toLowerCase();
     const fandex = options.fandex || [];
@@ -768,6 +769,7 @@ class PokemonGenerator {
     
     const includeLegendaries = options.includelegendaries === 'true' || options.includelegendaries === true;
     
+    onProgress('Selecting species and form…');
     let species = options.species 
       ? this.getSpeciesByName(options.species)
       : options.type 
@@ -813,10 +815,12 @@ class PokemonGenerator {
     // Extract base stats, handling variants like Pumpkaboo (Small/Average/Large/Super Size)
     const extractedStats = extractBaseStats(species['Base Stats']);
     const baseStatsData = getActualBaseStats(extractedStats);
+    onProgress('Applying nature and distributing stats…');
     const nature = this.selectNatureForOptions(options, baseStatsData);
     const stats = this.calculateStats(baseStatsData, level, nature, distribution, ignoreBaseRelation);
     
     // Get selected abilities with their definitions
+    onProgress('Selecting abilities…');
     const abilitySelections = this.selectAbilities(species, level);
     const abilitiesWithDefinitions = abilitySelections.map(abilitySelection => {
       const abilityName = typeof abilitySelection === 'string' ? abilitySelection : abilitySelection.name;
@@ -886,6 +890,7 @@ class PokemonGenerator {
     
     const hitPointsMax = this.calculateHitPoints(level, stats, hpFormula);
 
+    onProgress('Selecting moves and completing the sheet…');
     const pokemon = {
       id: species.Number,
       Icon: species.Icon,

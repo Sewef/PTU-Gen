@@ -105,12 +105,13 @@ app.get('/api/info', c => {
 });
 
 app.get('/api/pokemon/generate', async c => {
-  try {
+  const run = async (onProgress = () => {}) => {
+    onProgress('Loading generator data…');
     await ensureInitialized();
     const query = normalizeQuery(c.req.query());
     await loadCustomDataFromQuery(query);
 
-    const pokemon = await PokemonGenerator.generatePokemon({
+    return PokemonGenerator.generatePokemon({
       level: query.level ? parseInt(query.level) : undefined,
       minlevel: query.minlevel ? parseInt(query.minlevel) : undefined,
       maxlevel: query.maxlevel ? parseInt(query.maxlevel) : undefined,
@@ -135,9 +136,28 @@ app.get('/api/pokemon/generate', async c => {
       owlbearinitiative: query.owlbearinitiative,
       owlbeardiceroller: query.owlbeardiceroller,
       fandex: splitFandex(query)
-    });
+    }, onProgress);
+  };
 
-    return c.json(pokemon);
+  if (c.req.header('Accept') === 'application/x-ndjson') {
+    const encoder = new TextEncoder();
+    const body = new ReadableStream({
+      async start(controller) {
+        const send = event => controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'));
+        try {
+          const pokemon = await run(stage => send({ stage }));
+          send({ pokemon });
+        } catch (error) {
+          send({ error: error.message });
+        } finally {
+          controller.close();
+        }
+      }
+    });
+    return new Response(body, { headers: { 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store' } });
+  }
+  try {
+    return c.json(await run());
   } catch (error) {
     console.error('Error generating pokemon:', error);
     return jsonError(c, error, 400);

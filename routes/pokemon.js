@@ -78,6 +78,13 @@ function splitFandex(query) {
  *   - customMovesUrl: string - URL to JSON file with custom Moves (will be loaded before generation)
  */
 router.get('/generate', async (req, res) => {
+  const streaming = req.get('Accept') === 'application/x-ndjson';
+  const send = event => res.write(JSON.stringify(event) + '\n');
+  if (streaming) {
+    res.set({ 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' });
+    res.flushHeaders();
+    send({ stage: 'Loading generator data…' });
+  }
   try {
     await loadCustomDataFromQuery(req.query);
 
@@ -108,11 +115,17 @@ router.get('/generate', async (req, res) => {
       fandex: splitFandex(req.query)
     };
 
-    const pokemon = await PokemonGenerator.generatePokemon(options);
-    res.json(pokemon);
+    const pokemon = await PokemonGenerator.generatePokemon(options, streaming ? stage => send({ stage }) : undefined);
+    if (streaming) {
+      send({ pokemon });
+      res.end();
+    } else res.json(pokemon);
   } catch (error) {
     console.error('Error generating pokemon:', error);
-    res.status(400).json({ error: error.message });
+    if (streaming) {
+      send({ error: error.message });
+      res.end();
+    } else res.status(400).json({ error: error.message });
   }
 });
 

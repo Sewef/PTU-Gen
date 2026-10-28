@@ -26,6 +26,36 @@ afterEach(async () => {
 });
 
 describe('Svelte application surfaces', () => {
+  it('shows the current generation stage and removes status text when finished', async () => {
+    const encoder = new TextEncoder();
+    let progressStream: ReadableStreamDefaultController<Uint8Array>;
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes('/generate?')) {
+        return new Response(new ReadableStream<Uint8Array>({ start(controller) { progressStream = controller; } }), {
+          headers: { 'Content-Type': 'application/x-ndjson' }
+        });
+      }
+      const body = url.includes('/fandexes') ? { fandexes: [] }
+        : url.includes('/natures') ? { natures: [] }
+        : url.includes('/list') ? { species: [] }
+        : url.includes('/habitats') ? { habitats: [] } : { types: [] };
+      return new Response(JSON.stringify(body));
+    }));
+    instances.push(mount(GeneratorApp, { target: document.getElementById('app')! }));
+    await tick();
+    document.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+    await tick();
+    progressStream!.enqueue(encoder.encode('{"stage":"Selecting species and form…"}\n'));
+    await vi.waitFor(() => expect(document.querySelector('.generation-status')?.textContent).toBe('Selecting species and form…'));
+    progressStream!.enqueue(encoder.encode('{"stage":"Selecting abilities…"}\n'));
+    await vi.waitFor(() => expect(document.querySelector('.generation-status')?.textContent).toBe('Selecting abilities…'));
+    progressStream!.enqueue(encoder.encode('{"pokemon":{"id":25,"name":"Pikachu","level":10,"stats":{"HP":5}}}\n'));
+    progressStream!.close();
+    await vi.waitFor(() => expect(document.querySelector('.pokemon-card')).not.toBeNull());
+    expect(document.querySelector('.generation-status')).toBeNull();
+  });
+
   it('restores the linked Owlbear token sprite after reverting a battle-only form', async () => {
     history.replaceState({}, '', '/details.html?embedded=true');
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ natures: [], evolutionsRemaining: 0 }))));

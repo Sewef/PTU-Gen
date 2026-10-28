@@ -69,9 +69,44 @@ export function generationParams(settings: GeneratorSettings, blank = false): UR
   return params;
 }
 
-export async function generate(settings: GeneratorSettings, blank = false): Promise<Pokemon> {
+export async function generate(settings: GeneratorSettings, blank = false, onProgress?: (stage: string) => void): Promise<Pokemon> {
   const endpoint = blank ? 'generateBlank' : 'generate';
-  return normalizePokemon(await json(`/api/pokemon/${endpoint}?${generationParams(settings, blank)}`));
+  const url = `/api/pokemon/${endpoint}?${generationParams(settings, blank)}`;
+  if (blank || !onProgress) return normalizePokemon(await json(url));
+  const response = await fetch(url, { headers: { Accept: 'application/x-ndjson' } });
+  if (!response.ok || !response.headers.get('Content-Type')?.includes('application/x-ndjson')) {
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || body.message || response.statusText);
+    return normalizePokemon(body);
+  }
+  if (!response.body) throw new Error('Generation response is empty');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let pending = '';
+  let pokemon: Pokemon | undefined;
+  function processLine(line: string) {
+    if (!line.trim()) return;
+    const event = JSON.parse(line);
+    if (event.error) throw new Error(event.error);
+    if (event.stage) onProgress!(event.stage);
+    if (event.pokemon) pokemon = normalizePokemon(event.pokemon);
+  }
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      pending += decoder.decode(value, { stream: !done });
+      const lines = pending.split('\n');
+      pending = lines.pop()!;
+      for (const line of lines) processLine(line);
+      if (done) break;
+    }
+    processLine(pending);
+  } finally {
+    await reader.cancel();
+    reader.releaseLock();
+  }
+  if (!pokemon) throw new Error('Generation finished without a Pokémon');
+  return pokemon;
 }
 
 export type CustomizationKind = 'species' | 'abilities' | 'moves';

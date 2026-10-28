@@ -98,6 +98,14 @@ export function createTabManager({ tabList, panelList, historyScope, sendOwlbear
 
         button.append(icon, label, health);
         button.addEventListener('click', () => switchTab(tab.id));
+        tabElement.addEventListener('mousedown', event => {
+            if (event.button === 1) event.preventDefault();
+        });
+        tabElement.addEventListener('auxclick', event => {
+            if (event.button !== 1) return;
+            event.preventDefault();
+            closeTab(tab.id);
+        });
         tabElement.append(button, close);
         tabList.appendChild(tabElement);
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { generationParams, loadCustom, typesForFandexes } from './api';
+import { generate, generationParams, loadCustom, typesForFandexes } from './api';
 import type { GeneratorSettings } from './types';
 
 const settings: GeneratorSettings = {
@@ -10,6 +10,45 @@ const settings: GeneratorSettings = {
   ignoreBaseRelation: 'HP', hpFormula: 'LEVEL + HP', fiveStrikeMode: 'additive', owlbearVisible: false, owlbearPlayerId: 'player-1',
   owlbearTrackers: 'owltrackers', owlbearInitiative: 'prettysordid', owlbearDiceRoller: 'justdices'
 };
+
+describe('generation progress', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function mockStream(chunks: string[]) {
+    const encoder = new TextEncoder();
+    const body = new ReadableStream({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+        controller.close();
+      }
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(body, {
+      headers: { 'Content-Type': 'application/x-ndjson' }
+    })));
+  }
+
+  it('reports stages across chunk boundaries and returns the normalized Pokémon', async () => {
+    mockStream([
+      '{"stage":"Loading data…"}\n{"sta',
+      'ge":"Selecting abilities…"}\n',
+      '{"pokemon":{"id":25,"name":"Pikachu","level":10,"stats":{"HP":5}}}'
+    ]);
+    const progress = vi.fn();
+    const pokemon = await generate(settings, false, progress);
+    expect(progress.mock.calls).toEqual([['Loading data…'], ['Selecting abilities…']]);
+    expect(pokemon).toMatchObject({ id: 25, name: 'Pikachu', level: 10, statBonuses: { atk: 0 } });
+  });
+
+  it('propagates an error sent after generation starts', async () => {
+    mockStream(['{"stage":"Loading data…"}\n{"error":"Species not found"}\n']);
+    await expect(generate(settings, false, vi.fn())).rejects.toThrow('Species not found');
+  });
+
+  it('rejects a stream that ends without a result', async () => {
+    mockStream(['{"stage":"Loading data…"}\n']);
+    await expect(generate(settings, false, vi.fn())).rejects.toThrow('Generation finished without a Pokémon');
+  });
+});
 
 describe('generationParams', () => {
   it('maps the complete reactive form state to the existing API contract', () => {
