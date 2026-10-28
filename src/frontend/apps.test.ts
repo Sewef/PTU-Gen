@@ -26,6 +26,44 @@ afterEach(async () => {
 });
 
 describe('Svelte application surfaces', () => {
+  it('restores the linked Owlbear token sprite after reverting a battle-only form', async () => {
+    history.replaceState({}, '', '/details.html?embedded=true');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ natures: [], evolutionsRemaining: 0 }))));
+    const syncImages: string[] = [];
+    vi.stubGlobal('parent', {
+      postMessage(message: any) {
+        if (message.type !== 'ptu-owlbear-command') return;
+        if (message.command === 'sync-token') syncImages.push(message.payload.pokemon.imageUrl);
+        queueMicrotask(() => window.dispatchEvent(new MessageEvent('message', {
+          origin: location.origin,
+          data: {
+            type: 'ptu-owlbear-command-result', requestId: message.requestId, ok: true,
+            token: { id: 'token-1', visible: true }
+          }
+        })));
+      }
+    });
+    localStorage.setItem('selectedPokemon', JSON.stringify({
+      id: 448, name: 'Lucario', level: 50, stats: { HP: 16, atk: 22, def: 13, spA: 27, spD: 17, spe: 18 },
+      battleOnlyForms: [{ name: 'Mega Evolution', icon: '448-mega', stats: { atk: 4 } }],
+      owlbear: { tokenId: 'token-1', trackers: 'none' }
+    }));
+    instances.push(mount(DetailsApp, { target: document.getElementById('app')! }));
+    await vi.waitFor(() => expect(document.querySelector('.owlbear-token-status')?.textContent).toBe('Token linked'));
+    const toggle = document.querySelector<HTMLButtonElement>('.battle-only-forms-section button')!;
+    const headerImage = document.querySelector<HTMLImageElement>('.pokemon-header-image')!;
+    for (let cycle = 0; cycle < 2; cycle++) {
+      toggle.click();
+      await vi.waitFor(() => expect(syncImages).toHaveLength(cycle * 2 + 1));
+      expect(syncImages.at(-1)).toContain('/448-mega.png');
+      expect(headerImage.src).toContain('/448-mega.png');
+      toggle.click();
+      await vi.waitFor(() => expect(syncImages).toHaveLength(cycle * 2 + 2));
+      expect(syncImages.at(-1)).toContain('/448.png');
+      expect(headerImage.src).toContain('/448.png');
+    }
+  });
+
   it('adds generated Pokémon to history only when their card is opened', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
       const url = String(input);

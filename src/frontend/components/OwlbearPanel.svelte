@@ -85,6 +85,7 @@
             unlinkToken(tokenId);
             return;
           }
+          lastConfirmedSyncKey = syncKey;
           failed = false;
           status = 'Token linked';
         })
