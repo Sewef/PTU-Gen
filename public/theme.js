@@ -8,6 +8,7 @@ class ThemeManager {
             'solarized-light': { name: 'Solarized Light', class: 'solarized-light' }
         };
         
+        this.prankAlreadyPlayed = localStorage.getItem('theme-prank-played') === 'true';
         this.currentTheme = this.loadTheme();
         this.init();
     }
@@ -61,8 +62,16 @@ class ThemeManager {
     }
     
     init() {
-        // Apply saved theme on page load
-        this.setTheme(this.currentTheme);
+        // Start with the opposite theme to tempt users into chasing the selector.
+        const oppositeThemes = {
+            light: 'dark',
+            dark: 'light',
+            'solarized-dark': 'solarized-light',
+            'solarized-light': 'solarized-dark'
+        };
+        this.setTheme(this.prankAlreadyPlayed ? this.currentTheme : oppositeThemes[this.currentTheme]);
+        // Remember immediately so even reloading during the chase won't repeat the prank.
+        localStorage.setItem('theme-prank-played', 'true');
         
         // Listen for system theme changes
         if (window.matchMedia) {
@@ -88,6 +97,8 @@ class ThemeManager {
         button.id = 'theme-toggle-btn';
         button.className = 'theme-toggle-btn';
         button.setAttribute('aria-label', 'Toggle theme');
+        button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-controls', 'theme-menu');
         button.innerHTML = '🎨';
         
         // Create theme menu that appears on hover
@@ -115,15 +126,28 @@ class ThemeManager {
         
         // Keep menu visible when hovering over button or menu
         let hideTimeout;
+        let dashAnimation;
+        let dashCount = 0;
+        let chaseTimeout;
+        let chaseOver = this.prankAlreadyPlayed;
         
         const showMenu = () => {
+            if (dashAnimation && !container.contains(document.activeElement)) return;
             clearTimeout(hideTimeout);
+            const bounds = button.getBoundingClientRect();
+            menu.style.bottom = bounds.top >= menu.offsetHeight + 20 ? '70px' : 'auto';
+            menu.style.top = menu.style.bottom === 'auto' ? '70px' : 'auto';
+            menu.style.left = bounds.left + menu.offsetWidth <= window.innerWidth - 12 ? '0' : 'auto';
+            menu.style.right = menu.style.left === 'auto' ? '0' : 'auto';
             menu.classList.add('visible');
+            button.setAttribute('aria-expanded', 'true');
         };
         
         const hideMenu = () => {
             hideTimeout = setTimeout(() => {
+                if (container.contains(document.activeElement)) return;
                 menu.classList.remove('visible');
+                button.setAttribute('aria-expanded', 'false');
             }, 200);
         };
         
@@ -131,6 +155,96 @@ class ThemeManager {
         container.addEventListener('mouseleave', hideMenu);
         menu.addEventListener('mouseenter', showMenu);
         menu.addEventListener('mouseleave', hideMenu);
+        button.addEventListener('click', showMenu);
+        container.addEventListener('focusin', showMenu);
+        container.addEventListener('focusout', hideMenu);
+        container.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                button.focus();
+                menu.classList.remove('visible');
+                button.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Mouse users have to chase it; touch and keyboard users can still choose a theme.
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const returnHome = () => {
+            chaseOver = true;
+            clearTimeout(chaseTimeout);
+            // Let the current dash finish before heading home.
+            if (dashAnimation) return;
+            const start = container.getBoundingClientRect();
+            container.style.left = '20px';
+            container.style.top = 'auto';
+            container.style.bottom = '20px';
+            const home = container.getBoundingClientRect();
+            dashAnimation = container.animate([
+                { transform: `translate(${start.left - home.left}px, ${start.top - home.top}px)` },
+                { transform: 'translate(0, 0)' }
+            ], {
+                duration: reducedMotion.matches ? 0 : 500,
+                easing: 'cubic-bezier(0.45, 0, 0.15, 1)'
+            });
+            dashAnimation.onfinish = () => {
+                dashAnimation = null;
+                if (menu.classList.contains('visible') || container.matches(':hover')) showMenu();
+            };
+        };
+        document.addEventListener('pointermove', event => {
+            if (chaseOver || event.pointerType !== 'mouse' || reducedMotion.matches ||
+                dashAnimation || container.contains(document.activeElement) || menu.classList.contains('visible')) return;
+
+            const bounds = button.getBoundingClientRect();
+            const distance = Math.hypot(
+                event.clientX - (bounds.left + bounds.width / 2),
+                event.clientY - (bounds.top + bounds.height / 2)
+            );
+            if (distance > 110) return;
+            if (dashCount === 0) chaseTimeout = setTimeout(returnHome, 45000);
+            dashCount++;
+
+            const margin = 12;
+            const maxX = Math.max(margin, window.innerWidth - bounds.width - margin);
+            const maxY = Math.max(margin, window.innerHeight - bounds.height - margin);
+            let destination;
+            let bestDistance = -1;
+            for (let attempt = 0; attempt < 12; attempt++) {
+                const x = margin + Math.random() * (maxX - margin);
+                const y = margin + Math.random() * (maxY - margin);
+                const candidateDistance = Math.hypot(
+                    event.clientX - (x + bounds.width / 2),
+                    event.clientY - (y + bounds.height / 2)
+                );
+                if (candidateDistance > bestDistance) {
+                    bestDistance = candidateDistance;
+                    destination = { x, y };
+                }
+            }
+            const start = container.getBoundingClientRect();
+            container.style.left = `${destination.x}px`;
+            container.style.top = `${destination.y}px`;
+            container.style.bottom = 'auto';
+            // Animate from the current position to the new one without changing layout each frame.
+            dashAnimation = container.animate([
+                { transform: `translate(${start.left - destination.x}px, ${start.top - destination.y}px)` },
+                { transform: 'translate(0, 0)' }
+            ], {
+                duration: 360,
+                easing: 'cubic-bezier(0.45, 0, 0.15, 1)'
+            });
+            dashAnimation.onfinish = () => {
+                dashAnimation = null;
+                if (chaseOver || dashCount >= 5) returnHome();
+            };
+        });
+        window.addEventListener('resize', () => {
+            dashAnimation?.cancel();
+            dashAnimation = null;
+            container.style.left = '20px';
+            container.style.top = 'auto';
+            container.style.bottom = '20px';
+            if (menu.classList.contains('visible')) showMenu();
+        });
         
         return container;
     }
