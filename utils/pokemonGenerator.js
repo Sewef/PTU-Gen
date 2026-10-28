@@ -791,8 +791,8 @@ class PokemonGenerator {
       }
     }
 
-    // Apply forceEvolution if specified
-    if (options.forceevolution === 'true' || options.forceevolution === true) {
+    // Match the evolution stage to the level if requested.
+    if (options.matchevolutionstagetolevel === 'true' || options.matchevolutionstagetolevel === true) {
       // Get the base form of the evolution chain if a random species was selected
       if (!options.species) {
         species = this.getBaseFormOfEvolutionChain(species);

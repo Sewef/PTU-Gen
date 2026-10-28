@@ -14,7 +14,7 @@
     dataset: 'core', fandex: [], countMode: 'fixed', count: 1, minCount: 1, maxCount: 6,
     levelMode: 'fixed', level: 50, minLevel: 30, maxLevel: 70, species: '', randomForm: false,
     habitat: '', type: '', shinyMode: 'odds', shinyOdds: 1, includeLegendaries: false,
-    forceEvolution: false, distribution: 'RANDOM', natureMode: 'random', nature: '',
+    matchEvolutionStageToLevel: false, distribution: 'RANDOM', natureMode: 'random', nature: '',
     ignoreBaseRelation: '', hpFormula: 'LEVEL + (HP * 3) + 10', fiveStrikeMode: 'multiplicative', owlbearVisible: true,
     owlbearPlayerId: '', owlbearTrackers: 'none', owlbearInitiative: 'none', owlbearDiceRoller: 'none'
   };
@@ -59,7 +59,7 @@
   const speciesChanged = $derived(Boolean(settings.species || settings.randomForm));
   const filtersChanged = $derived(Boolean(settings.habitat || settings.type));
   const shinyChanged = $derived(settings.shinyMode !== defaults.shinyMode || settings.shinyOdds !== defaults.shinyOdds);
-  const optionsChanged = $derived(settings.includeLegendaries !== defaults.includeLegendaries || settings.forceEvolution !== defaults.forceEvolution);
+  const optionsChanged = $derived(settings.includeLegendaries !== defaults.includeLegendaries || settings.matchEvolutionStageToLevel !== defaults.matchEvolutionStageToLevel);
   const distributionChanged = $derived(settings.distribution !== defaults.distribution);
   const natureChanged = $derived(settings.natureMode !== defaults.natureMode || Boolean(settings.nature));
   const advancedChanged = $derived(settings.ignoreBaseRelation !== defaults.ignoreBaseRelation || settings.hpFormula !== defaults.hpFormula || settings.fiveStrikeMode !== defaults.fiveStrikeMode);
@@ -312,7 +312,7 @@
           <label><input type="radio" bind:group={settings.shinyMode} value="force" /> Force</label>
           <label><input type="radio" bind:group={settings.shinyMode} value="odds" /> Odds</label><input type="number" min="0" max="100" step="0.1" bind:value={settings.shinyOdds} disabled={settings.shinyMode !== 'odds'} /><span>%</span>
         </div></div>
-        <div class="form-group options-grid" class:pref-changed-group={optionsChanged}><label><input type="checkbox" bind:checked={settings.includeLegendaries} /> Include legendaries</label><label><input type="checkbox" bind:checked={settings.forceEvolution} /> Force evolution</label></div>
+        <div class="form-group options-grid" class:pref-changed-group={optionsChanged}><label><input type="checkbox" bind:checked={settings.includeLegendaries} /> Include legendaries</label><label title="Automatically select the evolution stage appropriate for the Pokémon’s level."><input type="checkbox" bind:checked={settings.matchEvolutionStageToLevel} /> Match evolution stage to level</label></div>
         <div class="form-group" class:pref-changed-group={distributionChanged}><div class="field-label-row"><span class="group-label">Distribution</span><button type="button" class="option-help" title={helpTitles.distribution} aria-label="Help: Distribution">?</button></div><div class="radio-row">
           {#each ['RANDOM', 'BALANCED', 'MINMAXED'] as value}<label><input type="radio" bind:group={settings.distribution} {value} /> {value}</label>{/each}
         </div></div>

@@ -6,7 +6,7 @@ const settings: GeneratorSettings = {
   dataset: 'community', fandex: ['alpha', 'beta'], countMode: 'fixed', count: 1, minCount: 1, maxCount: 6,
   levelMode: 'range', level: 50, minLevel: 20, maxLevel: 30, species: 'Pikachu', randomForm: true,
   habitat: 'Forest', type: 'Electric', shinyMode: 'odds', shinyOdds: 2.5, includeLegendaries: true,
-  forceEvolution: true, distribution: 'BALANCED', natureMode: 'fixed', nature: 'Brave',
+  matchEvolutionStageToLevel: true, distribution: 'BALANCED', natureMode: 'fixed', nature: 'Brave',
   ignoreBaseRelation: 'HP', hpFormula: 'LEVEL + HP', fiveStrikeMode: 'additive', owlbearVisible: false, owlbearPlayerId: 'player-1',
   owlbearTrackers: 'owltrackers', owlbearInitiative: 'prettysordid', owlbearDiceRoller: 'justdices'
 };
@@ -58,6 +58,7 @@ describe('generationParams', () => {
     expect(params.get('species')).toBe('Pikachu');
     expect(params.get('fandex')).toBe('alpha,beta');
     expect(params.get('nature')).toBe('Brave');
+    expect(params.get('matchEvolutionStageToLevel')).toBe('true');
     expect(params.get('owlbearVisible')).toBe('false');
     expect(params.get('fiveStrikeMode')).toBe('additive');
   });

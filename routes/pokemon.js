@@ -72,7 +72,7 @@ function splitFandex(query) {
  *   - dataset: string - 'core' (default), 'community', or 'homebrew'
  *   - nature: string - Specific nature name (e.g., 'Adamant', 'Timid'). If not specified, a random nature is chosen
  *   - includeLegendaries: boolean - Include legendary Pokemon in generation (default: false)
- *   - forceEvolution: boolean - Automatically evolve Pokemon based on level and evolution conditions (default: false)
+ *   - matchEvolutionStageToLevel: boolean - Select the evolution stage appropriate for the Pokemon's level (default: false)
  *   - customSpeciesUrl: string - URL to JSON file with custom species (will be loaded before generation)
  *   - customAbilitiesUrl: string - URL to JSON file with custom Abilities (will be loaded before generation)
  *   - customMovesUrl: string - URL to JSON file with custom Moves (will be loaded before generation)
@@ -106,7 +106,7 @@ router.get('/generate', async (req, res) => {
       naturemode: req.query.naturemode,
       nature: req.query.nature,
       includelegendaries: req.query.includelegendaries,
-      forceevolution: req.query.forceevolution,
+      matchevolutionstagetolevel: req.query.matchevolutionstagetolevel,
       owlbearvisible: req.query.owlbearvisible,
       owlbearplayerid: req.query.owlbearplayerid,
       owlbeartrackers: req.query.owlbeartrackers,

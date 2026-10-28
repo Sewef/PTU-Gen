@@ -34,8 +34,11 @@ describe('generation endpoint progress', () => {
 
   it('keeps the JSON response for existing API callers', async () => {
     vi.mocked(PokemonGenerator.generatePokemon).mockResolvedValueOnce({ name: 'Pikachu' } as any);
-    const response = await app.request('/api/pokemon/generate');
+    const response = await app.request('/api/pokemon/generate?matchEvolutionStageToLevel=true');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ name: 'Pikachu' });
+    expect(PokemonGenerator.generatePokemon).toHaveBeenLastCalledWith(
+      expect.objectContaining({ matchevolutionstagetolevel: 'true' }), expect.any(Function)
+    );
   });
 });

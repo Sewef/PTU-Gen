@@ -87,7 +87,7 @@ export interface GeneratorSettings {
   shinyMode: 'force' | 'odds';
   shinyOdds: number;
   includeLegendaries: boolean;
-  forceEvolution: boolean;
+  matchEvolutionStageToLevel: boolean;
   distribution: 'RANDOM' | 'BALANCED' | 'MINMAXED';
   natureMode: 'random' | 'optimal' | 'fixed';
   nature: string;

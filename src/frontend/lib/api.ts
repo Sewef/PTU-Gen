@@ -57,7 +57,7 @@ export function generationParams(settings: GeneratorSettings, blank = false): UR
   params.set('natureMode', settings.natureMode);
   if (settings.natureMode === 'fixed' && settings.nature) params.set('nature', settings.nature);
   if (settings.includeLegendaries) params.set('includeLegendaries', 'true');
-  if (settings.forceEvolution) params.set('forceEvolution', 'true');
+  if (settings.matchEvolutionStageToLevel) params.set('matchEvolutionStageToLevel', 'true');
   if (settings.ignoreBaseRelation) params.set('ignoreBaseRelation', settings.ignoreBaseRelation);
   if (settings.hpFormula) params.set('hpFormula', settings.hpFormula);
   params.set('fiveStrikeMode', settings.fiveStrikeMode);

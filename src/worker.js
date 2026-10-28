@@ -129,7 +129,7 @@ app.get('/api/pokemon/generate', async c => {
       naturemode: query.naturemode,
       nature: query.nature,
       includelegendaries: query.includelegendaries,
-      forceevolution: query.forceevolution,
+      matchevolutionstagetolevel: query.matchevolutionstagetolevel,
       owlbearvisible: query.owlbearvisible,
       owlbearplayerid: query.owlbearplayerid,
       owlbeartrackers: query.owlbeartrackers,
