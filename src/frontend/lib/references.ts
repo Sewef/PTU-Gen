@@ -1,5 +1,5 @@
 export const REFERENCE_TYPES = [
-  'move', 'ability', 'capability', 'status', 'edge', 'pokeedge', 'item', 'feature', 'keyword'
+  'move', 'ability', 'abilitykeyword', 'capability', 'status', 'edge', 'pokeedge', 'item', 'feature', 'keyword'
 ] as const;
 
 export type ReferenceType = typeof REFERENCE_TYPES[number];
@@ -17,13 +17,14 @@ const REFERENCE_PATTERN = new RegExp(
 const TYPE_PAGES: Record<ReferenceType, string> = {
   move: 'moves.html',
   ability: 'abilities.html',
+  abilitykeyword: 'abilities.html',
   capability: 'capabilities.html',
   status: 'statuses.html',
   edge: 'edges.html',
   pokeedge: 'pokeedges.html',
   item: 'items.html',
   feature: 'features.html',
-  keyword: 'moves.html#keywords'
+  keyword: 'moves.html'
 };
 
 export function parseReferenceText(value: unknown): ReferenceTextPart[] {
@@ -57,7 +58,8 @@ export function referenceUrl(type: ReferenceType, dataset: unknown = 'core', sea
       : 'ptucore';
   const [page, fragment] = TYPE_PAGES[type].split('#', 2);
   const searchTerm = String(search ?? '').trim();
-  const query = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : '';
+  const queryParameter = type === 'keyword' || type === 'abilitykeyword' ? 'keyword' : 'search';
+  const query = searchTerm ? `?${queryParameter}=${encodeURIComponent(searchTerm)}` : '';
   const hash = fragment ? `#${fragment}` : '';
   return `https://sewef.github.io/ptu/${section}/${page}${query}${hash}`;
 }
