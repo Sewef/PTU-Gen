@@ -698,7 +698,7 @@ describe('Svelte application surfaces', () => {
   it('edits range keywords as badges with inline numeric values', async () => {
     const pokemon = normalizePokemon({
       id: 236, name: 'Tyrogue', level: 12, types: ['Fighting'], stats: { HP: 5, atk: 8, def: 5, spA: 3, spD: 4, spe: 6 },
-      moves: [{ name: 'Custom Strike', type: 'Fighting', class: 'Physical', range: '6, 1 Target, Close Blast 2, Double Strike, Weird Thing' }]
+      moves: [{ name: 'Custom Strike', type: 'Fighting', class: 'Physical', range: '6, 1 Target, Close Blast 2, [[keyword:Double Strike]], Weird Thing' }]
     });
     const onsave = vi.fn();
     instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } }));
@@ -721,13 +721,14 @@ describe('Svelte application surfaces', () => {
     await tick();
     await setValue('Cone', '3');
     chip('Double Strike').click();
+    chip('Friendly').click();
     await tick();
-    expect(dialog().querySelector('.modal-info-box')?.textContent).toContain('8, 2 Targets, Cone 3, Close Blast 2, Weird Thing');
+    expect(dialog().querySelector('.modal-info-box')?.textContent).toContain('8, 2 Targets, Cone 3, Close Blast 2, Friendly, Weird Thing');
 
     document.querySelector<HTMLButtonElement>('[role="dialog"] .modal-btn-primary')!.click();
     await tick();
 
-    expect(pokemon.moves?.[0].range).toBe('8, 2 Targets, Cone 3, Close Blast 2, Weird Thing');
+    expect(pokemon.moves?.[0].range).toBe('8, 2 Targets, Cone 3, Close Blast 2, [[keyword:Friendly]], Weird Thing');
     expect(onsave).toHaveBeenCalled();
   });
 });

@@ -3,6 +3,7 @@
   import { availableAbilities, allAbilities } from '../lib/api';
   import { frequencyUses } from '../lib/pokemon';
   import PickerModal from './PickerModal.svelte';
+  import ReferenceText from './ReferenceText.svelte';
   let { pokemon, onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
   let picker = $state(false);
   let items = $state<any[]>([]);
@@ -52,17 +53,17 @@
           <label class="section-card-field"><strong>Frequency:</strong><input bind:value={ability.frequency} onchange={onsave} /></label>
           <label class="section-card-field"><strong>Effect:</strong><textarea bind:value={ability.effect} onchange={onsave}></textarea></label>
           {#each additionalEditableFields(ability) as [key, value]}
-            <div class="section-card-field ability-extra-field"><strong>{fieldLabel(key)}:</strong> <span class:structured-value={typeof value === 'object'}>{fieldValue(value)}</span></div>
+            <div class="section-card-field ability-extra-field"><strong>{fieldLabel(key)}:</strong> <span class:structured-value={typeof value === 'object'}><ReferenceText text={fieldValue(value)} dataset={pokemon.dataset} /></span></div>
           {/each}
         {:else}
           {#each displayFields(ability) as [key, value]}
-            <div class="section-card-field ability-property" class:note={key === 'note'}><strong>{fieldLabel(key)}:</strong> <span class:structured-value={typeof value === 'object'}>{fieldValue(value)}</span></div>
+            <div class="section-card-field ability-property" class:note={key === 'note'}><strong>{fieldLabel(key)}:</strong> <span class:structured-value={typeof value === 'object'}><ReferenceText text={fieldValue(value)} dataset={pokemon.dataset} /></span></div>
           {/each}
         {/if}
         {#if hasRowsTable(ability.table)}
-          <div class="ability-table-wrap"><table class="ability-table"><thead><tr>{#each ability.table.rows[0] as header}<th>{header}</th>{/each}</tr></thead><tbody>{#each ability.table.rows.slice(1) as row}<tr>{#each row as value}<td>{value}</td>{/each}</tr>{/each}</tbody></table></div>
+          <div class="ability-table-wrap"><table class="ability-table"><thead><tr>{#each ability.table.rows[0] as header}<th><ReferenceText text={header} dataset={pokemon.dataset} /></th>{/each}</tr></thead><tbody>{#each ability.table.rows.slice(1) as row}<tr>{#each row as value}<td><ReferenceText text={value} dataset={pokemon.dataset} /></td>{/each}</tr>{/each}</tbody></table></div>
         {:else if hasValue(ability.table)}
-          <div class="section-card-field ability-property"><strong>Table:</strong> <span class="structured-value">{fieldValue(ability.table)}</span></div>
+          <div class="section-card-field ability-property"><strong>Table:</strong> <span class="structured-value"><ReferenceText text={fieldValue(ability.table)} dataset={pokemon.dataset} /></span></div>
         {/if}
         {#if ability.frequency}<div class="usage-tracker"><span class="usage-label">Uses:</span><div class="usage-boxes">{#each Array(frequencyUses(ability.frequency)) as _, use}<button type="button" aria-label={`Use ${use + 1}`} class:checked={(ability.usageCount || 0) > use} class="usage-checkbox" onclick={() => usage(ability, use)}></button>{/each}</div></div>{/if}
       </article>

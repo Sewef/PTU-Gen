@@ -41,9 +41,15 @@
   const orderOf = (key: string) => KINDS.findIndex(kind => kind.key === key);
 
   function parseEntry(raw: string): Entry {
+    const reference = raw.match(/^\[\[\s*keyword\s*:\s*([^\]]+?)\s*\]\](?:\(([^)]*)\))?$/i);
+    const values = reference
+      ? [reference[2]?.trim(), reference[1].trim()].filter((value): value is string => Boolean(value))
+      : [raw];
     for (const kind of KINDS) {
-      const match = raw.match(kind.parse);
-      if (match) return { key: kind.key, value: match[1] ?? '', raw };
+      for (const value of values) {
+        const match = value.match(kind.parse);
+        if (match) return { key: kind.key, value: match[1] ?? '', raw };
+      }
     }
     return { key: null, value: '', raw };
   }
@@ -55,6 +61,14 @@
   const kindOf = (entry: Entry) => KINDS.find(kind => kind.key === entry.key);
   const valid = $derived(entries.every(entry => { const value = kindOf(entry)?.value; return !value || value.pattern.test(entry.value.trim()); }));
   const preview = $derived(entries.map(entry => { const kind = kindOf(entry); return kind ? kind.format(entry.value.trim()) : entry.raw; }).join(', '));
+  const serializedRange = $derived(entries.map(entry => {
+    const kind = kindOf(entry);
+    if (!kind) return entry.raw;
+    const label = kind.format(entry.value.trim());
+    return kind.group === 'keyword'
+      ? `[[keyword:${kind.key}]]${label === kind.key ? '' : `(${label})`}`
+      : label;
+  }).join(', '));
 
   function toggle(kind: Kind) {
     const index = entries.findIndex(entry => entry.key === kind.key);
@@ -99,7 +113,7 @@
         <form class="range-custom" onsubmit={(event) => { event.preventDefault(); addCustom(); }}><input aria-label="Custom keyword" placeholder="Custom keyword" bind:value={custom} /></form>
       </div>
     </div>
-    <div class="modal-buttons"><button type="button" class="modal-btn modal-btn-primary" disabled={!valid} onclick={() => onsave(preview)}>Save</button><button type="button" class="modal-btn modal-btn-secondary" onclick={onclose}>Cancel</button></div>
+    <div class="modal-buttons"><button type="button" class="modal-btn modal-btn-primary" disabled={!valid} onclick={() => onsave(serializedRange)}>Save</button><button type="button" class="modal-btn modal-btn-secondary" onclick={onclose}>Cancel</button></div>
   </div>
 </div>
 
