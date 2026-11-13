@@ -56,7 +56,13 @@
     onsave();
   }
   function openRangeEditor(move: any) { rangeTarget = move; }
-  function toggleClass(move: any) { const value = String(move.class || '').toLowerCase(); if (value === 'physical' || value === 'special') { move.class = value === 'physical' ? 'special' : 'physical'; onsave(); } }
+  function toggleClass(move: any) {
+    const value = String(move.class || '').toLowerCase();
+    if (value === 'physical' || value === 'special' || value === 'versatile') {
+      move.class = value === 'special' ? 'physical' : value === 'physical' ? 'special' : 'physical';
+      onsave();
+    }
+  }
   function changeCustomClass(move: any, moveClass: string) {
     move.class = moveClass;
     if (!move.stabCustomized && move.damageBase) {

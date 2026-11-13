@@ -492,6 +492,27 @@ describe('Svelte application surfaces', () => {
     expect(onsave).toHaveBeenCalledOnce();
   });
 
+  it('lets a Versatile move switch to Physical and Special by clicking its class', async () => {
+    const onsave = vi.fn();
+    const pokemon = normalizePokemon({
+      id: 25, name: 'Pikachu', level: 12, types: ['Electric'], stats: { HP: 5, atk: 6, def: 4, spA: 7, spD: 5, spe: 8 },
+      moves: [{ name: 'Hidden Power', type: 'Normal', class: 'Versatile', damageBase: damageBase(4) }], capabilities: [], skills: {}
+    });
+    instances.push(mount(MovesEditor, { target: document.getElementById('app')!, props: { pokemon, onsave } }));
+    await tick();
+
+    const moveClass = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(button => button.textContent === 'Versatile')!;
+    moveClass.click();
+    await tick();
+    expect(pokemon.moves?.[0].class).toBe('physical');
+    expect(onsave).toHaveBeenCalledOnce();
+
+    moveClass.click();
+    await tick();
+    expect(pokemon.moves?.[0].class).toBe('special');
+    expect(onsave).toHaveBeenCalledTimes(2);
+  });
+
   it('lets an existing move AC be edited', async () => {
     const onsave = vi.fn();
     const pokemon = normalizePokemon({
