@@ -3,6 +3,7 @@
   import type { Pokemon } from './lib/types';
   import { normalizePokemon, pokemonImage } from './lib/pokemon';
   import { readSelected, savePokemon } from './lib/storage';
+  import { movePowerAbilities, syncMovePower } from './lib/moves';
   import StatsEditor from './components/StatsEditor.svelte';
   import AbilitiesEditor from './components/AbilitiesEditor.svelte';
   import MovesEditor from './components/MovesEditor.svelte';
@@ -23,9 +24,12 @@
   let pokemon = $state<Pokemon | null>(null);
   let error = $state('');
   let damageType = $state('typeless');
+  let previousPowerAbilities: ReturnType<typeof movePowerAbilities> = [];
 
   function persist() {
     if (!pokemon) return;
+    syncMovePower(pokemon, previousPowerAbilities);
+    previousPowerAbilities = movePowerAbilities(pokemon);
     savePokemon(pokemon, storageKey, requestedHistoryScope || String(pokemon._ptuHistoryScope || 'site'));
     document.title = `${pokemon.name} - Lvl ${pokemon.level} - Pokémon Details`;
   }
@@ -41,6 +45,7 @@
     const stored = readSelected(storageKey);
     if (!stored) { error = 'No Pokémon data found. Please generate or import one first.'; return () => { if (embedded) document.body.classList.remove('owlbear-embedded'); }; }
     pokemon = normalizePokemon(stored);
+    previousPowerAbilities = movePowerAbilities(pokemon);
     persist(); setFavicon();
     return () => { if (embedded) document.body.classList.remove('owlbear-embedded'); };
   });
@@ -89,7 +94,7 @@
 
         <div class="details-right">
           <TypeEffectiveness {pokemon} selected={damageType} onselect={(type) => damageType = type} onsave={persist} />
-          <MovesEditor {pokemon} onsave={persist} />
+          <MovesEditor bind:pokemon onsave={persist} />
           <PokeEdgesEditor {pokemon} onsave={persist} />
         </div>
       </div>

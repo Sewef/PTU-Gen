@@ -77,9 +77,36 @@ export function ensureStruggle(pokemon: Pokemon) {
   return struggle;
 }
 
+type MovePower = NonNullable<Pokemon['movePower']>;
+
+export function movePowerAbilities(pokemon: Pokemon): MovePower[] {
+  return (pokemon.abilities || []).flatMap(ability => {
+    const name = String(ability.name || '').trim().toLowerCase();
+    return name === 'twisted power' ? ['twisted' as const] : name === 'weird power' ? ['weird' as const] : [];
+  });
+}
+
+export function syncMovePower(pokemon: Pokemon, previousAbilities?: MovePower[]): void {
+  const current = movePowerAbilities(pokemon);
+  if (previousAbilities === undefined) {
+    if (pokemon.movePower === undefined) pokemon.movePower = current.at(-1) || null;
+    return;
+  }
+  const added = current.filter(power => !previousAbilities.includes(power));
+  if (added.length) pokemon.movePower = added.at(-1)!;
+  else if (pokemon.movePower && previousAbilities.includes(pokemon.movePower) && !current.includes(pokemon.movePower)) {
+    pokemon.movePower = current.at(-1) || null;
+  }
+}
+
 export function attackValue(pokemon: Pokemon, move: any): number | null {
   const key = String(move.class || '').toLowerCase() === 'physical' ? 'atk' : String(move.class || '').toLowerCase() === 'special' ? 'spA' : null;
-  return key ? totalStat(pokemon, key) : null;
+  if (!key) return null;
+  const own = totalStat(pokemon, key);
+  const other = totalStat(pokemon, key === 'atk' ? 'spA' : 'atk');
+  if (pokemon.movePower === 'twisted') return own + Math.floor(other / 2);
+  if (pokemon.movePower === 'weird' && other > own) return own + other;
+  return own;
 }
 
 export function hasDoubleStrike(move: JsonRecord): boolean {

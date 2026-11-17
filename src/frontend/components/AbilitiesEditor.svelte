@@ -13,7 +13,13 @@
   async function loadPickerItems(all = false) { loading = true; try { items = flatten(all ? await allAbilities(pokemon) : await availableAbilities(pokemon)); globalList = all; } finally { loading = false; } }
   async function openPicker() { picker = true; await loadPickerItems(false); }
   function pick(item: any) {
-    pokemon.abilities!.push({ ...item, usageCount: 0 }); onsave();
+    const abilities = pokemon.abilities!;
+    if (abilities.some(ability => ability.name === item.name)) {
+      for (let index = abilities.length - 1; index >= 0; index--) {
+        if (abilities[index].name === item.name) abilities.splice(index, 1);
+      }
+    } else abilities.push({ ...item, usageCount: 0 });
+    onsave();
   }
   function blank() { pokemon.abilities!.push({ name: `Custom Ability ${pokemon.abilities!.length + 1}`, frequency: '', effect: '', usageCount: 0, editable: true }); onsave(); }
   function remove(index: number) { pokemon.abilities!.splice(index, 1); onsave(); }

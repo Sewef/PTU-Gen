@@ -1,5 +1,5 @@
 import type { BattleOnlyForm, JsonRecord, Pokemon } from './types';
-import { ensureStruggle, setDefaultStab } from './moves';
+import { ensureStruggle, setDefaultStab, syncMovePower } from './moves';
 
 export const ALL_TYPES = [
   'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground',
@@ -126,6 +126,7 @@ export function normalizePokemon(raw: any): Pokemon {
   ) as Pokemon['statBonuses'];
   pokemon.moves = (Array.isArray(pokemon.moves) ? pokemon.moves : []).map(move => setDefaultStab(pokemon, move));
   pokemon.abilities = Array.isArray(pokemon.abilities) ? pokemon.abilities : [];
+  syncMovePower(pokemon);
   pokemon.pokeEdges = Array.isArray(pokemon.pokeEdges) ? pokemon.pokeEdges : [];
   pokemon.capabilities = Array.isArray(pokemon.capabilities) ? pokemon.capabilities : [];
   pokemon.battleOnlyForms = normalizeBattleOnlyForms(pokemon.battleOnlyForms || pokemon['Battle-Only Forms']);

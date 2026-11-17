@@ -8,7 +8,7 @@
   import TypePickerModal from './TypePickerModal.svelte';
   import RangePickerModal from './RangePickerModal.svelte';
   import ReferenceText from './ReferenceText.svelte';
-  let { pokemon, onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
+  let { pokemon = $bindable(), onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
   let picker = $state(false); let items = $state<any[]>([]); let loading = $state(false); let globalList = $state(false);
   let rolling = $state('');
   let typeTarget = $state.raw<any | null>(null);
@@ -18,6 +18,10 @@
   const embedded = new URLSearchParams(location.search).get('embedded') === 'true';
   const justDices = $derived(embedded && pokemon.owlbear?.diceRoller === 'justdices');
   const struggle = $derived(pokemon.struggle);
+  function changePower(power: 'twisted' | 'weird', checked: boolean) {
+    pokemon.movePower = checked ? power : null;
+    onsave();
+  }
   function flatten(value: any): any[] { return Array.isArray(value) ? value : Object.values(value || {}).filter(Array.isArray).flat() as any[]; }
   async function loadPickerItems(all = false) { loading = true; try { items = flatten(all ? await allMoves(pokemon) : await availableMoves(pokemon)); globalList = all; } finally { loading = false; } }
   async function openPicker() { picker = true; await loadPickerItems(false); }
@@ -130,7 +134,7 @@
 </script>
 
 <div class="section">
-  <div class="flex-between-center-15"><h3 class="section-title">⚔️ Moves</h3><div class="button-group"><button type="button" class="edit-bn" onclick={openPicker}>✎ Edit</button><button type="button" class="edit-bn" onclick={blank}>+ Blank</button></div></div>
+  <div class="flex-between-center-15 moves-header"><h3 class="section-title">⚔️ Moves</h3><div class="move-power-options"><label title="Add half of Attack to Special damage, and half of Special Attack to Physical damage (rounded down)."><input type="checkbox" checked={pokemon.movePower === 'twisted'} onchange={(event) => changePower('twisted', event.currentTarget.checked)} /> Twisted Power</label><label title="Add Attack to Special damage if Attack is higher, or Special Attack to Physical damage if Special Attack is higher. Does not stack with Mixed Power."><input type="checkbox" checked={pokemon.movePower === 'weird'} onchange={(event) => changePower('weird', event.currentTarget.checked)} /> Weird Power</label></div><div class="button-group"><button type="button" class="edit-bn" onclick={openPicker}>✎ Edit</button><button type="button" class="edit-bn" onclick={blank}>+ Blank</button></div></div>
   <div class="section-list">
     <article class="section-card move struggle-card type-{slug(struggle.type)}">
       <div class="section-card-header"><div class="section-card-name">Struggle <button type="button" class="move-badge type-{slug(struggle.type)} move-type-picker" aria-label="Change Struggle type" onclick={() => openTypePicker(struggle)}>{struggle.type}</button> <button type="button" class="move-badge move-class-{slug(struggle.class)}" onclick={() => toggleClass(struggle)}>{struggle.class}</button></div></div>
@@ -187,6 +191,10 @@
 {#if rangeTarget}<RangePickerModal range={rangeTarget.range || ''} onsave={changeRange} onclose={() => rangeTarget = null} />{/if}
 
 <style>
+  .moves-header{flex-wrap:wrap}
+  .move-power-options{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:.85em}
+  .move-power-options label{display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
+  .move-power-options input{margin:0}
   .move-type-picker{border:0;cursor:pointer;font-family:inherit}
   .custom-move-heading{display:flex;align-items:center;flex:1;min-width:0;gap:6px;margin-bottom:0}
   .custom-move-heading .move-badge{margin-left:0}

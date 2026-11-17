@@ -56,6 +56,7 @@ export interface Pokemon extends JsonRecord {
   damageReduction?: number;
   hpFormula?: string;
   fiveStrikeMode?: 'multiplicative' | 'additive';
+  movePower?: 'twisted' | 'weird' | null;
   tutorPoints?: number;
   typeEffectivenessOverrides?: Record<string, number>;
   owlbear: OwlbearSettings;

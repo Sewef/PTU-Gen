@@ -26,6 +26,81 @@ afterEach(async () => {
 });
 
 describe('Svelte application surfaces', () => {
+  it.each(['Twisted Power', 'Weird Power'])('toggles %s in the ability picker and removes existing duplicates', async (name) => {
+    localStorage.setItem('selectedPokemon', JSON.stringify({
+      id: 25, name: 'Pikachu', level: 12, types: ['Electric'], stats: { HP: 5, atk: 13, spA: 9 },
+      abilities: [{ name }, { name }], moves: []
+    }));
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify([{ name }]), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    })));
+    instances.push(mount(DetailsApp, { target: document.getElementById('app')! }));
+    await tick();
+    const section = document.querySelector('.remove-ability-btn')!.closest('.section')!;
+    Array.from(section.querySelectorAll('button')).find(button => button.textContent?.includes('Edit'))!.click();
+    await vi.waitFor(() => expect(document.querySelector('.modal-move-btn')).not.toBeNull());
+    const choice = document.querySelector<HTMLButtonElement>('.modal-move-btn')!;
+    const power = document.querySelectorAll<HTMLInputElement>('.move-power-options input')[name === 'Twisted Power' ? 0 : 1];
+    const savedAbilities = () => JSON.parse(localStorage.getItem('selectedPokemon')!).abilities;
+    expect(choice.classList.contains('exists')).toBe(true);
+    expect(power.checked).toBe(true);
+    choice.click();
+    await tick();
+    expect(choice.classList.contains('exists')).toBe(false);
+    expect(savedAbilities()).toEqual([]);
+    expect(power.checked).toBe(false);
+    choice.click();
+    await tick();
+    expect(choice.classList.contains('exists')).toBe(true);
+    expect(savedAbilities()).toEqual([{ name, usageCount: 0 }]);
+    expect(power.checked).toBe(true);
+    choice.click();
+    await tick();
+    expect(savedAbilities()).toEqual([]);
+    expect(power.checked).toBe(false);
+  });
+
+  it('keeps move power checkboxes exclusive, saves choices and reacts to ability edits', async () => {
+    localStorage.setItem('selectedPokemon', JSON.stringify({
+      id: 25, name: 'Pikachu', level: 12, types: ['Electric'], stats: { HP: 5, atk: 13, spA: 9 },
+      abilities: [{ name: 'Weird Power' }], moves: []
+    }));
+    instances.push(mount(DetailsApp, { target: document.getElementById('app')! }));
+    await tick();
+    const [twisted, weird] = Array.from(document.querySelectorAll<HTMLInputElement>('.move-power-options input'));
+    expect(weird.checked).toBe(true);
+    expect(twisted.checked).toBe(false);
+    twisted.click();
+    await tick();
+    expect(twisted.checked).toBe(true);
+    expect(weird.checked).toBe(false);
+    expect(document.querySelector('.struggle-card .db-attack-bonus')?.textContent).toBe('+17');
+    twisted.click();
+    await tick();
+    expect(twisted.checked).toBe(false);
+    expect(weird.checked).toBe(false);
+    expect(JSON.parse(localStorage.getItem('selectedPokemon')!).movePower).toBeNull();
+
+    const abilitySection = document.querySelector('.remove-ability-btn')!.closest('.section')!;
+    Array.from(abilitySection.querySelectorAll('button')).find(button => button.textContent === '+ Blank')!.click();
+    await tick();
+    const name = abilitySection.querySelector<HTMLInputElement>('.custom-ability-name-input')!;
+    name.value = 'Twisted Power';
+    name.dispatchEvent(new Event('input', { bubbles: true }));
+    name.dispatchEvent(new Event('change', { bubbles: true }));
+    await tick();
+    expect(twisted.checked).toBe(true);
+    expect(weird.checked).toBe(false);
+    abilitySection.querySelectorAll<HTMLButtonElement>('.remove-ability-btn')[1].click();
+    await tick();
+    expect(twisted.checked).toBe(false);
+    expect(weird.checked).toBe(true);
+    abilitySection.querySelector<HTMLButtonElement>('.remove-ability-btn')!.click();
+    await tick();
+    expect(weird.checked).toBe(false);
+    expect(JSON.parse(localStorage.getItem('selectedPokemon')!).movePower).toBeNull();
+  });
+
   it.each([false, true])('shows Copy Manifest only outside the extension (embedded: %s)', async (embedded) => {
     history.replaceState({}, '', '/?owlbear=true');
     if (embedded) vi.stubGlobal('parent', { postMessage: vi.fn() });

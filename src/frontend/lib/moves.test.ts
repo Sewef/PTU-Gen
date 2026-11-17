@@ -1,8 +1,54 @@
 import { describe, expect, it } from 'vitest';
 import { normalizePokemon } from './pokemon';
-import { damageBase, doubleStrikeCases, ensureStruggle, fiveStrikeCases, hasDoubleStrike, hasFiveStrike, rollFormula, setDefaultStab, struggleTypes, toggleStab } from './moves';
+import { attackValue, damageRange, damageBase, doubleStrikeCases, ensureStruggle, fiveStrikeCases, hasDoubleStrike, hasFiveStrike, movePowerAbilities, rollFormula, setDefaultStab, struggleTypes, syncMovePower, toggleStab } from './moves';
 
 describe('move helpers', () => {
+  it('adds half the opposite stat with Twisted Power, including stages and rounding down', () => {
+    const pokemon = normalizePokemon({ stats: { atk: 13, spA: 9 }, abilities: [{ name: 'Twisted Power' }] });
+    pokemon.combatStages.atk = 1;
+    const physical = { class: 'Physical', damageBase: damageBase(4) };
+    const special = { class: 'Special', damageBase: damageBase(4) };
+    expect(attackValue(pokemon, physical)).toBe(19);
+    expect(attackValue(pokemon, special)).toBe(16);
+    expect(attackValue(pokemon, { class: 'Status' })).toBeNull();
+    expect(rollFormula(pokemon, physical, true)).toBe('1d8+6+1d8+6+19');
+    expect(damageRange(pokemon, physical)).toEqual({ min: 26, avg: 30, max: 33 });
+    expect(doubleStrikeCases(pokemon, physical)[0].formula).toBe('1d8+6+19');
+    expect(fiveStrikeCases(pokemon, special)[0].formula).toBe('1d8+6+16');
+    expect(physical.class).toBe('Physical');
+    expect(special.class).toBe('Special');
+  });
+
+  it.each([[13, 9, 13, 22], [9, 13, 22, 13], [10, 10, 10, 10]])(
+    'applies Weird Power only to the weaker damage class (%i Attack, %i Special Attack)',
+    (atk, spA, physical, special) => {
+      const pokemon = normalizePokemon({ stats: { atk, spA }, abilities: [{ name: 'Weird Power' }] });
+      expect(attackValue(pokemon, { class: 'Physical' })).toBe(physical);
+      expect(attackValue(pokemon, { class: 'Special' })).toBe(special);
+    }
+  );
+
+  it('synchronizes ability changes while preserving manual choices and saved unchecked options', () => {
+    const pokemon = normalizePokemon({ stats: { atk: 13, spA: 9 }, abilities: [{ name: 'Twisted Power' }] });
+    expect(pokemon.movePower).toBe('twisted');
+    let previous = movePowerAbilities(pokemon);
+    pokemon.movePower = null;
+    syncMovePower(pokemon, previous);
+    expect(normalizePokemon(pokemon).movePower).toBeNull();
+    pokemon.abilities!.push({ name: ' Weird Power ' });
+    syncMovePower(pokemon, previous);
+    expect(pokemon.movePower).toBe('weird');
+    previous = movePowerAbilities(pokemon);
+    pokemon.abilities!.pop();
+    syncMovePower(pokemon, previous);
+    expect(pokemon.movePower).toBe('twisted');
+    previous = movePowerAbilities(pokemon);
+    pokemon.abilities = [];
+    syncMovePower(pokemon, previous);
+    expect(pokemon.movePower).toBeNull();
+    expect(attackValue(pokemon, { class: 'Special' })).toBe(9);
+  });
+
   it('builds the PTU damage base and roll formula', () => {
     const pokemon = normalizePokemon({ name: 'Test', level: 10, types: ['Fire'], stats: { HP: 5, atk: 12, def: 5, spA: 8, spD: 5, spe: 5 } });
     const move = { class: 'physical', damageBase: damageBase(6) };
