@@ -99,7 +99,7 @@
 </script>
 
 <div class="stats-section">
-  <div class="stats-section-header"><h3 class="section-title">📈 Stats</h3><div class="stats-buttons-group">{#each ['RANDOM','BALANCED','MINMAXED'] as distribution}<button type="button" class="distribution-button" class:active={pokemon.distribution === distribution} onclick={() => redistribute(distribution)}>{distribution}</button>{/each}<div class="remaining-points-display">Level points: {statKeys.reduce((sum, key) => sum + levelPoints(key), 0)} / {pokemon.level + 10}</div></div></div>
+  <div class="stats-section-header"><h3 class="section-title">📈 Stats</h3><div class="stats-buttons-group">{#each ['RANDOM','BALANCED','MINMAXED'] as distribution}<button type="button" class="distribution-button" class:active={pokemon.distribution === distribution} onclick={() => redistribute(distribution)}>{distribution}</button>{/each}<div class="remaining-points-display" title="Level points"><span class="points-label">Level points</span><span class="points-label-short" aria-hidden="true">LP</span>: {statKeys.reduce((sum, key) => sum + levelPoints(key), 0)} / {pokemon.level + 10}</div></div></div>
   <div class="stats-breakdown">
     <div class="base-relation-summary" aria-label="Base Relation based on stats after Nature">
       {#each relationGroups() as group, groupIndex}
@@ -138,6 +138,11 @@
 
 <style>
   .stats-section{box-sizing:border-box;width:100%;max-width:100%;min-width:0}
+  .points-label-short{display:none}
+  @container(max-width:480px){
+    .stats-buttons-group{grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.65fr);gap:3px}
+    .stats-buttons-group .distribution-button,.stats-buttons-group .remaining-points-display{box-sizing:border-box;min-width:0;min-height:24px;margin:0;padding:3px;font-size:.62rem;line-height:1.1;white-space:nowrap;text-align:center}
+  }
   .stats-breakdown{box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow:hidden}
   .stats-table-heading,.stat-breakdown-row{box-sizing:border-box;display:grid;width:100%;max-width:100%;min-width:0;grid-template-columns:minmax(82px,1.15fr) repeat(3,minmax(0,.72fr)) minmax(0,.5fr) minmax(0,.55fr);gap:4px;align-items:center}
   .stats-table-heading{padding:0 5px 3px;color:var(--text-tertiary);font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;text-align:center}
@@ -167,6 +172,9 @@
     .stat-total{font-size:.75rem}
   }
   @container(max-width:330px){
+    .stats-buttons-group{grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.15fr)}
+    .points-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+    .points-label-short{display:inline}
     .stats-table-heading,.stat-breakdown-row{grid-template-columns:minmax(54px,.95fr) repeat(3,minmax(0,.7fr)) minmax(0,.45fr) minmax(0,.48fr)}
     .nature-indicator{display:none}
   }
