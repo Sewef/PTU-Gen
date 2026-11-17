@@ -1841,7 +1841,8 @@ class PokemonGenerator {
       if (habitatStr) {
         // Split by comma and add each habitat
         habitatStr.split(',').forEach(habitat => {
-          habitats.add(habitat.trim());
+          const trimmedHabitat = habitat.trim();
+          if (trimmedHabitat) habitats.add(trimmedHabitat);
         });
       }
     });
