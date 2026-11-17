@@ -103,11 +103,11 @@
     </div>
   {/if}
   <div class="damage-utilities">
-    <div class="tick-buttons" role="group" aria-label="HP tick controls"><span class="utility-label">HP</span><button type="button" title={'Lose one tick (' + tick + ' HP)'} onclick={() => applyTick(-1)}>− Tick</button><button type="button" title={'Heal one tick (' + tick + ' HP), up to ' + healingMaximum} onclick={() => applyTick(1)}>+ Tick</button></div>
+    <div class="tick-buttons" role="group" aria-label="HP tick controls"><span class="utility-label">HP tick</span><button type="button" aria-label="Lose one HP tick" title={'Lose one tick (' + tick + ' HP)'} onclick={() => applyTick(-1)}>−</button><button type="button" aria-label="Heal one HP tick" title={'Heal one tick (' + tick + ' HP), up to ' + healingMaximum} onclick={() => applyTick(1)}>+</button></div>
     <div class="damage-counters">
-      <div class="damage-counter-group"><label class="damage-counter">Temp HP <input aria-label="Temp HP" type="number" min="0" value={tempHitPoints} onchange={(event) => setTempHitPoints(Number(event.currentTarget.value))} /></label><button type="button" title={'Add one tick (' + tick + ' Temp HP)'} aria-label="Add one tick of Temp HP" onclick={addTempHitPointTick}>+ Tick</button></div>
-      <label class="damage-counter">Damage Reduction <input aria-label="Damage Reduction" type="number" min="0" step="1" value={damageReduction} onchange={(event) => setDamageReduction(Number(event.currentTarget.value))} /></label>
-      <div class="damage-counter-group"><label class="damage-counter">Injuries <input aria-label="Injuries" type="number" min="0" value={injuries} onchange={(event) => setInjuries(Number(event.currentTarget.value))} /></label><button type="button" title="Add one injury and reduce the healing cap by 10%" aria-label="Add one injury" onclick={addInjury}>+1</button></div>
+      <div class="damage-counter-group"><label class="damage-counter"><span>Temp HP</span><input aria-label="Temp HP" type="number" min="0" value={tempHitPoints} onchange={(event) => setTempHitPoints(Number(event.currentTarget.value))} /></label><button type="button" title={'Add one tick (' + tick + ' Temp HP)'} aria-label="Add one tick of Temp HP" onclick={addTempHitPointTick}>+</button></div>
+      <label class="damage-counter damage-reduction-counter"><abbr title="Damage Reduction">Damage Reduction</abbr> <input aria-label="Damage Reduction" type="number" min="0" step="1" value={damageReduction} onchange={(event) => setDamageReduction(Number(event.currentTarget.value))} /></label>
+      <div class="damage-counter-group"><label class="damage-counter"><span>Injuries</span><input aria-label="Injuries" type="number" min="0" value={injuries} onchange={(event) => setInjuries(Number(event.currentTarget.value))} /></label><button type="button" title="Add one injury and reduce the healing cap by 10%" aria-label="Add one injury" onclick={addInjury}>+</button></div>
     </div>
   </div>
 </div>
@@ -116,13 +116,17 @@
   .incoming-damage-block{display:block;width:100%;min-width:0;container-type:inline-size;text-align:left}
   .incoming-damage-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap}
   .incoming-damage-header .info-label{margin:0}
-  .damage-counters{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .damage-counter{display:flex;align-items:center;gap:4px;margin:0;color:var(--text-secondary);font-size:.7rem;font-weight:600;white-space:nowrap}
-  .damage-counter input{box-sizing:border-box;width:42px;min-height:25px;padding:2px 4px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-main);color:var(--text-primary);text-align:center;font:inherit}
-  .damage-utilities{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border-color)}
-  .tick-buttons,.damage-counter-group{display:flex;align-items:center;gap:4px}
-  .utility-label{margin-right:2px;font-size:.7rem;font-weight:600;color:var(--text-secondary)}
-  .damage-utilities button{min-height:25px;padding:3px 6px;border:1px solid var(--border-color);border-radius:4px;background:transparent;color:var(--text-secondary);font-size:.7rem;cursor:pointer}
+  .damage-counters{display:contents}
+  .damage-counter{display:grid;grid-template-columns:minmax(0,1fr) 40px 25px;align-items:center;gap:3px;margin:0;color:var(--text-secondary);font-size:.7rem;font-weight:600;line-height:14px;white-space:nowrap}
+  .damage-counter input{box-sizing:border-box;flex:0 0 40px;width:40px;min-width:0;height:25px;min-height:25px;padding:2px 3px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-main);color:var(--text-primary);text-align:center;font:inherit}
+  .damage-counter abbr{text-decoration:none}
+  .damage-reduction-counter{grid-template-columns:minmax(0,1fr) 40px}
+  .damage-utilities{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;gap:5px 12px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border-color)}
+  .tick-buttons,.damage-counter-group{display:grid;grid-template-columns:minmax(0,1fr) 40px 25px;align-items:center;gap:3px;white-space:nowrap}
+  .tick-buttons{grid-template-columns:minmax(0,1fr) 25px 25px}
+  .damage-counter-group .damage-counter{display:contents}
+  .damage-counter-group .damage-counter>span,.utility-label{font-size:.7rem;font-weight:600;line-height:14px;color:var(--text-secondary)}
+  .damage-utilities button{box-sizing:border-box;flex:0 0 25px;width:25px;height:25px;min-height:25px;padding:0;border:1px solid var(--border-color);border-radius:4px;background:transparent;color:var(--text-secondary);font-size:.8rem;cursor:pointer}
   .damage-utilities button:hover{border-color:var(--primary-color);color:var(--primary-color)}
   .damage-mode-buttons{display:inline-flex;gap:0}
   .damage-mode-buttons button{padding:4px 8px;border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-secondary);font:inherit;font-size:.72rem;font-weight:700;cursor:pointer}
@@ -142,5 +146,6 @@
   .damage-category-buttons{display:grid;grid-template-columns:1fr 1fr;gap:0}
   .damage-category-buttons button{min-width:0;padding:5px 4px;border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-secondary);font-size:.72em;font-weight:700;cursor:pointer}
   .damage-category-buttons button:first-child{border-radius:4px 0 0 4px}.damage-category-buttons button:last-child{border-radius:0 4px 4px 0}.damage-category-buttons button.active{border-color:var(--primary-color);background:var(--primary-color);color:#fff}
-  @container(max-width:360px){.hp-damage-controls{grid-template-columns:minmax(54px,.7fr) minmax(0,1fr)}.damage-category-buttons{grid-column:1}.hp-damage-controls.direct-damage-controls{grid-template-columns:minmax(54px,.7fr) minmax(0,1fr)}.direct-damage-controls .damage-mode-hint{grid-column:2;grid-row:1}.direct-damage-controls .hp-damage-btn{grid-column:1 / -1}.damage-counters{gap:8px}}
+  @container(max-width:640px){.damage-utilities{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @container(max-width:360px){.hp-damage-controls{grid-template-columns:minmax(54px,.7fr) minmax(0,1fr)}.damage-category-buttons{grid-column:1}.hp-damage-controls.direct-damage-controls{grid-template-columns:minmax(54px,.7fr) minmax(0,1fr)}.direct-damage-controls .damage-mode-hint{grid-column:2;grid-row:1}.direct-damage-controls .hp-damage-btn{grid-column:1 / -1}}
 </style>

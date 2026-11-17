@@ -40,6 +40,7 @@
   let advancedOpen = $state(false);
   let customOpen = $state(false);
   let owlbearOpen = $state(false);
+  let manifestCopyStatus = $state('');
   let importOpen = $state(false);
   let customInputs = $state<Record<CustomizationKind, string>>({ species: '', abilities: '', moves: '' });
   let customStatus = $state('');
@@ -73,6 +74,16 @@
   function persist() {
     if (!historyScope) return;
     localStorage.setItem(settingsKey(historyScope), JSON.stringify(settings));
+  }
+
+  async function copyManifest() {
+    manifestCopyStatus = '';
+    try {
+      await navigator.clipboard.writeText(new URL('/manifest.json', location.origin).href);
+      manifestCopyStatus = 'Manifest URL copied';
+    } catch {
+      manifestCopyStatus = 'Unable to copy. Please try again.';
+    }
   }
 
   function resetSettings() {
@@ -354,6 +365,7 @@
 
         <button type="button" class="advanced-toggle" class:has-hidden-changes={owlbearChanged && !owlbearOpen} onclick={() => owlbearOpen = !owlbearOpen}><span class="advanced-toggle-label"><img class="advanced-menu-icon owlbear-menu-icon" src="/owlbear-logo.svg" alt="" aria-hidden="true" /><span>Owlbear Rodeo</span></span><span>{owlbearOpen ? '▲' : '▼'}</span></button>
         {#if owlbearOpen}<div class="advanced-section open"><div class="advanced-content">
+          {#if !embedded}<div class="manifest-copy-row"><button type="button" class="edit-bn" onclick={copyManifest}>Copy Manifest</button><span role="status">{manifestCopyStatus}</span></div>{/if}
           <div class="form-group" class:pref-changed-group={settings.owlbearPlayerId !== defaults.owlbearPlayerId}><label for="owner">{embedded ? 'Owner' : 'Player ID'}</label>{#if embedded}<select class:pref-changed-control={settings.owlbearPlayerId !== defaults.owlbearPlayerId} id="owner" bind:value={settings.owlbearPlayerId} disabled={!currentPlayer}><option value="">{currentPlayer ? 'Select owner' : 'Loading players…'}</option>{#if currentPlayer}<option value={currentPlayer.id}>Me ({currentPlayer.name})</option>{/if}{#each roomPlayers.filter(player => player.id !== currentPlayer?.id) as player}<option value={player.id}>{player.name}</option>{/each}</select>{:else}<input class:pref-changed-control={settings.owlbearPlayerId !== defaults.owlbearPlayerId} id="owner" bind:value={settings.owlbearPlayerId} />{/if}</div>
           <div class="form-group" class:pref-changed-group={settings.owlbearVisible !== defaults.owlbearVisible}><label class="inline-option"><input class:pref-changed-control={settings.owlbearVisible !== defaults.owlbearVisible} type="checkbox" bind:checked={settings.owlbearVisible} /> Token visible</label></div>
           <div class="form-group" class:pref-changed-group={settings.owlbearTrackers !== defaults.owlbearTrackers}><label for="trackers">{OWLBEAR_INTEGRATIONS.trackers.label}</label><select class:pref-changed-control={settings.owlbearTrackers !== defaults.owlbearTrackers} id="trackers" bind:value={settings.owlbearTrackers}>{#each OWLBEAR_INTEGRATIONS.trackers.options as option}<option value={option.value}>{option.label}</option>{/each}</select></div>
@@ -414,6 +426,8 @@
   .advanced-toggle-label{display:inline-flex;align-items:center;gap:.45rem;min-width:0}
   .advanced-menu-icon{display:inline-flex;width:1.15rem;height:1.15rem;flex:0 0 1.15rem;align-items:center;justify-content:center;font-size:1rem;line-height:1}
   .owlbear-menu-icon{display:block;object-fit:contain}
+  .manifest-copy-row{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem .6rem;grid-column:1/-1;margin-bottom:.5rem}
+  .manifest-copy-row span{color:var(--text-secondary);font-size:.8rem}
   .input-button-row input { flex: 1; }
   .custom-import-group{display:grid;gap:.35rem}.custom-file-row input{box-sizing:border-box;width:100%;min-height:32px;padding:.25rem}.template-link{margin-left:auto;font-size:.8rem;font-weight:650}
   .autocomplete-suggestions.visible { display: block; position: relative; }

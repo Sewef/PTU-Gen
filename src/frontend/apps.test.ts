@@ -26,6 +26,34 @@ afterEach(async () => {
 });
 
 describe('Svelte application surfaces', () => {
+  it.each([false, true])('shows Copy Manifest only outside the extension (embedded: %s)', async (embedded) => {
+    history.replaceState({}, '', '/?owlbear=true');
+    if (embedded) vi.stubGlobal('parent', { postMessage: vi.fn() });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      fandexes: [], natures: [], species: [], habitats: [], types: []
+    }))));
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    instances.push(mount(GeneratorApp, { target: document.getElementById('app')! }));
+    await tick();
+    Array.from(document.querySelectorAll('button')).find(button => button.textContent?.includes('Owlbear Rodeo'))!.click();
+    await tick();
+    const copy = Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Copy Manifest');
+    if (embedded) {
+      expect(copy).toBeUndefined();
+      expect(writeText).not.toHaveBeenCalled();
+    } else {
+      expect(copy?.type).toBe('button');
+      copy!.click();
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith(`${location.origin}/manifest.json`));
+      await tick();
+      expect(document.querySelector('.manifest-copy-row [role="status"]')?.textContent).toBe('Manifest URL copied');
+      writeText.mockRejectedValueOnce(new Error('Clipboard unavailable'));
+      copy!.click();
+      await vi.waitFor(() => expect(document.querySelector('.manifest-copy-row [role="status"]')?.textContent).toContain('Unable to copy'));
+    }
+  });
+
   it('shows the current generation stage and removes status text when finished', async () => {
     const encoder = new TextEncoder();
     let progressStream: ReadableStreamDefaultController<Uint8Array>;
@@ -366,8 +394,9 @@ describe('Svelte application surfaces', () => {
     expect(document.body.textContent).toContain('× 10');
     expect(document.querySelector('.incoming-damage-block .hp-damage-controls')).not.toBeNull();
     expect(document.querySelector('.level-hp-info-row + .incoming-damage-block')).not.toBeNull();
-    const tickButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.tick-buttons button'));
-    expect(tickButtons.map(button => button.textContent)).toEqual(['+ Tick', '− Tick', '+ Tick Temp HP', '+ Injury']);
+    const tickButtons = ['Heal one HP tick', 'Lose one HP tick', 'Add one tick of Temp HP', 'Add one injury']
+      .map(label => document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!);
+    expect(tickButtons.every(Boolean)).toBe(true);
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Temp HP"]')?.value).toBe('0');
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Injuries"]')?.value).toBe('0');
     tickButtons[2].click();
