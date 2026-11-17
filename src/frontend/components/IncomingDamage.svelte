@@ -12,6 +12,7 @@
 
   let amount: number | null = $state(null);
   let mode = $state<'attack' | 'direct'>('attack');
+  let ignoreDr = $state(false);
   let category = $state<'physical' | 'special'>('physical');
   const damageTypes = $derived(attackingTypes(pokemon));
   const effectiveness = $derived(Number(typeEffectiveness(pokemon)[damageType] ?? 1));
@@ -20,7 +21,8 @@
   const calculatedDamage = $derived(mode === 'direct'
     ? Math.max(0, Math.trunc(Number.isFinite(amount) ? amount! : 0))
     : calculateIncomingDamage(amount ?? 0, defense, effectiveness));
-  const finalDamage = $derived(reduceIncomingDamage(calculatedDamage, damageReduction));
+  const appliedDr = $derived(mode === 'direct' && ignoreDr ? 0 : damageReduction);
+  const finalDamage = $derived(reduceIncomingDamage(calculatedDamage, appliedDr));
   const tick = $derived(hitPointTick(Number(pokemon.hitPointsMax)));
   const tempHitPoints = $derived(Math.max(0, Math.trunc(Number(pokemon.tempHitPoints) || 0)));
   const injuries = $derived(Number(pokemon.captureState?.standardCounts?.injuries) || 0);
@@ -92,13 +94,13 @@
       <select class="hp-damage-select" aria-label="Damage type" bind:value={damageType}>{#each damageTypes as type}<option value={type.toLowerCase()}>{type}</option>{/each}</select>
       <div class="damage-category-buttons" role="group" aria-label="Damage class"><button type="button" class:active={category === 'physical'} aria-pressed={category === 'physical'} onclick={() => category = 'physical'}>Physical</button><button type="button" class:active={category === 'special'} aria-pressed={category === 'special'} onclick={() => category = 'special'}>Special</button></div>
     {:else}
-      <span class="damage-mode-hint">Ignores defense &amp; types</span>
+      <div class="direct-damage-options"><span class="damage-mode-hint">Ignores defense &amp; types</span><label class="ignore-dr-option"><input type="checkbox" bind:checked={ignoreDr} /> Ignore DR</label></div>
     {/if}
     <button type="submit" class="hp-damage-btn" disabled={amount === null || !Number.isFinite(amount) || amount <= 0}>Apply</button>
   </form>
   {#if amount !== null && Number.isFinite(amount) && amount > 0}
     <div class="hp-damage-preview" aria-live="polite">
-      <span>Final: <strong>{finalDamage}</strong>{#if mode === 'attack'} ({amount} − {defense}, {effectiveness}x{#if damageReduction > 0}, −{damageReduction} DR{/if}){:else if damageReduction > 0} ({amount} − {damageReduction} DR){/if}</span>
+      <span>Final: <strong>{finalDamage}</strong>{#if mode === 'attack'} ({amount} − {defense}, {effectiveness}x{#if appliedDr > 0}, −{appliedDr} DR{/if}){:else if ignoreDr} (DR ignored){:else if appliedDr > 0} ({amount} − {appliedDr} DR){/if}</span>
       <span class="damage-hp-preview">{#if tempHitPoints > 0}Temp HP {tempHitPoints} → {damageResult.tempHitPoints}<span aria-hidden="true"> · </span>{/if}HP {pokemon.hitPoints} → {damageResult.hitPoints}</span>
     </div>
   {/if}
@@ -134,6 +136,9 @@
   .damage-mode-buttons button.active{border-color:var(--primary-color);background:var(--primary-color);color:#fff}
   .damage-mode-buttons button:hover:not(.active){color:var(--primary-color)}
   .damage-mode-hint{color:var(--text-secondary);font-size:.7rem;line-height:1.35}
+  .direct-damage-options{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 8px}
+  .ignore-dr-option{display:inline-flex;align-items:center;gap:4px;margin:0;color:var(--text-secondary);font-size:.7rem;white-space:nowrap;cursor:pointer}
+  .ignore-dr-option input{width:14px;height:14px;margin:0;padding:0;accent-color:var(--primary-color);cursor:pointer}
   .hp-damage-controls{box-sizing:border-box;width:100%;max-width:100%;margin-top:0;align-items:center;gap:6px;grid-template-columns:minmax(54px,.65fr) minmax(70px,1fr) minmax(112px,1.2fr) 60px}
   .hp-damage-controls.direct-damage-controls{grid-template-columns:minmax(54px,.65fr) minmax(0,2.2fr) 60px}
   .hp-damage-controls>*{min-width:0;max-width:100%}
@@ -147,5 +152,5 @@
   .damage-category-buttons button{min-width:0;padding:5px 4px;border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-secondary);font-size:.72em;font-weight:700;cursor:pointer}
   .damage-category-buttons button:first-child{border-radius:4px 0 0 4px}.damage-category-buttons button:last-child{border-radius:0 4px 4px 0}.damage-category-buttons button.active{border-color:var(--primary-color);background:var(--primary-color);color:#fff}
   @container(max-width:640px){.damage-utilities{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @container(max-width:360px){.hp-damage-controls{grid-template-columns:minmax(54px,.7fr) minmax(0,1fr)}.damage-category-buttons{grid-column:1}.hp-damage-controls.direct-damage-controls{grid-template-columns:minmax(54px,.7fr) minmax(0,1fr)}.direct-damage-controls .damage-mode-hint{grid-column:2;grid-row:1}.direct-damage-controls .hp-damage-btn{grid-column:1 / -1}}
+  @container(max-width:360px){.hp-damage-controls{grid-template-columns:minmax(54px,.7fr) minmax(0,1fr)}.damage-category-buttons{grid-column:1}.hp-damage-controls.direct-damage-controls{grid-template-columns:minmax(54px,.7fr) minmax(0,1fr)}.direct-damage-controls .direct-damage-options{grid-column:2;grid-row:1}.direct-damage-controls .hp-damage-btn{grid-column:1 / -1}}
 </style>

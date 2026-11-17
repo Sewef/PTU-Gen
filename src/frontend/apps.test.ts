@@ -586,6 +586,25 @@ describe('Svelte application surfaces', () => {
     document.querySelector<HTMLButtonElement>('.hp-damage-btn')!.click();
     await tick();
     expect(saved()).toMatchObject({ hitPoints: 82, damageReduction: 50 });
+
+    const ignoreDr = document.querySelector<HTMLInputElement>('.ignore-dr-option input')!;
+    expect(ignoreDr.checked).toBe(false);
+    ignoreDr.click();
+    await tick();
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('Final: 30');
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('DR ignored');
+    document.querySelector<HTMLButtonElement>('.hp-damage-btn')!.click();
+    await tick();
+    expect(saved()).toMatchObject({ hitPoints: 52, damageReduction: 50 });
+    ignoreDr.click();
+    await tick();
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('Final: 1');
+    ignoreDr.click();
+    await tick();
+    document.querySelectorAll<HTMLButtonElement>('[aria-label="Damage mode"] button')[0].click();
+    await tick();
+    expect(document.querySelector('.ignore-dr-option')).toBeNull();
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('Final: 1');
   });
 
   it('shows STAB as a toggle that updates the damage base', async () => {
