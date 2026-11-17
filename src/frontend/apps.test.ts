@@ -472,6 +472,52 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('30 − 14');
   });
 
+  it('applies direct damage through immunity and defense, spending temporary HP first', async () => {
+    const pokemon = normalizePokemon({
+      id: 25, name: 'Pikachu', level: 12, types: ['Electric'],
+      stats: { HP: 5, atk: 6, def: 40, spA: 7, spD: 30, spe: 8 },
+      typeEffectivenessOverrides: { ground: 0 },
+      hitPoints: 100, hitPointsMax: 100, tempHitPoints: 8
+    });
+    const saved: { hp: number; temporary: number }[] = [];
+    instances.push(mount(IncomingDamage, {
+      target: document.getElementById('app')!,
+      props: { pokemon, damageType: 'ground', onsave: () => saved.push({ hp: Number(pokemon.hitPoints), temporary: Number(pokemon.tempHitPoints) }) }
+    }));
+    await tick();
+    const submit = document.querySelector<HTMLButtonElement>('.hp-damage-btn')!;
+    expect(submit.disabled).toBe(true);
+    const input = document.querySelector<HTMLInputElement>('[aria-label="Incoming damage"]')!;
+    input.value = '30';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await tick();
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('Final: 0');
+
+    const modes = document.querySelectorAll<HTMLButtonElement>('[aria-label="Damage mode"] button');
+    modes[1].click();
+    await tick();
+    expect(modes[1].getAttribute('aria-pressed')).toBe('true');
+    expect(document.querySelector('[aria-label="Damage type"]')).toBeNull();
+    expect(document.querySelector('[aria-label="Damage class"]')).toBeNull();
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('Final: 30');
+    expect(document.querySelector('.damage-hp-preview')?.textContent).toContain('Temp HP 8 → 0');
+    expect(document.querySelector('.damage-hp-preview')?.textContent).toContain('HP 100 → 78');
+    submit.click();
+    await tick();
+    expect(saved).toEqual([{ hp: 78, temporary: 0 }]);
+
+    modes[0].click();
+    await tick();
+    expect(document.querySelector<HTMLSelectElement>('[aria-label="Damage type"]')?.value).toBe('ground');
+    expect(input.value).toBe('30');
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('Final: 0');
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await tick();
+    expect(submit.disabled).toBe(true);
+    expect(document.querySelector('.hp-damage-preview')).toBeNull();
+  });
+
   it('shows STAB as a toggle that updates the damage base', async () => {
     const onsave = vi.fn();
     const pokemon = normalizePokemon({
