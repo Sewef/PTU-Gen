@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 const outputDirectory = resolve('dist');
 const requiredAssets = [
   'manifest.json',
-  'manifest-dev.json',
   'owlbear.html',
   'owlbear.js',
   'owlbear.css',
