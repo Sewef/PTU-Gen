@@ -16,10 +16,18 @@ describe('pokemon helpers', () => {
     expect(pokemon.moves).toEqual([]);
     expect(pokemon.captureState.standardCounts).toEqual({});
     expect(pokemon.hitPoints).toBe(pokemon.hitPointsMax);
+    expect(pokemon.damageReduction).toBe(0);
     expect(pokemon.gender).toBe('Female');
     expect(pokemon.otherInfo?.gender).toBe('Female');
     expect(pokemon.statBonuses).toEqual({ HP: 0, atk: 0, def: 0, spA: 0, spD: 0, spe: 0 });
     expect(pokemon.combatStages).toEqual({ atk: 0, def: 0, spA: 0, spD: 0, spe: 0 });
+  });
+
+  it('keeps saved DR and normalizes invalid values', () => {
+    const record = { name: 'Testmon', level: 5, stats: { HP: 3 } };
+    expect(normalizePokemon({ ...record, damageReduction: 8 }).damageReduction).toBe(8);
+    expect(normalizePokemon({ ...record, damageReduction: -2 }).damageReduction).toBe(0);
+    expect(normalizePokemon({ ...record, damageReduction: Infinity }).damageReduction).toBe(0);
   });
 
   it('preserves combat stages while removing the legacy HP stage', () => {

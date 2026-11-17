@@ -5,6 +5,12 @@ export function calculateIncomingDamage(amount: number, defense: number, multipl
   return Math.max(1, Math.floor(reduced * (Number.isFinite(multiplier) ? multiplier : 1)));
 }
 
+export function reduceIncomingDamage(damage: number, reduction: number): number {
+  if (!Number.isFinite(damage) || damage <= 0) return 0;
+  const safeReduction = Number.isFinite(reduction) ? Math.max(0, Math.trunc(reduction)) : 0;
+  return Math.max(1, damage - safeReduction);
+}
+
 export function hitPointTick(maximumHitPoints: number): number {
   return Math.max(1, Math.floor((Number(maximumHitPoints) || 0) / 10));
 }

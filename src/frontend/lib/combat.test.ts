@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { adjustHitPointsByTick, applyDamageToHitPoints, calculateIncomingDamage, hitPointTick, injuredHitPointMaximum } from './combat';
+import { adjustHitPointsByTick, applyDamageToHitPoints, calculateIncomingDamage, reduceIncomingDamage, hitPointTick, injuredHitPointMaximum } from './combat';
 
 describe('incoming damage', () => {
+  it('subtracts DR after defense and effectiveness, with a minimum of one', () => {
+    expect(reduceIncomingDamage(calculateIncomingDamage(20, 5, 2), 8)).toBe(22);
+    expect(reduceIncomingDamage(5, 5)).toBe(1);
+    expect(reduceIncomingDamage(5, 50)).toBe(1);
+    expect(reduceIncomingDamage(5, 0)).toBe(5);
+    expect(reduceIncomingDamage(5, -10)).toBe(5);
+  });
+
+  it('preserves immunity and empty damage when applying DR', () => {
+    expect(reduceIncomingDamage(calculateIncomingDamage(20, 5, 0), 8)).toBe(0);
+    expect(reduceIncomingDamage(0, 8)).toBe(0);
+  });
+
   it('subtracts the relevant defense before effectiveness', () => {
     expect(calculateIncomingDamage(20, 5, 2)).toBe(30);
   });

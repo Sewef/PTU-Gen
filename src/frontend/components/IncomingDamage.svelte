@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Pokemon } from '../lib/types';
   import { attackingTypes, typeEffectiveness } from '../lib/type-effectiveness';
-  import { adjustHitPointsByTick, applyDamageToHitPoints, calculateIncomingDamage, hitPointTick, injuredHitPointMaximum } from '../lib/combat';
+  import { adjustHitPointsByTick, applyDamageToHitPoints, calculateIncomingDamage, reduceIncomingDamage, hitPointTick, injuredHitPointMaximum } from '../lib/combat';
   import { totalStat } from '../lib/stats';
 
   let { pokemon = $bindable(), damageType = $bindable('typeless'), onsave }: {
@@ -16,9 +16,11 @@
   const damageTypes = $derived(attackingTypes(pokemon));
   const effectiveness = $derived(Number(typeEffectiveness(pokemon)[damageType] ?? 1));
   const defense = $derived(totalStat(pokemon, category === 'physical' ? 'def' : 'spD'));
-  const finalDamage = $derived(mode === 'direct'
+  const damageReduction = $derived(Math.max(0, Math.trunc(Number(pokemon.damageReduction) || 0)));
+  const calculatedDamage = $derived(mode === 'direct'
     ? Math.max(0, Math.trunc(Number.isFinite(amount) ? amount! : 0))
     : calculateIncomingDamage(amount ?? 0, defense, effectiveness));
+  const finalDamage = $derived(reduceIncomingDamage(calculatedDamage, damageReduction));
   const tick = $derived(hitPointTick(Number(pokemon.hitPointsMax)));
   const tempHitPoints = $derived(Math.max(0, Math.trunc(Number(pokemon.tempHitPoints) || 0)));
   const injuries = $derived(Number(pokemon.captureState?.standardCounts?.injuries) || 0);
@@ -62,6 +64,11 @@
     onsave();
   }
 
+  function setDamageReduction(value: number) {
+    pokemon.damageReduction = Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0;
+    onsave();
+  }
+
   function setInjuries(value: number) {
     const count = Math.max(0, Math.trunc(Number(value) || 0));
     pokemon.captureState!.standardCounts.injuries = count;
@@ -91,7 +98,7 @@
   </form>
   {#if amount !== null && Number.isFinite(amount) && amount > 0}
     <div class="hp-damage-preview" aria-live="polite">
-      <span>Final: <strong>{finalDamage}</strong>{#if mode === 'attack'} ({amount} − {defense}, {effectiveness}x){/if}</span>
+      <span>Final: <strong>{finalDamage}</strong>{#if mode === 'attack'} ({amount} − {defense}, {effectiveness}x{#if damageReduction > 0}, −{damageReduction} DR{/if}){:else if damageReduction > 0} ({amount} − {damageReduction} DR){/if}</span>
       <span class="damage-hp-preview">{#if tempHitPoints > 0}Temp HP {tempHitPoints} → {damageResult.tempHitPoints}<span aria-hidden="true"> · </span>{/if}HP {pokemon.hitPoints} → {damageResult.hitPoints}</span>
     </div>
   {/if}
@@ -99,6 +106,7 @@
     <div class="tick-buttons" role="group" aria-label="HP tick controls"><span class="utility-label">HP</span><button type="button" title={'Lose one tick (' + tick + ' HP)'} onclick={() => applyTick(-1)}>− Tick</button><button type="button" title={'Heal one tick (' + tick + ' HP), up to ' + healingMaximum} onclick={() => applyTick(1)}>+ Tick</button></div>
     <div class="damage-counters">
       <div class="damage-counter-group"><label class="damage-counter">Temp HP <input aria-label="Temp HP" type="number" min="0" value={tempHitPoints} onchange={(event) => setTempHitPoints(Number(event.currentTarget.value))} /></label><button type="button" title={'Add one tick (' + tick + ' Temp HP)'} aria-label="Add one tick of Temp HP" onclick={addTempHitPointTick}>+ Tick</button></div>
+      <label class="damage-counter">Damage Reduction <input aria-label="Damage Reduction" type="number" min="0" step="1" value={damageReduction} onchange={(event) => setDamageReduction(Number(event.currentTarget.value))} /></label>
       <div class="damage-counter-group"><label class="damage-counter">Injuries <input aria-label="Injuries" type="number" min="0" value={injuries} onchange={(event) => setInjuries(Number(event.currentTarget.value))} /></label><button type="button" title="Add one injury and reduce the healing cap by 10%" aria-label="Add one injury" onclick={addInjury}>+1</button></div>
     </div>
   </div>

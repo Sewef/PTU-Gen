@@ -518,6 +518,47 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector('.hp-damage-preview')).toBeNull();
   });
 
+  it('saves DR and applies it after attack calculations and direct damage, before temporary HP', async () => {
+    const pokemon = normalizePokemon({
+      name: 'Testmon', level: 12, types: ['Electric'],
+      stats: { HP: 5, def: 10 }, hitPoints: 100, hitPointsMax: 100, tempHitPoints: 5
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ natures: [], evolutionsRemaining: 0 }))));
+    localStorage.setItem('selectedPokemon', JSON.stringify(pokemon));
+    instances.push(mount(DetailsApp, { target: document.getElementById('app')! }));
+    await tick();
+    const saved = () => JSON.parse(localStorage.getItem('selectedPokemon')!);
+    const type = document.querySelector<HTMLSelectElement>('[aria-label="Damage type"]')!;
+    type.value = 'ground';
+    type.dispatchEvent(new Event('change', { bubbles: true }));
+    const input = document.querySelector<HTMLInputElement>('[aria-label="Incoming damage"]')!;
+    input.value = '30';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const dr = document.querySelector<HTMLInputElement>('[aria-label="Damage Reduction"]')!;
+    expect(dr.value).toBe('0');
+    dr.value = '8';
+    dr.dispatchEvent(new Event('change', { bubbles: true }));
+    await tick();
+    expect(saved().damageReduction).toBe(8);
+    // (30 - 10 defense) × 1.5 effectiveness - 8 DR = 22.
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('Final: 22');
+    expect(document.querySelector('.damage-hp-preview')?.textContent).toContain('HP 100 → 83');
+    document.querySelector<HTMLButtonElement>('.hp-damage-btn')!.click();
+    await tick();
+    expect(saved()).toMatchObject({ hitPoints: 83, tempHitPoints: 0, damageReduction: 8 });
+
+    document.querySelectorAll<HTMLButtonElement>('[aria-label="Damage mode"] button')[1].click();
+    await tick();
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('Final: 22');
+    dr.value = '50';
+    dr.dispatchEvent(new Event('change', { bubbles: true }));
+    await tick();
+    expect(document.querySelector('.hp-damage-preview')?.textContent).toContain('Final: 1');
+    document.querySelector<HTMLButtonElement>('.hp-damage-btn')!.click();
+    await tick();
+    expect(saved()).toMatchObject({ hitPoints: 82, damageReduction: 50 });
+  });
+
   it('shows STAB as a toggle that updates the damage base', async () => {
     const onsave = vi.fn();
     const pokemon = normalizePokemon({
