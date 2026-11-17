@@ -817,8 +817,10 @@ button {
     font-size: 0.75em;
 }
 
-.errata-rarity-input {
-    width: 50px;
+input.errata-rarity-input[type="number"] {
+    box-sizing: border-box;
+    flex: 0 0 52px;
+    width: 52px;
     min-height: 24px;
     padding: 3px 5px;
     border: 1px solid var(--border-color);
@@ -858,9 +860,11 @@ button {
     gap: 6px;
 }
 
-.status-count-input-standard,
-.status-count-input {
-    width: 40px;
+input.status-count-input-standard[type="number"],
+input.status-count-input[type="number"] {
+    box-sizing: border-box;
+    flex: 0 0 52px;
+    width: 52px;
     min-height: 24px;
     padding: 3px 5px;
     border: 1px solid var(--border-color);
@@ -1459,8 +1463,9 @@ button {
     background-color: #b366cc;
 }
 
-.struggle-ac-input {
-    width: 34px;
+input.struggle-ac-input[type="number"] {
+    box-sizing: border-box;
+    width: 48px;
     padding: 0 2px;
     border: 1px solid var(--border-color);
     border-radius: 3px;
