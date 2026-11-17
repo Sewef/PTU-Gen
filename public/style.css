@@ -627,14 +627,10 @@ button {
 
 .other-info-panel .other-info-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px 12px;
-    padding: 8px 12px 10px;
+    gap: 3px 10px;
+    padding: 6px 10px;
     border-top: 1px solid var(--border-color);
     text-align: left;
-}
-
-.other-info-panel .other-info-grid > :last-child {
-    grid-column: 1 / -1;
 }
 
 .other-info-gender {
@@ -785,10 +781,6 @@ button {
     .other-info-panel .other-info-grid,
     .errata-container {
         grid-template-columns: minmax(0, 1fr);
-    }
-
-    .other-info-panel .other-info-grid > :last-child {
-        grid-column: auto;
     }
 
 }
@@ -3746,10 +3738,6 @@ body.details-page.owlbear-embedded .export-button-wrapper {
     font-size: 0.9em;
 }
 
-.other-info-grid > div:last-child {
-    grid-column: 1 / -1;
-}
-
 .remove-move-btn {
     padding: 4px 8px;
     background: var(--bg-secondary);
@@ -4377,7 +4365,7 @@ body.details-page {
 }
 
 .details-page .other-info-grid {
-    gap: 6px;
+    gap: 3px 10px;
 }
 
 .details-page .stats-breakdown {

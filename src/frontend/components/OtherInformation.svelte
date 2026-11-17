@@ -34,14 +34,16 @@
   <div class="other-info-grid">
     <div class="info-value other-info-gender"><strong>Gender:</strong> <select class="gender-select" value={pokemon.gender} onchange={(event) => changeGender(event.currentTarget.value)}><option>Unknown</option><option>Male</option><option>Female</option><option value="No Gender">Genderless</option></select></div>
     {#each Object.entries(pokemon.otherInfo || {}).filter(([key, value]) => key !== 'gender' && ['string','number'].includes(typeof value)) as [key, value]}
-      <div class="info-value"><strong>{fieldLabel(key)}:</strong> {String(value)}</div>
+      <div class="info-value"><strong>{fieldLabel(key)}:</strong> <span>{String(value)}</span></div>
     {/each}
   </div>
 </details>
 
 <style>
-  .other-info-grid{padding:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;font-size:.8rem;line-height:1.35}
-  .other-info-grid .info-value,.other-info-gender{font-size:inherit}
+  .other-info-panel > summary{padding:6px 10px}
+  .other-info-grid{display:grid;font-size:.8rem;line-height:1.25}
+  .other-info-grid .info-value{display:flex;align-items:center;gap:5px;min-width:0;min-height:24px;margin:0;font-size:inherit}
+  .other-info-grid .info-value > span{min-width:0;overflow-wrap:anywhere}
   .other-info-grid strong{font-weight:650}
-  .gender-select{min-height:27px;font-size:inherit}
+  .other-info-gender .gender-select{width:auto;max-width:100%;min-height:24px;padding:2px 24px 2px 6px;font-size:inherit;line-height:1.25}
 </style>
