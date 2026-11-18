@@ -347,7 +347,7 @@ describe('Svelte application surfaces', () => {
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Attack bonus"]')?.value).toBe('0');
     expect(Array.from(document.querySelectorAll('.level-hp-field > span')).map(label => label.textContent)).toEqual(['Level', 'Current HP', 'Max HP']);
     expect(document.querySelector('.hp-formula-field > span')?.textContent).toBe('Formula');
-    expect(document.querySelector('.nature-field > span')?.textContent).toBe('Selected nature');
+    expect(document.querySelector('.other-info-panel .nature-field > strong')?.textContent).toBe('Nature:');
     const attackRelation = document.querySelector<HTMLInputElement>('input[aria-label="Keep Attack in Base Relation"]')!;
     attackRelation.click();
     await tick();
