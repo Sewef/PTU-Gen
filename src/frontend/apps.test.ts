@@ -345,8 +345,12 @@ describe('Svelte application surfaces', () => {
     expect(attackBase.value).toBe('8');
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Attack level points"]')?.value).toBe('2');
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Attack bonus"]')?.value).toBe('0');
-    expect(Array.from(document.querySelectorAll('.level-hp-field > span')).map(label => label.textContent)).toEqual(['Level', 'Current HP', 'Max HP']);
-    expect(document.querySelector('.hp-formula-field > span')?.textContent).toBe('Formula');
+    expect(document.querySelector('.pokemon-header input[aria-label="Level"]')).not.toBeNull();
+    expect(document.querySelector('.incoming-damage-block .hp-summary input[aria-label="Current HP"]')).not.toBeNull();
+    expect(document.querySelector('.incoming-damage-block .hp-summary input[aria-label="Maximum HP"]')).not.toBeNull();
+    expect(document.querySelector('.other-info-panel input[aria-label="HP Formula"]')).not.toBeNull();
+    expect(document.querySelector<HTMLDetailsElement>('.other-info-panel')?.open).toBe(false);
+    expect(document.querySelector<HTMLDetailsElement>('.capture-rate-panel')?.open).toBe(false);
     expect(document.querySelector('.other-info-panel .nature-field > strong')?.textContent).toBe('Nature:');
     const attackRelation = document.querySelector<HTMLInputElement>('input[aria-label="Keep Attack in Base Relation"]')!;
     attackRelation.click();
@@ -468,7 +472,8 @@ describe('Svelte application surfaces', () => {
     expect(document.body.textContent).toContain('Stuck:');
     expect(document.body.textContent).toContain('× 10');
     expect(document.querySelector('.incoming-damage-block .hp-damage-controls')).not.toBeNull();
-    expect(document.querySelector('.level-hp-info-row + .incoming-damage-block')).not.toBeNull();
+    expect(document.querySelector('.level-hp-info-row')).toBeNull();
+    expect(document.querySelector('.hp-summary + .incoming-damage-header')).not.toBeNull();
     const tickButtons = ['Heal one HP tick', 'Lose one HP tick', 'Add one tick of Temp HP', 'Add one injury']
       .map(label => document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!);
     expect(tickButtons.every(Boolean)).toBe(true);
@@ -500,9 +505,21 @@ describe('Svelte application surfaces', () => {
     const afterDamage = JSON.parse(localStorage.getItem('selectedPokemon')!);
     expect(afterDamage.hitPoints).toBeLessThan(afterInjury.hitPoints);
     expect(afterDamage.tempHitPoints).toBe(0);
+    const hpMeter = document.querySelector('[role="meter"][aria-label="Remaining HP"]')!;
+    expect(hpMeter.getAttribute('aria-valuetext')).toBe(`${afterDamage.hitPoints} / ${afterDamage.hitPointsMax} HP`);
+    expect(Number(hpMeter.getAttribute('aria-valuenow'))).toBeCloseTo(Math.max(0, Math.min(100, afterDamage.hitPoints / afterDamage.hitPointsMax * 100)));
     expect(document.querySelector('.details-right .damage-panel')).toBeNull();
     expect(document.querySelectorAll('.type-effectiveness-item')).toHaveLength(19);
     expect(document.querySelector('.type-effectiveness-header small')).toBeNull();
+    const evadeBonus = document.querySelector<HTMLInputElement>('input[aria-label="General evade bonus"]')!;
+    expect(evadeBonus.value).toBe('0');
+    evadeBonus.value = '9';
+    evadeBonus.dispatchEvent(new Event('change', { bubbles: true }));
+    await tick();
+    expect(JSON.parse(localStorage.getItem('selectedPokemon')!).evadeBonus).toBe(9);
+    for (const category of ['Physical', 'Special', 'Speed']) {
+      expect(document.querySelector(`output[aria-label="${category} evade"]`)?.textContent).toBe('9');
+    }
   });
 
   it('lets move and ability pickers switch to their global lists', async () => {

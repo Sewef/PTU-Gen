@@ -24,3 +24,9 @@ export function totalStat(pokemon: Pokemon, stat: StatKey): number {
   const stage = Number(pokemon.combatStages?.[stat]) || 0;
   return Math.floor(value * (COMBAT_STAGE_MULTIPLIERS[stage] || 1));
 }
+
+export function evade(pokemon: Pokemon, stat: 'def' | 'spD' | 'spe') {
+  const base = Math.max(0, Math.min(6, Math.floor(totalStat(pokemon, stat) / 5)));
+  const bonus = Number.isFinite(Number(pokemon.evadeBonus)) ? Math.trunc(Number(pokemon.evadeBonus)) : 0;
+  return { base, bonus, total: Math.max(0, Math.min(9, base + bonus)) };
+}

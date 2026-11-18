@@ -155,6 +155,7 @@ export function normalizePokemon(raw: any): Pokemon {
   if (pokemon.hitPoints === undefined || pokemon.hitPoints === null) pokemon.hitPoints = pokemon.hitPointsMax;
   pokemon.tempHitPoints = Math.max(0, Math.trunc(Number(pokemon.tempHitPoints) || 0));
   pokemon.damageReduction = Math.max(0, Math.trunc(Number.isFinite(Number(pokemon.damageReduction)) ? Number(pokemon.damageReduction) : 0));
+  pokemon.evadeBonus = Math.trunc(Number.isFinite(Number(pokemon.evadeBonus)) ? Number(pokemon.evadeBonus) : 0);
   pokemon.tutorPoints ??= Math.floor(pokemon.level / 5) + 1;
   ensureStruggle(pokemon);
   delete pokemon.typeMultiplierMode;

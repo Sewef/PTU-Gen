@@ -28,6 +28,9 @@
   const injuries = $derived(Number(pokemon.captureState?.standardCounts?.injuries) || 0);
   const healingMaximum = $derived(injuredHitPointMaximum(Number(pokemon.hitPointsMax), injuries));
   const damageResult = $derived(applyDamageToHitPoints(Number(pokemon.hitPoints), tempHitPoints, finalDamage));
+  const hpPercentage = $derived(Number.isFinite(pokemon.hitPoints) && Number.isFinite(pokemon.hitPointsMax) && pokemon.hitPointsMax > 0
+    ? Math.min(100, Math.max(0, pokemon.hitPoints / pokemon.hitPointsMax * 100))
+    : 0);
 
   function apply() {
     if (amount === null || !Number.isFinite(amount) || amount <= 0) return;
@@ -81,6 +84,19 @@
 </script>
 
 <div class="info-box incoming-damage-block">
+  <div class="hp-summary" role="group" aria-label="Hit points">
+    <div class="hp-heading">
+      <span class="info-label">HP <span class="hp-percentage">{Math.round(hpPercentage)}%</span></span>
+      <div class="hp-values">
+        <input id="hpCurrentInput" aria-label="Current HP" type="number" bind:value={pokemon.hitPoints} onchange={onsave} />
+        <span aria-hidden="true">/</span>
+        <input aria-label="Maximum HP" type="number" min="1" bind:value={pokemon.hitPointsMax} onchange={onsave} />
+      </div>
+    </div>
+    <div class="hp-bar" role="meter" aria-label="Remaining HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow={hpPercentage} aria-valuetext={`${pokemon.hitPoints} / ${pokemon.hitPointsMax} HP`}>
+      <div class="hp-bar-fill" style:width={`${hpPercentage}%`}></div>
+    </div>
+  </div>
   <div class="incoming-damage-header">
   <span class="info-label">Incoming Damage</span>
   <div class="damage-mode-buttons" role="group" aria-label="Damage mode">
@@ -115,6 +131,16 @@
 </div>
 
 <style>
+  .hp-summary{display:grid;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary)}
+  .hp-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .hp-heading .info-label,.incoming-damage-header .info-label{font-size:.85rem;font-weight:700;margin:0}
+  .hp-percentage{margin-left:6px;color:var(--text-secondary);font-size:.72rem;font-weight:500;font-variant-numeric:tabular-nums}
+  .hp-values{display:flex;align-items:center;gap:6px;font-size:.85rem}
+  .hp-summary input{box-sizing:border-box;width:72px;min-width:0;height:29px;margin:0;padding:4px 6px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-main);color:var(--text-primary);font:inherit;font-weight:700;text-align:center}
+  .hp-summary input:focus{border-color:var(--primary-color);outline:none;box-shadow:0 0 0 2px color-mix(in srgb,var(--primary-color) 18%,transparent)}
+  .hp-bar{height:5px;overflow:hidden;border-radius:999px;background:var(--bg-main);box-shadow:inset 0 0 0 1px var(--border-color)}
+  .hp-bar-fill{height:100%;border-radius:inherit;background:#dc3545;transition:width .2s ease}
+  @media(prefers-reduced-motion:reduce){.hp-bar-fill{transition:none}}
   .incoming-damage-block{display:block;width:100%;min-width:0;container-type:inline-size;text-align:left}
   .incoming-damage-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap}
   .incoming-damage-header .info-label{margin:0}

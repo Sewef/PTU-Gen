@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { Pokemon } from './lib/types';
   import { normalizePokemon, pokemonImage } from './lib/pokemon';
+  import { levelUpdate } from './lib/pokemon-editor';
   import { readSelected, savePokemon } from './lib/storage';
   import { movePowerAbilities, syncMovePower } from './lib/moves';
   import StatsEditor from './components/StatsEditor.svelte';
@@ -15,7 +16,7 @@
   import BattleOnlyForms from './components/BattleOnlyForms.svelte';
   import OtherInformation from './components/OtherInformation.svelte';
   import TypesEditor from './components/TypesEditor.svelte';
-  import LevelHpNatureEditor from './components/LevelHpNatureEditor.svelte';
+  import IncomingDamage from './components/IncomingDamage.svelte';
   import OwlbearPanel from './components/OwlbearPanel.svelte';
 
   const storageKey = new URLSearchParams(location.search).get('pokemonKey') || 'selectedPokemon';
@@ -32,6 +33,12 @@
     previousPowerAbilities = movePowerAbilities(pokemon);
     savePokemon(pokemon, storageKey, requestedHistoryScope || String(pokemon._ptuHistoryScope || 'site'));
     document.title = `${pokemon.name} - Lvl ${pokemon.level} - Pokémon Details`;
+  }
+
+  function changeLevel() {
+    if (!pokemon) return;
+    Object.assign(pokemon, levelUpdate(pokemon, pokemon.level));
+    persist();
   }
 
   function setFavicon() {
@@ -67,7 +74,7 @@
           <div class="pokemon-header-text">
             <div class="flex-header"><div class="pokemon-title">#{Number(pokemon.id) || 0} {pokemon.name}</div>{#if pokemon.shiny}<div class="shiny-badge">✨ SHINY</div>{/if}</div>
             <input type="text" bind:value={pokemon.nickname} onchange={persist} placeholder="Nickname" class="nickname-field" maxlength="20" />
-            <div class="pokemon-meta">Level {pokemon.level} • {pokemon.dataset || 'Core'} Dataset{pokemon._fandex ? ` • ${pokemon._fandex}` : ''}</div>
+            <div class="pokemon-meta"><label class="header-level">Level <input aria-label="Level" type="number" min="1" max="100" bind:value={pokemon.level} onchange={changeLevel} /></label> • {pokemon.dataset || 'Core'} Dataset{pokemon._fandex ? ` • ${pokemon._fandex}` : ''}</div>
           </div>
           <OwlbearPanel bind:pokemon {embedded} onsave={persist} />
         </div>
@@ -77,9 +84,9 @@
         <div class="details-left">
           <div class="pokemon-info">
             <TypesEditor bind:pokemon onsave={persist} />
-            <LevelHpNatureEditor bind:pokemon bind:damageType onsave={persist} />
+            <IncomingDamage bind:pokemon bind:damageType onsave={persist} />
 
-            <OtherInformation bind:pokemon initiallyOpen={!embedded} onsave={persist} />
+            <OtherInformation bind:pokemon onsave={persist} />
             <CaptureCalculator bind:pokemon onsave={persist} />
           </div>
 
@@ -101,3 +108,9 @@
     {/if}
   </main>
 </div>
+
+<style>
+  .header-level{display:inline-flex;align-items:center;gap:5px;margin:0;font:inherit;color:inherit}
+  .header-level input{box-sizing:border-box;width:58px;min-width:0;height:27px;margin:0;padding:2px 5px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-main);color:var(--text-primary);font:inherit;text-align:center}
+  .header-level input:focus{border-color:var(--primary-color);outline:none;box-shadow:0 0 0 2px color-mix(in srgb,var(--primary-color) 18%,transparent)}
+</style>

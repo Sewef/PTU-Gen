@@ -2,6 +2,7 @@
   import type { Pokemon } from '../lib/types';
   import { calculateHp, STAT_LABELS } from '../lib/pokemon';
   import { totalStat } from '../lib/stats';
+  import EvadeSummary from './EvadeSummary.svelte';
 
   let { pokemon = $bindable(), onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
   const statKeys = ['HP', 'atk', 'def', 'spA', 'spD', 'spe'] as const;
@@ -133,12 +134,14 @@
         <div class="stat-total">{total(stat)}</div>
       </div>
     {/each}
+    <EvadeSummary bind:pokemon {onsave} />
   </div>
 </div>
 
 <style>
   .stats-section{box-sizing:border-box;width:100%;max-width:100%;min-width:0}
   .points-label-short{display:none}
+  .remaining-points-display{display:flex;align-items:center;justify-content:center}
   @container(max-width:480px){
     .stats-buttons-group{grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.65fr);gap:3px}
     .stats-buttons-group .distribution-button,.stats-buttons-group .remaining-points-display{box-sizing:border-box;min-width:0;min-height:24px;margin:0;padding:3px;font-size:.62rem;line-height:1.1;white-space:nowrap;text-align:center}

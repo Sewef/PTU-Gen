@@ -6,7 +6,7 @@
   let { pokemon = $bindable(), onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
   const state = $derived(pokemon.captureState!);
   let evolutionStages = $state(0);
-  let panelOpen = $state(new URLSearchParams(location.search).get('embedded') !== 'true');
+  let panelOpen = $state(false);
 
   function stopSummaryToggle(node: HTMLElement) {
     const stop = (event: MouseEvent) => event.stopPropagation();
