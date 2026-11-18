@@ -14,10 +14,27 @@
   function blank() { pokemon.pokeEdges!.push({ name: `Custom Poké Edge ${pokemon.pokeEdges!.length + 1}`, prerequisites: '', cost: '', effect: '', editable: true }); onsave(); }
   function remove(index: number) { pokemon.pokeEdges!.splice(index, 1); onsave(); }
 </script>
-<div class="section">
-  <div class="flex-between-center-15"><h3 class="section-title">Poké Edges</h3><div class="button-group poke-edges-toolbar"><label class="tutor-points-control"><span>Tutor Points</span><span class="tutor-points-counter"><span title={`${spent} spent`}>{remaining}</span><span>/</span><input type="number" min="0" bind:value={pokemon.tutorPoints} onchange={onsave} /></span></label><button type="button" class="edit-bn" onclick={openPicker}>✎ Add</button><button type="button" class="edit-bn" onclick={blank}>+ Blank</button></div></div>
+<div class="section poke-edges-section">
+  <div class="section-header"><h3 class="section-title"><span aria-hidden="true">🧩</span> Poké Edges</h3><div class="poke-edges-toolbar"><label class="tutor-points-control" title="Tutor Points"><span class="tutor-label">Tutor Points</span><span class="tutor-label-short" aria-hidden="true">TP</span><span class="tutor-points-counter"><span title={`${spent} spent`}>{remaining}</span><span>/</span><input aria-label="Tutor Points" type="number" min="0" bind:value={pokemon.tutorPoints} onchange={onsave} /></span></label><div class="button-group"><button type="button" class="edit-bn" onclick={openPicker}>✎ Add</button><button type="button" class="edit-bn" onclick={blank}>+ Blank</button></div></div></div>
   <div class="section-list">{#each pokemon.pokeEdges || [] as edge, index}<article class="section-card poke-edge"><div class="section-card-header">{#if edge.editable}<input bind:value={edge.name} onchange={onsave} />{:else}<div class="section-card-name">{edge.name}</div>{/if}<button type="button" class="remove-poke-edge-btn" onclick={() => remove(index)}>✕ Remove</button></div>
     {#each ['prerequisites', 'cost', 'effect'] as field}{#if edge.editable}<label class="section-card-field"><strong>{field[0].toUpperCase() + field.slice(1)}:</strong><input bind:value={edge[field]} onchange={onsave} /></label>{:else if edge[field]}<div class="section-card-field"><strong>{field[0].toUpperCase() + field.slice(1)}:</strong> <ReferenceText text={edge[field]} dataset={pokemon.dataset} /></div>{/if}{/each}
   </article>{:else}<div class="empty-state compact">No Poké Edges yet.</div>{/each}</div>
 </div>
 {#if picker}<PickerModal title={loading ? 'Loading Poké Edges…' : 'Add Poké Edge'} {items} selected={(pokemon.pokeEdges || []).map(item => item.name)} onpick={pick} onclose={() => picker = false} />{/if}
+
+<style>
+  .poke-edges-section{min-width:0;container-type:inline-size}
+  .section-header{gap:8px;flex-wrap:nowrap}
+  .section-header .section-title{flex-shrink:0;white-space:nowrap}
+  .poke-edges-toolbar{flex-wrap:nowrap;gap:8px;margin:0;min-width:0}
+  .button-group{display:flex;align-items:center;gap:6px;margin:0}
+  .tutor-points-control{gap:4px;margin:0;white-space:nowrap}
+  .tutor-points-counter{gap:3px}
+  .tutor-points-control input{box-sizing:border-box;width:44px;min-width:0;height:26px;padding:2px 4px;font:inherit}
+  .tutor-label-short{display:none}
+  .edit-bn{white-space:nowrap}
+  @container(max-width:420px){
+    .tutor-label{display:none}.tutor-label-short{display:inline}
+    .tutor-points-control input{width:36px;padding-inline:2px}
+  }
+</style>

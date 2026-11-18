@@ -74,7 +74,7 @@
           <div class="pokemon-header-text">
             <div class="flex-header"><div class="pokemon-title">#{Number(pokemon.id) || 0} {pokemon.name}</div>{#if pokemon.shiny}<div class="shiny-badge">✨ SHINY</div>{/if}</div>
             <input type="text" bind:value={pokemon.nickname} onchange={persist} placeholder="Nickname" class="nickname-field" maxlength="20" />
-            <div class="pokemon-meta"><label class="header-level">Level <input aria-label="Level" type="number" min="1" max="100" bind:value={pokemon.level} onchange={changeLevel} /></label> • {pokemon.dataset || 'Core'} Dataset{pokemon._fandex ? ` • ${pokemon._fandex}` : ''}</div>
+            <div class="pokemon-meta"><span class="header-gender">{pokemon.gender === 'No Gender' ? 'Genderless' : pokemon.gender || 'Unknown'}</span> • <label class="header-level">Level <input aria-label="Level" type="number" min="1" max="100" bind:value={pokemon.level} onchange={changeLevel} /></label> • {pokemon.dataset || 'Core'} Dataset{pokemon._fandex ? ` • ${pokemon._fandex}` : ''}</div>
           </div>
           <OwlbearPanel bind:pokemon {embedded} onsave={persist} />
         </div>
@@ -93,7 +93,7 @@
           <StatsEditor bind:pokemon onsave={persist} />
 
           <SkillsEditor bind:pokemon {embedded} onsave={persist} />
-          <CapabilitiesEditor bind:pokemon onsave={persist} />
+          <CapabilitiesEditor bind:pokemon {embedded} onsave={persist} />
           <BattleOnlyForms bind:pokemon onsave={persist} />
 
           <AbilitiesEditor {pokemon} onsave={persist} />

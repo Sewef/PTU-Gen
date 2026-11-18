@@ -134,7 +134,8 @@
 </script>
 
 <div class="section">
-  <div class="flex-between-center-15 moves-header"><h3 class="section-title">⚔️ Moves</h3><div class="move-power-options"><label title="Add half of Attack to Special damage, and half of Special Attack to Physical damage (rounded down)."><input type="checkbox" checked={pokemon.movePower === 'twisted'} onchange={(event) => changePower('twisted', event.currentTarget.checked)} /> Twisted Power</label><label title="Add Attack to Special damage if Attack is higher, or Special Attack to Physical damage if Special Attack is higher. Does not stack with Mixed Power."><input type="checkbox" checked={pokemon.movePower === 'weird'} onchange={(event) => changePower('weird', event.currentTarget.checked)} /> Weird Power</label></div><div class="button-group"><button type="button" class="edit-bn" onclick={openPicker}>✎ Edit</button><button type="button" class="edit-bn" onclick={blank}>+ Blank</button></div></div>
+  <div class="flex-between-center-15 moves-header"><h3 class="section-title">⚔️ Moves</h3><div class="button-group"><button type="button" class="edit-bn" onclick={openPicker}>✎ Edit</button><button type="button" class="edit-bn" onclick={blank}>+ Blank</button></div></div>
+  <div class="move-power-options"><label title="Add half of Attack to Special damage, and half of Special Attack to Physical damage (rounded down)."><input type="checkbox" checked={pokemon.movePower === 'twisted'} onchange={(event) => changePower('twisted', event.currentTarget.checked)} /> Twisted Power</label><label title="Add Attack to Special damage if Attack is higher, or Special Attack to Physical damage if Special Attack is higher. Does not stack with Mixed Power."><input type="checkbox" checked={pokemon.movePower === 'weird'} onchange={(event) => changePower('weird', event.currentTarget.checked)} /> Weird Power</label></div>
   <div class="section-list">
     <article class="section-card move struggle-card type-{slug(struggle.type)}">
       <div class="section-card-header"><div class="section-card-name">Struggle <button type="button" class="move-badge type-{slug(struggle.type)} move-type-picker" aria-label="Change Struggle type" onclick={() => openTypePicker(struggle)}>{struggle.type}</button> <button type="button" class="move-badge move-class-{slug(struggle.class)}" onclick={() => toggleClass(struggle)}>{struggle.class}</button></div></div>
@@ -191,8 +192,10 @@
 {#if rangeTarget}<RangePickerModal range={rangeTarget.range || ''} onsave={changeRange} onclose={() => rangeTarget = null} />{/if}
 
 <style>
-  .moves-header{flex-wrap:wrap}
-  .move-power-options{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:.85em}
+  .moves-header{flex-wrap:nowrap}
+  .moves-header .section-title{white-space:nowrap}
+  .moves-header .button-group{flex-wrap:nowrap;flex-shrink:0}
+  .move-power-options{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:8px;font-size:.85em}
   .move-power-options label{display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
   .move-power-options input{margin:0}
   .move-type-picker{border:0;cursor:pointer;font-family:inherit}
