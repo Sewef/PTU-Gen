@@ -746,7 +746,7 @@ button {
 
 .errata-row {
     display: grid;
-    grid-template-columns: 30px 1fr;
+    grid-template-columns: 36px minmax(0, 1fr);
     gap: 8px;
     align-items: center;
     min-height: 34px;
@@ -793,6 +793,12 @@ button {
     display: flex;
     gap: 6px;
     align-items: center;
+    width: 36px;
+    min-width: 36px;
+}
+
+.errata-checkbox-group .errata-checkbox {
+    flex: 0 0 15px;
 }
 
 .errata-checkbox-group input[disabled] {
@@ -800,6 +806,8 @@ button {
 }
 
 .errata-row-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-size: 0.8em;
     color: var(--text-primary);
 }
