@@ -28,9 +28,13 @@
   const injuries = $derived(Number(pokemon.captureState?.standardCounts?.injuries) || 0);
   const healingMaximum = $derived(injuredHitPointMaximum(Number(pokemon.hitPointsMax), injuries));
   const damageResult = $derived(applyDamageToHitPoints(Number(pokemon.hitPoints), tempHitPoints, finalDamage));
-  const hpPercentage = $derived(Number.isFinite(pokemon.hitPoints) && Number.isFinite(pokemon.hitPointsMax) && pokemon.hitPointsMax > 0
-    ? Math.min(100, Math.max(0, pokemon.hitPoints / pokemon.hitPointsMax * 100))
-    : 0);
+  const hpPercentage = $derived.by(() => {
+    const current = pokemon.hitPoints;
+    const maximum = pokemon.hitPointsMax;
+    if (typeof current !== 'number' || !Number.isFinite(current) ||
+        typeof maximum !== 'number' || !Number.isFinite(maximum) || maximum <= 0) return 0;
+    return Math.min(100, Math.max(0, current / maximum * 100));
+  });
 
   function apply() {
     if (amount === null || !Number.isFinite(amount) || amount <= 0) return;
