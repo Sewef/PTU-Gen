@@ -6,7 +6,9 @@ describe('Owlbear scene readiness', () => {
     let initialize: () => Promise<void>;
     let sceneReady: (ready: boolean) => void;
     let playerChanged: (player: any) => void;
+    let itemsChanged: (items: any[]) => void;
     const ensureVisibility = vi.fn(async () => {});
+    const notifyTokens = vi.fn();
     const OBR = {
       isAvailable: true,
       room: { id: 'room-1' },
@@ -16,10 +18,10 @@ describe('Owlbear scene readiness', () => {
         onChange: vi.fn(callback => { playerChanged = callback; })
       },
       party: { getPlayers: vi.fn(async () => []), onChange: vi.fn() },
-      scene: { onReadyChange: vi.fn(callback => { sceneReady = callback; }), items: { onChange: vi.fn() } }
+      scene: { onReadyChange: vi.fn(callback => { sceneReady = callback; }), items: { onChange: vi.fn(callback => { itemsChanged = callback; }), getItems: vi.fn(async () => [{ id: 'token' }]) } }
     };
     const context = createOwlbearContext({
-      OBR, resolveOwlbearReady: vi.fn(), notifyTrackedTokenStates: vi.fn(),
+      OBR, resolveOwlbearReady: vi.fn(), notifyTrackedTokenStates: notifyTokens,
       ensurePlayerOwnedOwlTrackersVisibility: ensureVisibility
     });
     await context.initializeOwlbearContext();
@@ -27,10 +29,14 @@ describe('Owlbear scene readiness', () => {
     ensureVisibility.mockClear();
 
     sceneReady!(false);
+    itemsChanged!([]);
+    expect(notifyTokens).not.toHaveBeenCalled();
     expect(ensureVisibility).not.toHaveBeenCalled();
     playerChanged!({ id: 'player-1', name: 'Player', role: 'GM' });
     ensureVisibility.mockClear();
     sceneReady!(true);
+    await Promise.resolve();
+    expect(notifyTokens).toHaveBeenCalledWith([{ id: 'token' }]);
     expect(ensureVisibility).toHaveBeenCalledWith([{ id: 'player-1', name: 'Player', role: 'GM' }]);
     sceneReady!(false);
     sceneReady!(true);

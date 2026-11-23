@@ -7,6 +7,8 @@ export function createOwlbearContext({
     let currentPlayer = null;
     let partyPlayers = [];
     const playerRoles = new Map();
+    let sceneLoading = false;
+    let sceneGeneration = 0;
 
     function getOwlbearContextMessage() {
         return {
@@ -65,7 +67,14 @@ export function createOwlbearContext({
                 };
                 partyPlayers = players.filter(player => player.id !== currentPlayer.id);
                 OBR.scene.onReadyChange(ready => {
-                    if (ready) updateTrackersVisibility([currentPlayer, ...partyPlayers]);
+                    const generation = ++sceneGeneration;
+                    sceneLoading = !ready;
+                    if (ready) {
+                        updateTrackersVisibility([currentPlayer, ...partyPlayers]);
+                        OBR.scene.items.getItems().then(items => {
+                            if (generation === sceneGeneration) notifyTrackedTokenStates(items);
+                        }).catch(error => console.error('Unable to refresh scene tokens:', error));
+                    }
                 });
                 handlePlayerRoles([currentPlayer, ...partyPlayers]);
                 broadcastOwlbearContext();
@@ -84,7 +93,7 @@ export function createOwlbearContext({
                 });
 
                 OBR.scene.items.onChange(items => {
-                    notifyTrackedTokenStates(items);
+                    if (!sceneLoading) notifyTrackedTokenStates(items);
                 });
                 console.log('PTU Gen Owlbear extension ready');
             } catch (error) {

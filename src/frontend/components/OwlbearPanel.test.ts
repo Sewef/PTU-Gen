@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, unmount } from 'svelte';
 import { normalizePokemon } from '../lib/pokemon';
 
-const { requestOwlbear } = vi.hoisted(() => ({ requestOwlbear: vi.fn() }));
+const { requestOwlbear, listenOwlbear } = vi.hoisted(() => ({ requestOwlbear: vi.fn(), listenOwlbear: vi.fn((_players: any, _token: any) => () => undefined) }));
 
 vi.mock('../lib/owlbear', () => ({
-  listenOwlbear: vi.fn(() => () => undefined),
+  listenOwlbear,
   requestOwlbear
 }));
 
@@ -61,8 +61,12 @@ describe('OwlbearPanel', () => {
     });
 
     await vi.waitFor(() => expect(document.querySelector('.owlbear-focus-btn')?.textContent).toBe('Insert'));
-    expect(pokemon.owlbear.tokenId).toBe('');
-    expect(document.querySelector('.owlbear-token-status')?.textContent).toBe('Token no longer in scene');
-    expect(onsave).toHaveBeenCalled();
+    expect(pokemon.owlbear.tokenId).toBe('deleted-token');
+    expect(document.querySelector('.owlbear-token-status')?.textContent).toBe('Token not in current scene');
+    expect(onsave).not.toHaveBeenCalled();
+
+    const onTokenState = listenOwlbear.mock.calls.at(-1)![1];
+    onTokenState({ tokenId: 'deleted-token', exists: true, visible: true, createdUserId: null });
+    await vi.waitFor(() => expect(document.querySelector('.owlbear-focus-btn')?.textContent).toBe('Focus'));
   });
 });

@@ -68,7 +68,7 @@
       tokenId, trackers, name, nickname, shiny, hitPoints, hitPointsMax,
       tempHitPoints, injuries, battleOnlyFormIcon
     ]);
-    if (!embedded || !tokenId || !tokenStateLoaded || syncKey === lastConfirmedSyncKey) return;
+    if (!embedded || !tokenId || !linked || !tokenStateLoaded || syncKey === lastConfirmedSyncKey) return;
 
     const timer = window.setTimeout(() => {
       // Keep this payload plain: Svelte's reactive proxies cannot be cloned by postMessage.
@@ -133,13 +133,11 @@
 
   function unlinkToken(expectedTokenId: string) {
     if (pokemon.owlbear.tokenId !== expectedTokenId) return;
-    pokemon.owlbear.tokenId = '';
     linked = false;
     tokenStateLoaded = true;
     lastConfirmedSyncKey = '';
     failed = true;
-    status = 'Token no longer in scene';
-    onsave();
+    status = 'Token not in current scene';
   }
 
   async function action(run: () => Promise<any>, expectedTokenId = '') {
