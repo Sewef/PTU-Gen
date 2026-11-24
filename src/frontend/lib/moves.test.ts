@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { normalizePokemon } from './pokemon';
-import { attackValue, damageRange, damageBase, doubleStrikeCases, ensureStruggle, fiveStrikeCases, hasDoubleStrike, hasFiveStrike, movePowerAbilities, rollFormula, setDefaultStab, struggleTypes, syncMovePower, toggleStab } from './moves';
+import { attackValue, damageRange, damageBase, doubleStrikeCases, ensureStruggle, fiveStrikeCases, hasDoubleStrike, hasFiveStrike, metronomeCandidates, movePowerAbilities, rollFormula, setDefaultStab, struggleTypes, syncMovePower, toggleStab } from './moves';
 
 describe('move helpers', () => {
+  it('excludes Metronome references, known moves and duplicate names from random candidates', () => {
+    const moves = ['Metronome', 'Rage', 'Powder', "King's Shield", 'Tackle', ' tackle ', 'Thunderbolt'].map(name => ({ name }));
+    expect(metronomeCandidates(moves, [{ name: 'THUNDERBOLT' }], "[[move:Rage]] [[move:Powder]], [[move:King's Shield]]")).toEqual([{ name: 'Tackle' }]);
+    expect(metronomeCandidates(moves, moves, '')).toEqual([]);
+  });
   it('adds half the opposite stat with Twisted Power, including stages and rounding down', () => {
     const pokemon = normalizePokemon({ stats: { atk: 13, spA: 9 }, abilities: [{ name: 'Twisted Power' }] });
     pokemon.combatStages.atk = 1;

@@ -2,7 +2,7 @@
   import type { Pokemon } from '../lib/types';
   import { allMoves, availableMoves } from '../lib/api';
   import { frequencyUses, selectableTypes, slug } from '../lib/pokemon';
-  import { attackValue, baseDamageBase, damageBase, damageRange, doubleStrikeCases, fiveStrikeCases, hasDoubleStrike, hasFiveStrike, moveDamageBase, rollFormula, setDefaultStab, toggleStab } from '../lib/moves';
+  import { attackValue, baseDamageBase, damageBase, damageRange, doubleStrikeCases, fiveStrikeCases, hasDoubleStrike, hasFiveStrike, metronomeCandidates, moveDamageBase, rollFormula, setDefaultStab, toggleStab } from '../lib/moves';
   import { requestOwlbear } from '../lib/owlbear';
   import PickerModal from './PickerModal.svelte';
   import TypePickerModal from './TypePickerModal.svelte';
@@ -11,6 +11,8 @@
   let { pokemon = $bindable(), onsave }: { pokemon: Pokemon; onsave: () => void } = $props();
   let picker = $state(false); let items = $state<any[]>([]); let loading = $state(false); let globalList = $state(false);
   let rolling = $state('');
+  let metronomeLoading = $state(false);
+  let metronomeMessage = $state('');
   let typeTarget = $state.raw<any | null>(null);
   let rangeTarget = $state.raw<any | null>(null);
   let feedbackKey = $state('');
@@ -26,6 +28,21 @@
   async function loadPickerItems(all = false) { loading = true; try { items = flatten(all ? await allMoves(pokemon) : await availableMoves(pokemon)); globalList = all; } finally { loading = false; } }
   async function openPicker() { picker = true; await loadPickerItems(false); }
   function pick(item: any) { const index = pokemon.moves!.findIndex(move => move.name === item.name); if (index >= 0) pokemon.moves!.splice(index, 1); else pokemon.moves!.push(setDefaultStab(pokemon, { ...item, damageBase: item.damageBase ? { ...item.damageBase } : item.damageBase, usageCount: 0 })); onsave(); }
+  async function useMetronome(move: any) {
+    metronomeLoading = true;
+    metronomeMessage = '';
+    try {
+      const moves = flatten(await allMoves(pokemon));
+      const candidates = metronomeCandidates(moves, pokemon.moves || [], move.effect);
+      if (!candidates.length) { metronomeMessage = 'No eligible moves available.'; return; }
+      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+      pokemon.moves!.push(setDefaultStab(pokemon, { ...chosen, damageBase: chosen.damageBase ? { ...chosen.damageBase } : chosen.damageBase, usageCount: 0 }));
+      onsave();
+      metronomeMessage = `Added ${chosen.name}.`;
+    } catch {
+      metronomeMessage = 'Could not load moves. Please try again.';
+    } finally { metronomeLoading = false; }
+  }
   function blank() { pokemon.moves!.push({ name: `Custom Move ${pokemon.moves!.length + 1}`, type: 'Typeless', frequency: '', class: 'Physical', range: '', ac: '', db: 4, damageBase: damageBase(4), effect: '', usageCount: 0, editable: true }); onsave(); }
   function remove(index: number) { pokemon.moves!.splice(index, 1); onsave(); }
   function usage(move: any, index: number) { move.usageCount = move.usageCount === index + 1 ? index : index + 1; onsave(); }
@@ -182,6 +199,7 @@
         {#if move.editable}
           <label class="section-card-field custom-move-effect"><strong>Effect:</strong><textarea bind:value={move.effect} onchange={onsave}></textarea></label>
         {:else if move.effect}<div class="section-card-field"><strong>Effect:</strong> <ReferenceText text={move.effect} dataset={pokemon.dataset} /></div>{/if}
+        {#if String(move.name || '').trim().toLowerCase() === 'metronome'}<div><button type="button" class="edit-bn" disabled={metronomeLoading} onclick={() => useMetronome(move)}>{metronomeLoading ? 'Loading…' : '🎲 Add random move'}</button> <span role="status">{metronomeMessage}</span></div>{/if}
         {#if move.frequency}<div class="usage-tracker"><span class="usage-label">Uses:</span><div class="usage-boxes">{#each Array(frequencyUses(move.frequency)) as _, use}<button type="button" aria-label={`Use ${use + 1}`} class:checked={(move.usageCount || 0) > use} class="usage-checkbox" onclick={() => usage(move, use)}></button>{/each}</div></div>{/if}
       </article>
     {:else}<div class="empty-state compact">No moves yet.</div>{/each}
