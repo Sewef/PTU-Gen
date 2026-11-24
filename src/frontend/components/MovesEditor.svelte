@@ -199,7 +199,7 @@
         {#if move.editable}
           <label class="section-card-field custom-move-effect"><strong>Effect:</strong><textarea bind:value={move.effect} onchange={onsave}></textarea></label>
         {:else if move.effect}<div class="section-card-field"><strong>Effect:</strong> <ReferenceText text={move.effect} dataset={pokemon.dataset} /></div>{/if}
-        {#if String(move.name || '').trim().toLowerCase() === 'metronome'}<div><button type="button" class="edit-bn" disabled={metronomeLoading} onclick={() => useMetronome(move)}>{metronomeLoading ? 'Loading…' : '🎲 Add random move'}</button> <span role="status">{metronomeMessage}</span></div>{/if}
+        {#if String(move.name || '').trim().toLowerCase() === 'metronome'}<div class="section-card-field db-field metronome-action"><div class="db-summary"><span class="db-identity"><strong>Random Move</strong></span><span class="metronome-feedback" role="status">{metronomeMessage}</span></div><div class="db-actions"><button type="button" class="copy-roll-formula-btn" disabled={metronomeLoading} onclick={() => useMetronome(move)}>{metronomeLoading ? 'Loading…' : 'Add'}</button></div></div>{/if}
         {#if move.frequency}<div class="usage-tracker"><span class="usage-label">Uses:</span><div class="usage-boxes">{#each Array(frequencyUses(move.frequency)) as _, use}<button type="button" aria-label={`Use ${use + 1}`} class:checked={(move.usageCount || 0) > use} class="usage-checkbox" onclick={() => usage(move, use)}></button>{/each}</div></div>{/if}
       </article>
     {:else}<div class="empty-state compact">No moves yet.</div>{/each}
@@ -227,6 +227,8 @@
   .custom-move-frequency-input{box-sizing:border-box;width:120px;min-width:0;padding:2px 5px}
   .custom-move-effect{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:5px}
   .custom-move-effect textarea{box-sizing:border-box;width:100%;min-width:0}
+  .metronome-action{margin-top:6px}
+  .metronome-feedback{font-size:.9em;color:var(--text-secondary)}
   .copy-roll-formula-btn.is-success{border-color:#62bd83;background:#d9f6e5;color:#187445}
   .copy-roll-formula-btn.is-error{border-color:#df7b7b;background:#fde1e1;color:#b12a2a}
   @media(max-width:480px){.custom-move-heading{flex-wrap:wrap}.custom-move-name-input{flex-basis:130px;width:130px}.custom-move-effect{grid-template-columns:1fr}}
