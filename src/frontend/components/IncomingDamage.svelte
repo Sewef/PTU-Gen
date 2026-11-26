@@ -158,7 +158,7 @@
   .tick-buttons{grid-template-columns:minmax(0,1fr) 25px 25px}
   .damage-counter-group .damage-counter{display:contents}
   .damage-counter-group .damage-counter>span,.utility-label{font-size:.7rem;font-weight:600;line-height:14px;color:var(--text-secondary)}
-  .damage-utilities button{box-sizing:border-box;flex:0 0 25px;width:25px;height:25px;min-height:25px;padding:0;border:1px solid var(--border-color);border-radius:4px;background:transparent;color:var(--text-secondary);font-size:.8rem;cursor:pointer}
+  .damage-utilities button{box-sizing:border-box;flex:0 0 25px;width:25px;height:25px;min-height:25px;padding:0;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-main);color:var(--text-primary);font-size:.8rem;cursor:pointer}
   .damage-utilities button:hover{border-color:var(--primary-color);color:var(--primary-color)}
   .damage-mode-buttons{display:inline-flex;gap:0}
   .damage-mode-buttons button{padding:4px 8px;border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-secondary);font:inherit;font-size:.72rem;font-weight:700;cursor:pointer}
