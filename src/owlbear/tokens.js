@@ -89,7 +89,12 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
     }
 
     function notifyTrackedTokenStates(items) {
-        const itemsById = new Map(items.map(item => [item.id, item]));
+        if (trackedTokenWindows.size === 0) return;
+        const itemsById = new Map();
+        for (const item of items) {
+            if (trackedTokenWindows.has(item.id)) itemsById.set(item.id, item);
+            if (itemsById.size === trackedTokenWindows.size) break;
+        }
         trackedTokenWindows.forEach((windows, tokenId) => {
             const item = itemsById.get(tokenId);
             const fingerprint = tokenStateFingerprint(item);
@@ -208,6 +213,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
     async function setSceneTokenVisibility(tokenId, visible, targetWindow) {
         const existing = await getSceneToken(tokenId, targetWindow);
         if (!existing) throw new Error('The linked token no longer exists in this scene.');
+        if (existing.visible === Boolean(visible)) return existing;
 
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
@@ -225,6 +231,9 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         if (!existing) throw new Error('The linked token no longer exists in this scene.');
 
         const ownerRole = await getPlayerRole(createdUserId);
+        if (existing.createdUserId === createdUserId &&
+            (!Array.isArray(existing.metadata?.[OWL_TRACKERS_METADATA_KEY]) ||
+                existing.metadata?.[OWL_TRACKERS_HIDDEN_METADATA_KEY] === (ownerRole === 'GM'))) return existing;
 
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
@@ -246,6 +255,17 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
         if (!existing) throw new Error('The linked token no longer exists in this scene.');
         const ownerRole = await getPlayerRole(String(existing.createdUserId || ''));
         const initiativeKey = 'com.pretty-initiative/metadata';
+        const metadata = existing.metadata || {};
+        const trackers = metadata[OWL_TRACKERS_METADATA_KEY];
+        const trackerNames = Array.isArray(trackers) ? trackers.map(tracker => String(tracker?.name || '').toLowerCase()) : [];
+        const trackersMatch = pokemon.owlbear.trackers === 'owltrackers'
+            ? Array.isArray(trackers) && ['hp', 'injuries', 'temp hp'].every(name => trackerNames.includes(name)) &&
+                metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY] === (ownerRole === 'GM')
+            : !(OWL_TRACKERS_METADATA_KEY in metadata) && !(OWL_TRACKERS_HIDDEN_METADATA_KEY in metadata);
+        const initiativeMatches = pokemon.owlbear.initiative === 'prettysordid'
+            ? Boolean(metadata[initiativeKey])
+            : !(initiativeKey in metadata);
+        if (trackersMatch && initiativeMatches) return existing;
         await OBR.scene.items.updateItems([tokenId], items => {
             items.forEach(item => {
                 const metadata = { ...(item.metadata || {}) };
@@ -351,7 +371,7 @@ export function createTokenService({ OBR, buildImage, owlbearReady }) {
                     item.image.url = desiredImageUrl;
                 }
 
-                if (!trackersEnabled) return;
+                if (!trackersEnabled || (!hpChanged && !injuriesChanged && !tempHpChanged)) return;
                 const itemTrackers = item.metadata?.[OWL_TRACKERS_METADATA_KEY];
                 if (!Array.isArray(itemTrackers)) return;
                 const updatedTrackers = itemTrackers.map(tracker => {

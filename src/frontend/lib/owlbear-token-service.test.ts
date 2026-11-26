@@ -33,6 +33,7 @@ describe('Owlbear token service', () => {
     item.metadata[OWL_TRACKERS_METADATA_KEY][0].value = 12;
     item.metadata['com.pretty-initiative/metadata'].active = true;
     await service.setSceneTokenIntegrations(pokemon, {});
+    expect(OBR.scene.items.updateItems).toHaveBeenCalledOnce();
     expect(item.metadata[OWL_TRACKERS_METADATA_KEY]).toHaveLength(3);
     expect(item.metadata[OWL_TRACKERS_METADATA_KEY][0].value).toBe(12);
     expect(item.metadata['com.pretty-initiative/metadata'].active).toBe(true);
@@ -41,6 +42,27 @@ describe('Owlbear token service', () => {
     pokemon.owlbear.initiative = 'none';
     await service.setSceneTokenIntegrations(pokemon, {});
     expect(item.metadata).toEqual({ custom: 'preserved' });
+  });
+
+  it('skips unchanged visibility and ownership while correcting tracker visibility', async () => {
+    const item: any = { id: 'token-1', visible: true, createdUserId: 'player-1', metadata: {
+      [OWL_TRACKERS_METADATA_KEY]: [], [OWL_TRACKERS_HIDDEN_METADATA_KEY]: false
+    } };
+    const OBR = {
+      player: { id: 'player-1', getRole: vi.fn(async () => 'PLAYER') },
+      scene: { isReady: vi.fn(async () => true), items: {
+        getItems: vi.fn(async () => [item]),
+        updateItems: vi.fn(async (_ids: string[], update: (items: any[]) => void) => update([item]))
+      } }
+    };
+    const service = createTokenService({ OBR, buildImage: vi.fn(), owlbearReady: Promise.resolve(true) });
+    await service.setSceneTokenVisibility('token-1', true, {});
+    await service.setSceneTokenOwner('token-1', 'player-1', {});
+    expect(OBR.scene.items.updateItems).not.toHaveBeenCalled();
+    item.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY] = true;
+    await service.setSceneTokenOwner('token-1', 'player-1', {});
+    expect(OBR.scene.items.updateItems).toHaveBeenCalledOnce();
+    expect(item.metadata[OWL_TRACKERS_HIDDEN_METADATA_KEY]).toBe(false);
   });
 
   it('shows Owl Trackers when a player inserts a token', async () => {
@@ -344,10 +366,15 @@ describe('Owlbear token service', () => {
     service.notifyTrackedTokenStates([item]);
     expect(targetWindow.postMessage).toHaveBeenCalledOnce();
 
+    service.notifyTrackedTokenStates([]);
+    service.notifyTrackedTokenStates([]);
+    expect(targetWindow.postMessage).toHaveBeenCalledTimes(2);
+    expect(targetWindow.postMessage).toHaveBeenLastCalledWith(expect.objectContaining({ tokenId: 'token-1', exists: false }), expect.any(String));
+
     service.unregisterTrackedWindow(targetWindow);
     item.visible = true;
     service.notifyTrackedTokenStates([item]);
-    expect(targetWindow.postMessage).toHaveBeenCalledOnce();
+    expect(targetWindow.postMessage).toHaveBeenCalledTimes(2);
   });
 
   it('checks tracker visibility for multiple players with one scene read', async () => {
